@@ -1,0 +1,34 @@
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Global Gradient Background */
+.bg-mephisto-gradient {
+  background-color: #000000;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(356, 85%, 26%, 0.2) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(24, 94%, 30%, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(260, 50%, 15%, 0.1) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+  background: #333; 
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ef4444; 
+}

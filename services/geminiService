@@ -1,0 +1,15 @@
+import { GoogleGenAI } from "@google/genai";
+
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key missing");
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
+// Placeholder for future AI features (Fake Persona generation etc.)
+export const generatePersona = async (): Promise<string> => {
+   // Logic will be added in the next step
+   return "";
+}
