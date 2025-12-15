@@ -7,6 +7,7 @@ import CustomAddressModal from './components/CustomAddressModal';
 import Footer from './components/Footer';
 import { Mailbox, EmailSummary, EmailDetail } from './types';
 import { generateMailbox, createCustomMailbox, getMessages, getMessageDetail, deleteMessage } from './services/mailService';
+import { RefreshCw } from 'lucide-react';
 
 const App: React.FC = () => {
   // State
@@ -75,9 +76,14 @@ const App: React.FC = () => {
       setEmails([]);
       setSelectedEmailId(null);
       setCurrentEmailDetail(null);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      setError("Failed to create address. Try again.");
+      // More friendly error message
+      if (e.message.includes('Connection failed')) {
+         setError("Connection Error. Try Retrying.");
+      } else {
+         setError("Initialization Failed.");
+      }
     } finally {
       setIsLoadingAccount(false);
     }
@@ -125,12 +131,24 @@ const App: React.FC = () => {
       if (emails.length === 0) setIsLoadingEmails(true);
 
       try {
-        const newEmails = await getMessages(activeAccount);
+        const fetchedEmails = await getMessages(activeAccount);
+        
         if (isMounted) {
+          if (fetchedEmails === null) {
+            // Error occurred silently in getMessages
+            return;
+          }
+
           setEmails(prev => {
-            if (newEmails.length === 0 && prev.length === 0) return prev;
-            if (newEmails.length === prev.length && newEmails[0]?.id === prev[0]?.id) return prev;
-            return newEmails;
+            if (fetchedEmails.length === 0 && prev.length === 0) return prev;
+            if (fetchedEmails.length === prev.length && fetchedEmails[0]?.id === prev[0]?.id) {
+              return prev;
+            }
+            
+            const emailMap = new Map();
+            fetchedEmails.forEach(e => emailMap.set(e.id, e));
+            const mergedList = Array.from(emailMap.values());
+            return mergedList.sort((a, b) => Number(b.id) - Number(a.id));
           });
         }
       } catch (e) {
@@ -198,7 +216,7 @@ const App: React.FC = () => {
   const isMobileDetailView = !!selectedEmailId;
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col font-sans bg-mephisto-gradient text-slate-200">
       <Header 
         accounts={accounts}
         currentAccount={activeAccount}
@@ -218,12 +236,35 @@ const App: React.FC = () => {
 
       <main className="flex-grow container mx-auto px-0 md:px-6 py-0 md:py-8 max-w-7xl flex flex-col h-[calc(100vh-80px)] md:h-auto">
         
-        <div className="hidden md:block p-4 md:p-0 mb-6">
+        {/* Error Retry Overlay for Address Bar */}
+        <div className="hidden md:block p-4 md:p-0 mb-6 relative">
              <AddressBar 
               mailbox={activeAccount} 
               isLoading={isLoadingAccount} 
               error={error}
             />
+            {error && (
+              <div className="absolute top-1/2 right-4 -translate-y-1/2 z-20">
+                <button 
+                  onClick={createAccount}
+                  className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-red-900/50 flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" /> Retry
+                </button>
+              </div>
+            )}
+        </div>
+
+        {/* Mobile Error Retry */}
+        <div className="md:hidden">
+           {error && (
+             <div className="bg-red-500/10 p-3 flex justify-between items-center text-red-200 text-sm">
+                <span>{error}</span>
+                <button onClick={createAccount} className="p-2 bg-red-600 text-white rounded-lg">
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+             </div>
+           )}
         </div>
 
         <div className="flex-grow grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-6 relative overflow-hidden md:overflow-visible">
