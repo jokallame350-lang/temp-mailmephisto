@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-// DÜZELTME BURADA: '../types' yerine '../appTypes'
 import { Mailbox } from '../appTypes';
 import { Copy, RefreshCw, Trash2, ChevronDown, Check, Globe, Command } from 'lucide-react';
-import { translations, Language } from '../translations';
+import { translations, Language } from '../appTranslations';
 
 interface AddressBarProps {
   mailbox: Mailbox | null;
@@ -15,6 +14,7 @@ interface AddressBarProps {
   domains?: string[];
   progress: number;
   lang: Language;
+  onCreateCustom?: () => void; // App.tsx gönderiyor olabilir, ekledik
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({ 
@@ -90,9 +90,9 @@ const AddressBar: React.FC<AddressBarProps> = ({
         </div>
       </div>
       <div className="flex justify-center gap-4 text-[9px] text-slate-400 dark:text-slate-600 font-mono uppercase tracking-widest opacity-60">
-        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> R : {translations[lang].refresh}</span>
-        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> C : {translations[lang].copy}</span>
-        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> N : {translations[lang].new}</span>
+        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> R : {t.refresh}</span>
+        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> C : {t.copy}</span>
+        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> N : {t.new}</span>
       </div>
     </div>
   );
