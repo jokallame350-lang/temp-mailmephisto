@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import AddressBar from './components/AddressBar';
 import EmailList from './components/EmailList';
@@ -11,18 +11,17 @@ import PasswordGenModal from './components/PasswordGenModal';
 import LimitModal from './components/LimitModal';
 import { SEOContent } from './components/SEOContent'; 
 
-// DÜZELTME BURADA: './types' yerine './appTypes'
+// DÜZELTME: appTypes ve appTranslations import edildi
 import { Mailbox, EmailSummary, EmailDetail } from './appTypes';
 import { generateMailbox, createCustomMailbox, getMessages, getMessageDetail, deleteMessage, fetchDomains } from './services/mailService';
 import { Terminal, Activity } from 'lucide-react';
-import { translations, Language } from './translations';
+import { translations, Language } from './appTranslations';
 
 const REFRESH_INTERVAL = 7000; 
 const MAX_ACTIVE_ACCOUNTS = 3; 
 const DAILY_CREATION_LIMIT = 5; 
 
 const App: React.FC = () => {
-  // --- TEMA VE DİL AYARLARI ---
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang];
@@ -36,7 +35,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const root = window.document.documentElement;
     const savedTheme = localStorage.getItem('mephisto_theme') as 'dark' | 'light';
-    
     if (savedTheme) {
       setTheme(savedTheme);
       root.classList.remove('dark', 'light');
@@ -52,7 +50,6 @@ const App: React.FC = () => {
     root.classList.add(theme);
   }, [theme]);
 
-  // --- STATE TANIMLARI ---
   const [accounts, setAccounts] = useState<Mailbox[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [emails, setEmails] = useState<EmailSummary[]>([]);
@@ -61,13 +58,11 @@ const App: React.FC = () => {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [availableDomains, setAvailableDomains] = useState<string[]>([]);
 
-  // Modallar
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   
-  // Limit Modal
   const [limitModal, setLimitModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -79,13 +74,11 @@ const App: React.FC = () => {
   const [isLoadingEmails, setIsLoadingEmails] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [progress, setProgress] = useState(0); 
-  const [error, setError] = useState<string | null>(null);
 
   const STORAGE_KEY = 'nexus_accounts_v4_mailtm';
   const LIMIT_KEY = 'nexus_daily_limit_v1';
   const activeAccount = accounts.find(a => a.id === activeAccountId) || null;
 
-  // --- LIMIT KONTROL ---
   const checkDailyLimit = (): boolean => {
     const today = new Date().toDateString(); 
     const rawData = localStorage.getItem(LIMIT_KEY);
@@ -118,7 +111,6 @@ const App: React.FC = () => {
     });
   };
 
-  // --- KISAYOLLAR ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -140,7 +132,6 @@ const App: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // --- ACTIONS ---
   const createAccount = async () => {
     if (accounts.length >= MAX_ACTIVE_ACCOUNTS) { showLimitAlert('capacity'); return; }
     if (!checkDailyLimit()) { showLimitAlert('daily'); return; }
@@ -342,6 +333,7 @@ const App: React.FC = () => {
       </div>
       
       <Footer lang={lang} />
+      {/* Burada da lang gönderdiğimizden emin olun (eğer modal istiyorsa) */}
       <CustomAddressModal isOpen={showCustomModal} onClose={() => setShowCustomModal(false)} onCreate={handleCreateCustom} lang={lang} />
     </div>
   );
