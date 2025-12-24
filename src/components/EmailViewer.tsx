@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { EmailDetail } from '../types';
+import { EmailDetail } from '../appTypes';
 import { ArrowLeft, Calendar, User, Download, Code, Eye, ShieldAlert, Image as ImageIcon } from 'lucide-react';
 import DOMPurify from 'dompurify';
-import { translations, Language } from '../translations';
+import { translations, Language } from '../appTranslations';
 
 interface EmailViewerProps {
   email: EmailDetail | null;
@@ -29,6 +29,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
 
   if (!email) return null;
 
+  const fromAddress = typeof email.from === 'string' ? email.from : email.from.address;
+  const fromName = typeof email.from === 'string' ? email.from : (email.from.name || email.from.address);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', {
       weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -36,7 +39,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
   };
 
   const handleDownload = () => {
-    const emlContent = `From: ${email.from.address}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html ? email.html[0] : email.text || ''}`;
+    const emlContent = `From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html ? email.html[0] : email.text || ''}`;
     const blob = new Blob([emlContent], { type: 'message/rfc822' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -70,8 +73,8 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
         <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2 bg-slate-100 dark:bg-white/5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-white/5">
             <User className="w-3 h-3 text-red-500" />
-            <span className="text-slate-800 dark:text-slate-200 font-medium">{email.from.name}</span>
-            <span className="text-slate-500">&lt;{email.from.address}&gt;</span>
+            <span className="text-slate-800 dark:text-slate-200 font-medium">{fromName}</span>
+            <span className="text-slate-500">&lt;{fromAddress}&gt;</span>
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="w-3 h-3 text-slate-400" />
@@ -94,7 +97,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
       <div className="flex-grow overflow-y-auto custom-scrollbar relative bg-white">
         {viewSource ? (
           <div className="absolute inset-0 bg-[#050505] p-6 text-xs font-mono text-green-500/80 overflow-auto">
-            <pre className="whitespace-pre-wrap break-all">{`From: ${email.from.address}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html ? email.html[0] : email.text}`}</pre>
+            <pre className="whitespace-pre-wrap break-all">{`From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html ? email.html[0] : email.text}`}</pre>
           </div>
         ) : (
           <div className="w-full min-h-full p-8 text-slate-900 leading-relaxed">
