@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mailbox } from '../types';
+// DÜZELTME BURADA: '../types' yerine '../appTypes'
+import { Mailbox } from '../appTypes';
 import { Copy, RefreshCw, Trash2, ChevronDown, Check, Globe, Command } from 'lucide-react';
-import { translations, Language } from '../translations'; // İMPORT
+import { translations, Language } from '../translations';
 
 interface AddressBarProps {
   mailbox: Mailbox | null;
@@ -13,14 +14,14 @@ interface AddressBarProps {
   onDomainChange: (domain: string) => void;
   domains?: string[];
   progress: number;
-  lang: Language; // DİL DESTEĞİ
+  lang: Language;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({ 
   mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete, onDomainChange, 
   domains = [], progress, lang 
 }) => {
-  const t = translations[lang]; // ÇEVİRİYİ AL
+  const t = translations[lang];
   const [copied, setCopied] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
