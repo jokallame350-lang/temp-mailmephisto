@@ -1,71 +1,74 @@
 import React from 'react';
-import { X, Trash2, Plus, Check, Mail } from 'lucide-react';
+import { Mail, Trash2, Plus, X } from 'lucide-react';
 import { Mailbox } from '../types';
 
 interface AccountSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   accounts: Mailbox[];
-  activeAccountId: string | null;
+  currentAccount: Mailbox | null;
   onSwitch: (id: string) => void;
-  onNewAccount: () => void;
-  onDelete: (id: string) => void;
+  onCreate: () => void;
+  onDelete: (id: string) => void; // onDelete fonksiyonunu prop olarak ekledik
 }
 
 const AccountSidebar: React.FC<AccountSidebarProps> = ({
   isOpen,
   onClose,
   accounts,
-  activeAccountId,
+  currentAccount,
   onSwitch,
-  onNewAccount,
+  onCreate,
   onDelete
 }) => {
   return (
     <>
-      <div 
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-      />
+      {/* Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 transition-opacity"
+          onClick={onClose}
+        />
+      )}
 
-      <div className={`
-        fixed top-0 right-0 h-full w-80 bg-slate-900 border-l border-white/10 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : 'translate-x-full'}
-      `}>
+      {/* Sidebar */}
+      <div className={`fixed top-0 left-0 h-full w-80 bg-[#0f0f12] border-r border-white/10 z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 h-full flex flex-col">
-          
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Mail className="w-5 h-5 text-red-500" />
-              My Inboxes
-            </h2>
-            <button onClick={onClose} className="text-slate-400 hover:text-white">
+            <h2 className="text-xl font-black text-white tracking-tighter italic">ACCOUNTS</h2>
+            <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
               <X className="w-6 h-6" />
             </button>
           </div>
 
-          <div className="flex-grow overflow-y-auto space-y-3">
+          <div className="flex-grow overflow-y-auto custom-scrollbar space-y-3">
             {accounts.map((acc) => (
               <div 
                 key={acc.id}
-                onClick={() => { onSwitch(acc.id); onClose(); }}
-                className={`
-                  p-4 rounded-xl border cursor-pointer transition-all group relative
-                  ${acc.id === activeAccountId 
-                    ? 'bg-red-500/10 border-red-500/50' 
-                    : 'bg-slate-800/50 border-white/5 hover:border-white/20 hover:bg-slate-800'}
-                `}
+                className={`group p-4 rounded-xl border transition-all cursor-pointer relative ${
+                  currentAccount?.id === acc.id 
+                    ? 'bg-white/5 border-red-600/50' 
+                    : 'bg-transparent border-white/5 hover:border-white/20'
+                }`}
+                onClick={() => onSwitch(acc.id)}
               >
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-mono truncate max-w-[180px] ${acc.id === activeAccountId ? 'text-white' : 'text-slate-400'}`}>
-                    {acc.email}
-                  </span>
-                  {acc.id === activeAccountId && <Check className="w-4 h-4 text-red-500" />}
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`w-2 h-2 rounded-full ${currentAccount?.id === acc.id ? 'bg-red-500 animate-pulse' : 'bg-slate-700'}`} />
+                  <span className="text-xs font-bold text-slate-500">ID: {acc.id.substring(0, 8)}</span>
                 </div>
-
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(acc.id); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                {/* HATA ÇÖZÜMÜ: acc.email yerine acc.address kullanıldı */}
+                <p className={`text-sm font-mono truncate ${currentAccount?.id === acc.id ? 'text-white' : 'text-slate-400'}`}>
+                  {acc.address}
+                </p>
+                
+                {/* Silme Butonu */}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation(); // Tıklamanın üst elemana geçmesini engelle
+                    onDelete(acc.id);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  title="Delete Account"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -74,15 +77,13 @@ const AccountSidebar: React.FC<AccountSidebarProps> = ({
           </div>
 
           <div className="mt-6 pt-6 border-t border-white/10">
-            <button
-              onClick={() => { onNewAccount(); onClose(); }}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold bg-white text-black hover:bg-slate-200 transition-colors"
+            <button 
+              onClick={onCreate}
+              className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition-all"
             >
-              <Plus className="w-5 h-5" />
-              Create New Address
+              <Plus className="w-4 h-4" /> New Identity
             </button>
           </div>
-
         </div>
       </div>
     </>
