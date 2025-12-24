@@ -10,6 +10,7 @@ export interface Mailbox {
 
 export interface EmailSummary {
   id: string;
+  // HATA ÇÖZÜMÜ: Hem string hem obje olabilir
   from: string | { 
     address: string; 
     name: string; 
