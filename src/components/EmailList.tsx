@@ -1,5 +1,6 @@
 import React from 'react';
-import { EmailSummary } from '../types';
+// DÜZELTME BURADA: '../types' yerine '../appTypes'
+import { EmailSummary } from '../appTypes';
 import { Trash2, Mail, Clock, AlertCircle, CheckCircle2, Tag } from 'lucide-react';
 import { translations, Language } from '../translations';
 
@@ -55,9 +56,12 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex flex-col min-w-0 pr-2">
                     <span className={`text-sm truncate ${!email.seen ? 'font-bold text-slate-900 dark:text-white' : 'font-medium text-slate-700 dark:text-slate-300'}`}>
-                      {email.from.name || email.from.address}
+                      {/* Güvenli erişim */}
+                      {typeof email.from === 'string' ? email.from : (email.from.name || email.from.address)}
                     </span>
-                    <span className="text-[10px] text-slate-400 truncate font-mono">{email.from.address}</span>
+                    <span className="text-[10px] text-slate-400 truncate font-mono">
+                        {typeof email.from === 'string' ? email.from : email.from.address}
+                    </span>
                   </div>
                   <span className="text-[10px] text-slate-400 whitespace-nowrap flex items-center gap-1 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded">
                     <Clock className="w-3 h-3" />
