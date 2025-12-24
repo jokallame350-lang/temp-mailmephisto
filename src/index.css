@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ALEV GEÇİŞİ STİLLERİ */
+.fire-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(220,38,38,0.6) 0%, rgba(5,5,5,1) 80%);
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.fire-transition-active {
+  opacity: 1;
+  animation: fireFlash 0.8s ease-in-out forwards;
+}
+
+@keyframes fireFlash {
+  0% { opacity: 0; transform: scale(0.95); }
+  40% { opacity: 1; transform: scale(1.05); filter: blur(5px); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+/* Scrollbar Özelleştirme */
+.custom-scrollbar::-webkit-scrollbar { width: 5px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(220, 38, 38, 0.2); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 38, 0.5); }
