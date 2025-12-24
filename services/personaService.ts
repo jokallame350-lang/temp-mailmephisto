@@ -1,41 +1,32 @@
+// src/services/personaService.ts
+
 export interface Persona {
   fullName: string;
+  username: string; // <-- EKSİK OLAN BU SATIRDI
   address: string;
-  country: string;
-  password: string;
-  birthDate: string;
+  job: string;
 }
 
-const FIRST_NAMES = ["James", "Mary", "Robert", "Patricia", "John", "Jennifer", "Michael", "Linda", "David", "Elizabeth", "William", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen"];
-const LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin"];
-const STREETS = ["Maple Ave", "Oak St", "Pine Rd", "Cedar Ln", "Main St", "Washington Blvd", "Lakeview Dr", "Park Ave", "Sunset Blvd", "Broadway"];
-const CITIES = ["New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX", "Phoenix, AZ", "Philadelphia, PA", "San Antonio, TX", "San Diego, CA", "Dallas, TX", "San Jose, CA"];
+const FIRST_NAMES = ["James", "John", "Robert", "Michael", "William", "David", "Richard", "Joseph", "Thomas", "Charles", "Mary", "Patricia", "Jennifer", "Linda", "Elizabeth", "Barbara", "Susan", "Jessica", "Sarah", "Karen"];
+const LAST_NAMES = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson"];
+const STREETS = ["Maple", "Oak", "Cedar", "Pine", "Washington", "Lake", "Hill", "Sunset", "Highland", "Main"];
+const CITIES = ["Springfield", "Rivertown", "Lakeside", "Centerville", "Mapleton", "Oakwood", "Franklin", "Clinton"];
+const JOBS = ["Software Engineer", "Data Analyst", "Product Manager", "Graphic Designer", "Marketing Specialist", "Consultant", "Teacher", "Nurse", "Sales Representative", "Accountant"];
 
 export const generateRandomPersona = (): Persona => {
-  const firstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
-  const lastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
-  const street = Math.floor(Math.random() * 900 + 100) + " " + STREETS[Math.floor(Math.random() * STREETS.length)];
+  const first = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+  const last = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+  const street = STREETS[Math.floor(Math.random() * STREETS.length)];
   const city = CITIES[Math.floor(Math.random() * CITIES.length)];
+  const number = Math.floor(Math.random() * 9000) + 100;
   
-  // Strong password generation
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-  let password = "";
-  for (let i = 0; i < 14; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  // Random Birth Date (18-60 years old)
-  const age = Math.floor(Math.random() * 42) + 18;
-  const year = new Date().getFullYear() - age;
-  const month = Math.floor(Math.random() * 12) + 1;
-  const day = Math.floor(Math.random() * 28) + 1;
-  const birthDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  // Username oluşturma mantığı
+  const username = `${first.toLowerCase()}${last.toLowerCase()}${Math.floor(Math.random()*99)}`;
 
   return {
-    fullName: `${firstName} ${lastName}`,
-    address: `${street}, ${city}`,
-    country: "United States",
-    password: password,
-    birthDate: birthDate
+    fullName: `${first} ${last}`,
+    username: username,
+    address: `${number} ${street} Ave, ${city}`,
+    job: JOBS[Math.floor(Math.random() * JOBS.length)]
   };
 };

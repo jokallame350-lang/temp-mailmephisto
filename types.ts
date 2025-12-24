@@ -4,15 +4,15 @@ export interface Mailbox {
   id: string;
   address: string;
   apiBase: string;
-  token?: string;
-  password?: string;
+  token?: string;    
+  password?: string; 
 }
 
 export interface EmailSummary {
   id: string;
-  from: string | { 
-    address: string; 
-    name: string; 
+  from: {
+    address: string;
+    name: string;
   };
   subject: string;
   intro: string;

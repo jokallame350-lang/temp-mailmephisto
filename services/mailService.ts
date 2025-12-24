@@ -3,8 +3,7 @@ import { Mailbox, EmailSummary, EmailDetail, AICategory } from '../types';
 // HEDEF: Guerrilla Mail (Sharklasers)
 const API_BASE = "https://api.guerrillamail.com/ajax.php";
 
-// PROXY LİSTESİ (Sırayla dener)
-// Not: CORS engeli için public proxy kullanıyoruz.
+// PROXY LİSTESİ (Sırayla dener - CORS engeli için)
 const PROXIES = [
   "https://api.codetabs.com/v1/proxy?quest=",    
   "https://thingproxy.freeboard.io/fetch/",      
@@ -20,11 +19,20 @@ interface SharkSession {
   alias: string;
 }
 
-// --- YARDIMCI: HTML Temizleyici (Resimleri Düzeltir) ---
+// --- YARDIMCI: HTML Entity Temizleyici (YENİ EKLENDİ) ---
+// Örnek: "iPhone&rsquo;umdan" -> "iPhone'umdan" yapar.
+const decodeHtmlEntities = (text: string) => {
+  if (!text) return "";
+  const textArea = document.createElement('textarea');
+  textArea.innerHTML = text;
+  return textArea.value;
+};
+
+// --- YARDIMCI: HTML İçerik Temizleyici ---
 const cleanEmailHtml = (html: string): string => {
   if (!html) return "";
-  // "res.php?q=..." şeklindeki bozuk linkleri bulup orijinal haline çevirir
-  // Ayrıca http kaynakları https yapmaya çalışır (Mixed Content hatasını önlemek için)
+  // 1. Bozuk resim linklerini onar
+  // 2. HTTP linkleri HTTPS yap (Mixed content hatası olmasın)
   return html
     .replace(
       /(src=["'])(.*?res\.php.*?q=)(.*?)(["'])/g, 
@@ -36,10 +44,10 @@ const cleanEmailHtml = (html: string): string => {
         }
       }
     )
-    .replace(/http:\/\//g, 'https://'); // Basit SSL zorlaması
+    .replace(/http:\/\//g, 'https://'); 
 };
 
-// --- YARDIMCI: Akıllı İstek (TIMEOUT EKLENDİ) ---
+// --- YARDIMCI: Akıllı İstek (TIMEOUT KORUMALI) ---
 async function smartFetch(params: string): Promise<any> {
   const targetUrl = `${API_BASE}?${params}`;
   
@@ -47,7 +55,7 @@ async function smartFetch(params: string): Promise<any> {
     try {
       const finalUrl = `${proxy}${encodeURIComponent(targetUrl)}`;
       
-      // 5 Saniyelik Timeout ayarı (Site donmasın diye)
+      // 5 Saniye içinde yanıt gelmezse işlemi iptal et (Site donmasın)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -55,15 +63,14 @@ async function smartFetch(params: string): Promise<any> {
         signal: controller.signal 
       });
       
-      clearTimeout(timeoutId); // İşlem biterse sayacı durdur
+      clearTimeout(timeoutId); // İşlem başarılı, sayacı durdur
 
       if (!res.ok) continue;
       
       const data = await res.json();
       return data;
     } catch (error) {
-      // Proxy hatası veya timeout durumunda diğer proxy'ye geç
-      continue;
+      continue; // Hata alırsan diğer proxy'i dene
     }
   }
   return null;
@@ -85,8 +92,7 @@ export const generateMailbox = async (): Promise<Mailbox> => {
     const data = await smartFetch("f=get_email_address");
     
     if (!data || !data.email_addr) {
-        // Fallback: Eğer API tamamen çökerse rastgele bir string üret (UI bozulmasın)
-        const fake = `error_${Math.floor(Math.random() * 1000)}@sharklasers.com`;
+        const fake = `loading_${Math.floor(Math.random() * 1000)}@sharklasers.com`;
         return { id: fake, address: fake, apiBase: 'shark_final' };
     }
 
@@ -111,11 +117,9 @@ export const generateMailbox = async (): Promise<Mailbox> => {
 
 // 2. Custom Hesap
 export const createCustomMailbox = async (username: string, domain: string, apiBase: string): Promise<Mailbox> => {
-  // Önce token al
   const initData = await smartFetch("f=get_email_address");
   
   if (initData && initData.sid_token) {
-    // Sonra kullanıcı adını set et
     await smartFetch(`f=set_email_user&email_user=${username}&lang=en&sid_token=${initData.sid_token}&site=${domain}`);
     
     const session = {
@@ -135,19 +139,17 @@ export const createCustomMailbox = async (username: string, domain: string, apiB
   return generateMailbox();
 };
 
-// 3. Mesajları Getir
+// 3. Mesajları Getir (DÜZELTİLDİ: Türkçe Karakter Sorunu Giderildi)
 export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[] | null> => {
   const rawSession = localStorage.getItem(STORAGE_KEY);
   if (!rawSession) return [];
   const session = JSON.parse(rawSession);
 
-  // Aktif olmayan hesabı sorgulama
   if (session.email_addr !== mailbox.address) return [];
 
   const data = await smartFetch(`f=get_email_list&offset=0&sid_token=${session.sid_token}`);
 
   if (!data || !data.list) {
-    // İnternet yoksa cache'den oku
     const cached = localStorage.getItem(CACHE_KEY(session.email_addr));
     return cached ? JSON.parse(cached) : [];
   }
@@ -159,13 +161,13 @@ export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[] | nu
       name: msg.mail_from.split('<')[0].replace(/"/g, '').trim() 
     },
     subject: msg.mail_subject,
-    intro: msg.mail_excerpt,
+    // BURASI DÜZELTİLDİ: decodeHtmlEntities kullanıldı
+    intro: decodeHtmlEntities(msg.mail_excerpt),
     seen: msg.mail_read === "1",
     createdAt: new Date(parseInt(msg.mail_timestamp) * 1000).toISOString(),
     aiCategory: determineCategory(msg.mail_subject, msg.mail_from, msg.mail_excerpt)
   }));
 
-  // Cache güncelle
   localStorage.setItem(CACHE_KEY(session.email_addr), JSON.stringify(newEmails));
   return newEmails;
 };
@@ -186,13 +188,13 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
     id: String(msg.mail_id),
     from: { address: msg.mail_from, name: msg.mail_from },
     subject: msg.mail_subject,
-    intro: msg.mail_excerpt,
+    intro: decodeHtmlEntities(msg.mail_excerpt), // Detayda da düzgün görünsün
     seen: true,
     createdAt: new Date(parseInt(msg.mail_timestamp) * 1000).toISOString(),
     aiCategory: determineCategory(msg.mail_subject, msg.mail_from, ''),
     text: msg.mail_body,
     html: [cleanBody],
-    hasAttachments: false, // Guerrilla API attachment desteği proxy ile zor olduğu için false
+    hasAttachments: false,
     attachments: []
   };
 };

@@ -1,117 +1,95 @@
 import React, { useState } from 'react';
-import { Copy, Check, RefreshCw, ShieldCheck, QrCode, Key, X, Plus } from 'lucide-react';
 import { Mailbox } from '../types';
+import { Copy, RefreshCw, Trash2, ChevronDown, Globe } from 'lucide-react';
 
 interface AddressBarProps {
   mailbox: Mailbox | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   onRefresh: () => void;
-  lang: string;
-  // HATA ÇÖZÜMÜ: App.tsx'in gönderdiği tüm proplar eklendi
-  progress?: number; 
-  isRefreshing?: boolean;
-  onChange?: () => void;
-  onDelete?: () => void;
-  onDomainChange?: (newDomain: string) => void;
-  onCreateCustom?: () => void; // <-- BU EKSİKTİ, EKLENDİ
+  onChange: () => void;
+  onDelete: () => void;
+  onDomainChange: (domain: string) => void;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({ 
-  mailbox, isLoading, onRefresh, lang, progress = 0, onCreateCustom
+  mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete, onDomainChange 
 }) => {
-  const [copied, setCopied] = useState(false);
-  const [showQR, setShowQR] = useState(false);
-  const [showPassGen, setShowPassGen] = useState(false);
-  const [generatedPass, setGeneratedPass] = useState('');
+  const [showDomains, setShowDomains] = useState(false);
+  const domains = ["sharklasers.com", "guerrillamail.com", "guerrillamail.info", "grr.la", "guerrillamail.net", "guerrillamail.org", "pokemail.net", "spam4.me"];
 
-  const generatePassword = () => {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
-    let password = "";
-    for (let i = 0; i < 16; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
+  const copyToClipboard = () => {
+    if (mailbox) {
+      navigator.clipboard.writeText(mailbox.address);
     }
-    setGeneratedPass(password);
-    setShowPassGen(true);
-  };
-
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="w-full max-w-3xl space-y-4">
-      {isLoading && (
-         <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-            <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${progress}%` }}></div>
-         </div>
-      )}
-
-      <div className="flex flex-col md:flex-row items-center gap-3">
-        <div 
-          onClick={() => mailbox && handleCopy(mailbox.address)}
-          className="flex-grow flex items-center px-5 py-4 bg-[#0a0a0c] border border-white/5 rounded-2xl cursor-pointer hover:border-red-500/50 transition-all group min-w-0 w-full"
-        >
-          <ShieldCheck className="w-5 h-5 text-red-600 mr-3 shrink-0" />
-          <span className="text-sm md:text-base font-black text-white truncate font-mono tracking-tight select-none">
-            {isLoading 
-              ? (lang === 'tr' ? 'Bağlantı Kuruluyor...' : 'Establishing secure link...') 
-              : (mailbox?.address || (lang === 'tr' ? 'Node Bekleniyor...' : 'Awaiting Node...'))}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          {/* Custom Address Butonu (Varsa göster) */}
-          {onCreateCustom && (
-            <button onClick={onCreateCustom} className="p-3.5 bg-white/5 rounded-xl hover:bg-white/10 text-slate-400 border border-white/5" title="Custom Address">
-              <Plus className="w-5 h-5" />
-            </button>
-          )}
-          
-          <button onClick={() => setShowQR(true)} className="p-3.5 bg-white/5 rounded-xl hover:bg-white/10 text-slate-400 border border-white/5">
-            <QrCode className="w-5 h-5" />
-          </button>
-          <button onClick={generatePassword} className="p-3.5 bg-white/5 rounded-xl hover:bg-white/10 text-slate-400 border border-white/5">
-            <Key className="w-5 h-5" />
-          </button>
-          <button onClick={onRefresh} className="p-3.5 bg-white/5 rounded-xl hover:bg-white/10 text-white border border-white/5 active:rotate-180 transition-all">
-            <RefreshCw className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={() => mailbox && handleCopy(mailbox.address)}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all ${copied ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}
-          >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {copied ? (lang === 'tr' ? 'KOPYALANDI' : 'COPIED') : (lang === 'tr' ? 'KOPYALA' : 'COPY')}
-          </button>
-        </div>
+    <div className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl p-1.5 flex flex-col md:flex-row items-center gap-2 shadow-2xl">
+      {/* SOL KISIM: E-POSTA ADRES ALANI (DÜZELTİLEN YER) */}
+      <div className="flex-grow flex items-center gap-3 px-4 py-2.5 bg-white/[0.02] rounded-lg border border-white/5 w-full overflow-hidden">
+        <Globe className="w-4 h-4 text-slate-500 shrink-0" />
+        <span className="text-slate-200 font-mono text-[13px] truncate lowercase tracking-normal leading-none mb-[-1px]">
+          {isLoading ? "generating encryption..." : mailbox?.address || "no-signal"}
+        </span>
       </div>
-      
-      {showQR && mailbox && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-           <div className="bg-[#0f0f12] p-8 rounded-[40px] border border-white/10 flex flex-col items-center relative max-w-sm w-full">
-             <button onClick={() => setShowQR(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
-             <div className="p-4 bg-white rounded-3xl mb-6">
-                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${mailbox.address}`} alt="QR" className="w-48 h-48" />
-             </div>
-             <button onClick={() => setShowQR(false)} className="w-full py-4 bg-white/5 rounded-2xl font-black uppercase text-[10px] text-white">Close</button>
-           </div>
-        </div>
-      )}
 
-      {showPassGen && (
-         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <div className="bg-[#0f0f12] p-10 rounded-[40px] border border-white/10 flex flex-col items-center relative max-w-sm w-full">
-               <button onClick={() => setShowPassGen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
-               <div className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl mb-8 flex items-center justify-between">
-                  <span className="text-sm font-mono font-black text-red-500 tracking-wider truncate">{generatedPass}</span>
-                  <button onClick={() => handleCopy(generatedPass)} className="p-2 text-slate-400 hover:text-white"><Copy className="w-4 h-4" /></button>
-               </div>
-               <button onClick={generatePassword} className="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px]">New Password</button>
-            </div>
-         </div>
-      )}
+      {/* SAĞ KISIM: BUTONLAR */}
+      <div className="flex items-center gap-1.5 w-full md:w-auto shrink-0">
+        <button 
+          onClick={copyToClipboard} 
+          className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-all text-[11px] font-bold uppercase tracking-wider border border-white/5 active:scale-95"
+        >
+          <Copy className="w-3.5 h-3.5" /> 
+          <span>Copy</span>
+        </button>
+        
+        <button 
+          onClick={onRefresh} 
+          className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-all border border-white/5 active:scale-95"
+          title="Refresh Inbox"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </button>
+
+        <div className="relative">
+          <button 
+            onClick={() => setShowDomains(!showDomains)} 
+            className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-all border border-white/5 active:scale-95"
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showDomains ? 'rotate-180' : ''}`} />
+          </button>
+          
+          {showDomains && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowDomains(false)}></div>
+              <div className="absolute right-0 mt-2 w-56 bg-[#0f0f11] border border-white/10 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="px-3 py-2 border-b border-white/5 text-[9px] uppercase tracking-[0.2em] text-slate-500 font-bold">Select Domain</div>
+                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                  {domains.map(d => (
+                    <button 
+                      key={d} 
+                      onClick={() => { onDomainChange(d); setShowDomains(false); }} 
+                      className="w-full px-4 py-2.5 text-left text-[12px] text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors border-b border-white/5 last:border-0 font-mono flex justify-between items-center group"
+                    >
+                      {d}
+                      <Globe className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <button 
+          onClick={onDelete} 
+          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all border border-red-500/20 active:scale-95"
+          title="Delete Address"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
