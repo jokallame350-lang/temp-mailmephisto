@@ -1,10 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Flame, ShieldCheck, ChevronDown, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import { Mailbox } from '../types';
-import { 
-  Plus, Trash2, ChevronDown, Shield, Copy, Check, User, Globe, 
-  QrCode, KeyRound, Sun, Moon, Languages
-} from 'lucide-react';
-import { Language } from '../translations';
 
 interface HeaderProps {
   accounts: Mailbox[];
@@ -13,154 +9,180 @@ interface HeaderProps {
   onNewAccount: () => void;
   onNewCustomAccount: () => void;
   onDeleteAccount: (id: string) => void;
-  
-  // Tema ve Dil Propsları
   theme: 'dark' | 'light';
   toggleTheme: () => void;
-  lang: Language;
-  setLang: (lang: Language) => void;
-
-  onOpenQR?: () => void;
-  onOpenPass?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  accounts, currentAccount, onSwitchAccount, onNewAccount, onNewCustomAccount, onDeleteAccount,
-  theme, toggleTheme, lang, setLang,
-  onOpenQR, onOpenPass
+  accounts, 
+  currentAccount, 
+  onSwitchAccount, 
+  onDeleteAccount,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Dropdown dışına tıklama kontrolü
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      const target = event.target as Node;
+      const isOutsideDesktop = !desktopMenuRef.current?.contains(target);
+      const isOutsideMobile = !mobileMenuRef.current?.contains(target);
+
+      if (isOutsideDesktop && isOutsideMobile) {
+        setIsMenuOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
+    
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [isMenuOpen]);
 
-  const copyToClipboard = (text: string, id: string, e: React.MouseEvent) => {
+  const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    if (currentAccount?.address) {
+      navigator.clipboard.writeText(currentAccount.address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
-    <header className="w-full h-16 border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-[#0a0a0c]/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between px-4 md:px-8 shadow-sm dark:shadow-lg transition-colors duration-300">
+    <header className="h-20 border-b border-white/5 bg-black/20 backdrop-blur-xl flex items-center justify-between px-4 md:px-8 sticky top-0 z-50">
       
-      {/* Logo */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-orange-600 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/20">
-          <Shield className="text-white w-6 h-6" />
-        </div>
-        <div className="hidden md:flex flex-col">
-          <span className="font-bold text-lg text-slate-800 dark:text-white tracking-tight leading-none">Mephisto</span>
-          <span className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold">Privacy Shield</span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        
-        {/* Dil Değiştirici */}
-        <button 
-          onClick={() => setLang(lang === 'en' ? 'tr' : 'en')}
-          className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1 font-bold text-xs"
-          title="Switch Language"
-        >
-          <Languages className="w-4 h-4" />
-          <span>{lang.toUpperCase()}</span>
-        </button>
-
-        {/* Tema Değiştirici */}
-        <button 
-          onClick={toggleTheme}
-          className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors mr-2 border-r border-gray-200 dark:border-white/10 pr-3"
-          title="Toggle Theme"
-        >
-          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-
-        {/* Araçlar */}
-        <div className="flex items-center gap-1 mr-2 pr-2 border-r border-gray-200 dark:border-white/10">
-            {onOpenQR && (
-              <button onClick={onOpenQR} className="p-2 text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                <QrCode className="w-5 h-5" />
-              </button>
-            )}
-            {onOpenPass && (
-              <button onClick={onOpenPass} className="p-2 text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors">
-                <KeyRound className="w-5 h-5" />
-              </button>
-            )}
-        </div>
-
-        {/* Hesap Menüsü */}
-        <div className="relative" ref={dropdownRef}>
+      {/* --- DESKTOP VIEW --- */}
+      <div className="hidden md:flex items-center gap-4">
+        <div className="relative" ref={desktopMenuRef}>
           <button 
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-3 bg-slate-100 dark:bg-[#111] hover:bg-slate-200 dark:hover:bg-[#161616] border border-gray-200 dark:border-white/10 px-3 py-2 rounded-lg transition-all duration-200 group"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex items-center gap-3 py-2 px-4 rounded-xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5 group"
           >
-            <div className="flex flex-col items-end text-right">
-              <span className="text-xs text-slate-700 dark:text-slate-200 font-mono max-w-[120px] truncate">
-                {currentAccount ? currentAccount.address : (lang === 'tr' ? 'Hesap Yok' : 'No Account')}
-              </span>
-              <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold group-hover:text-red-500 transition-colors">
-                {accounts.length} {lang === 'tr' ? 'Aktif' : 'Active ID'}
-              </span>
+            <div className="relative p-2 rounded-lg bg-white/5 border border-white/5 group-hover:border-red-500/30 transition-colors">
+               <Flame className="w-5 h-5 text-red-500" />
             </div>
-            <div className="w-8 h-8 rounded-md bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/5 flex items-center justify-center">
-               <User className="w-4 h-4 text-slate-500" />
+            
+            <div className="text-left">
+               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 leading-none mb-1">
+                Mephisto
+               </h1>
+               {currentAccount && (
+                 <p className="text-[11px] text-gray-500 font-mono tracking-wide">
+                   {currentAccount.address}
+                 </p>
+               )}
             </div>
-            <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
           </button>
-
-          {isOpen && (
-            <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
-              <div className="max-h-64 overflow-y-auto custom-scrollbar p-2 space-y-1">
-                {accounts.map((acc) => (
-                  <div 
-                    key={acc.id}
-                    onClick={() => { onSwitchAccount(acc.id); setIsOpen(false); }}
-                    className={`group flex items-center justify-between p-2 rounded-lg cursor-pointer transition-all border border-transparent ${currentAccount?.id === acc.id ? 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20' : 'hover:bg-slate-100 dark:hover:bg-white/5'}`}
-                  >
-                    <div className="flex items-center gap-3 overflow-hidden">
-                       <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold ${currentAccount?.id === acc.id ? 'bg-red-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
-                          {acc.address.substring(0, 1).toUpperCase()}
-                       </div>
-                       <span className={`text-xs font-mono truncate ${currentAccount?.id === acc.id ? 'text-red-700 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>
-                          {acc.address}
-                       </span>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                       <button onClick={(e) => copyToClipboard(acc.address, acc.id, e)} className="p-1.5 hover:bg-slate-200 dark:hover:bg-white/10 rounded text-slate-500 dark:text-slate-400">
-                         {copiedId === acc.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                       </button>
-                       <button onClick={(e) => { e.stopPropagation(); onDeleteAccount(acc.id); }} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-500/20 rounded text-slate-500 dark:text-slate-400 hover:text-red-500">
-                         <Trash2 className="w-3 h-3" />
-                       </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-2 border-t border-gray-200 dark:border-white/5 bg-slate-50 dark:bg-[#050505] grid grid-cols-2 gap-2">
-                <button onClick={() => { onNewAccount(); setIsOpen(false); }} className="flex items-center justify-center gap-2 p-2 rounded-lg bg-white dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs text-slate-700 dark:text-white border border-gray-200 dark:border-white/5 transition-all">
-                  <Plus className="w-3 h-3" /> Random
-                </button>
-                <button onClick={() => { onNewCustomAccount(); setIsOpen(false); }} className="flex items-center justify-center gap-2 p-2 rounded-lg bg-white dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-xs text-slate-700 dark:text-white border border-gray-200 dark:border-white/5 transition-all">
-                  <Globe className="w-3 h-3" /> Custom
-                </button>
-              </div>
+          
+          {isMenuOpen && (
+            <div className="absolute top-full left-0 mt-3 w-80 bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl shadow-black overflow-hidden animate-in fade-in slide-in-from-top-2 z-50 backdrop-blur-3xl">
+               <AccountList 
+                 accounts={accounts}
+                 currentAccount={currentAccount}
+                 onSwitchAccount={onSwitchAccount}
+                 onDeleteAccount={onDeleteAccount}
+                 onClose={() => setIsMenuOpen(false)}
+               />
             </div>
           )}
         </div>
       </div>
+
+      {/* --- MOBILE VIEW --- */}
+      <div className="flex md:hidden w-full items-center justify-between gap-3 relative" ref={mobileMenuRef}>
+        <div 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="flex-grow flex flex-col justify-center overflow-hidden cursor-pointer"
+        >
+          <div className="flex items-center gap-2 text-white">
+             <Flame className="w-4 h-4 text-red-500" />
+             <span className="font-mono text-sm font-semibold truncate">
+               {currentAccount ? currentAccount.address : 'Loading...'}
+             </span>
+             <ChevronDown className="w-3 h-3 text-gray-500" />
+          </div>
+        </div>
+
+        <button 
+          onClick={handleCopy}
+          className="p-2.5 bg-white/5 border border-white/10 text-red-400 rounded-lg active:scale-95 transition-transform"
+        >
+          {copied ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+        </button>
+
+        {isMenuOpen && (
+            <div className="absolute top-full left-0 mt-2 w-full bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
+               <AccountList 
+                 accounts={accounts}
+                 currentAccount={currentAccount}
+                 onSwitchAccount={onSwitchAccount}
+                 onDeleteAccount={onDeleteAccount}
+                 onClose={() => setIsMenuOpen(false)}
+               />
+            </div>
+          )}
+      </div>
+      
+      <div className="hidden md:flex items-center gap-4">
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/5 backdrop-blur-sm">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-medium text-gray-300">Encrypted</span>
+        </div>
+      </div>
     </header>
+  );
+};
+
+interface AccountListProps {
+  accounts: Mailbox[];
+  currentAccount: Mailbox | null;
+  onSwitchAccount: (id: string) => void;
+  onDeleteAccount: (id: string) => void;
+  onClose: () => void;
+}
+
+const AccountList: React.FC<AccountListProps> = ({ 
+  accounts, currentAccount, onSwitchAccount, onDeleteAccount, onClose 
+}) => {
+  const safeAccounts = accounts || [];
+
+  return (
+    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2 space-y-1">
+        {safeAccounts.length === 0 && (
+            <div className="text-center text-gray-500 py-4 text-xs">No active inboxes</div>
+        )}
+        {safeAccounts.map(acc => (
+          <div 
+            key={acc.id}
+            className={`flex items-center justify-between p-3 rounded-xl cursor-pointer group transition-all ${
+              currentAccount?.id === acc.id 
+                ? 'bg-red-500/10 border border-red-500/20' 
+                : 'hover:bg-white/5 border border-transparent'
+            }`}
+            onClick={() => { onSwitchAccount(acc.id); onClose(); }}
+          >
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className={`w-2 h-2 rounded-full flex-shrink-0 shadow-[0_0_10px_rgba(0,0,0,0.5)] ${currentAccount?.id === acc.id ? 'bg-red-500 shadow-red-500/50' : 'bg-gray-600'}`} />
+              <span className={`text-sm font-mono truncate ${currentAccount?.id === acc.id ? 'text-red-200' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                {acc.address}
+              </span>
+            </div>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteAccount(acc.id);
+              }}
+              className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded transition-all opacity-0 group-hover:opacity-100"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+    </div>
   );
 };
 

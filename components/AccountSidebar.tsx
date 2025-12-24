@@ -58,8 +58,7 @@ const AccountSidebar: React.FC<AccountSidebarProps> = ({
               >
                 <div className="flex items-center justify-between">
                   <span className={`text-sm font-mono truncate max-w-[180px] ${acc.id === activeAccountId ? 'text-white' : 'text-slate-400'}`}>
-                    {/* HATA ÇÖZÜMÜ: Buradaki .email kısmı .address yapıldı */}
-                    {acc.address}
+                    {acc.email}
                   </span>
                   {acc.id === activeAccountId && <Check className="w-4 h-4 text-red-500" />}
                 </div>

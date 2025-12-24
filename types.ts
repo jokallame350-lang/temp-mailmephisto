@@ -1,11 +1,11 @@
-export type AICategory = 'Verification' | 'Security' | 'Newsletter' | 'Other';
+export type AICategory = 'Verification' | 'Promotion' | 'Newsletter' | 'Security' | 'Other';
 
 export interface Mailbox {
   id: string;
   address: string;
-  apiBase: string;
-  token?: string;    // Mail.tm için gerekli
-  password?: string; // Mail.tm için gerekli
+  password?: string;
+  token?: string; // JWT token for Mail.tm
+  apiBase?: string; // The API provider URL used for this mailbox
 }
 
 export interface EmailSummary {
@@ -17,7 +17,7 @@ export interface EmailSummary {
   subject: string;
   intro: string;
   seen: boolean;
-  createdAt: string;
+  createdAt: string; // ISO Date string
   aiCategory: AICategory;
 }
 
@@ -25,5 +25,11 @@ export interface EmailDetail extends EmailSummary {
   text?: string;
   html?: string[];
   hasAttachments: boolean;
-  attachments: any[];
+  attachments: Array<{
+    id: string;
+    filename: string;
+    contentType: string;
+    size: number;
+    downloadUrl: string;
+  }>;
 }

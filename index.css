@@ -1,32 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* GENEL AYARLAR */
+/* TÜM SAYFAYI ZORLA SİYAH YAP */
 html, body, #root {
+  background-color: #050505 !important; /* !important kuralı diğer her şeyi ezer */
+  color: white !important;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   width: 100%;
-  font-family: 'Sora', sans-serif; /* Fontu buraya ekledik */
-  background-color: #050505; /* Varsayılanı koyu yaptık ki beyaz patlamasın */
-  color: white;
 }
 
-/* Scrollbar Tasarımı */
+/* GRADIENT ARKA PLAN */
+body {
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(356, 85%, 26%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(24, 94%, 30%, 0.2) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(260, 50%, 15%, 0.2) 0px, transparent 50%) !important;
+  background-attachment: fixed;
+}
+
+/* SCROLLBAR TASARIMI */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent; 
+  background: #0a0a0a; 
 }
 ::-webkit-scrollbar-thumb {
   background: #333; 
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ef4444; /* Mephisto Kırmızısı */
+  background: #ef4444; 
 }

@@ -1,17 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
-    <link rel="icon" type="image/png" href="/icon.png" />
-    <link rel="apple-touch-icon" href="/icon.png" />
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <title>MephistoMail - The Ultimate Shield For Your Privacy</title>
-    <meta name="description" content="Quick, anonymous, and volatile temporary emails. No tracking, no logs. Protect your primary inbox from spam." />
-    <meta name="theme-color" content="#050505" />
-
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8K2MN0ZGH"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -20,20 +12,84 @@
 
       gtag('config', 'G-M8K2MN0ZGH');
     </script>
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://mephistomail.site/" />
-    <meta property="og:title" content="MephistoMail - Privacy First Disposable Email" />
-    <meta property="og:description" content="Stop giving away your real email. Use Mephisto to stay anonymous. No logs, no tracking." />
-    <meta property="og:image" content="https://mephistomail.site/og-image.png" />
+    <title>MephistoTempMail - Disposable Email</title>
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://mephistomail.site/" />
-    <meta name="twitter:title" content="MephistoMail - Privacy First Disposable Email" />
-    <meta name="twitter:description" content="Stop giving away your real email. Use Mephisto to stay anonymous." />
-    <meta name="twitter:image" content="https://mephistomail.site/og-image.png" />
-  </head>
-  <body>
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['Fira Code', 'monospace'],
+            },
+            animation: {
+              'blob': 'blob 7s infinite',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              blob: {
+                '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      
+      /* Global Gradient Background */
+      .bg-mephisto-gradient {
+        background-color: #000000;
+        background-image: 
+          radial-gradient(at 0% 0%, hsla(356, 85%, 26%, 0.2) 0px, transparent 50%),
+          radial-gradient(at 100% 0%, hsla(24, 94%, 30%, 0.15) 0px, transparent 50%),
+          radial-gradient(at 100% 100%, hsla(260, 50%, 15%, 0.1) 0px, transparent 50%);
+        background-attachment: fixed;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333; 
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #ef4444; /* Red-500 */
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.32.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-mephisto-gradient text-slate-200 antialiased selection:bg-red-500/30 selection:text-red-200">
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

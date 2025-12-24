@@ -1,14 +1,74 @@
 import { Mailbox, EmailSummary, EmailDetail, AICategory } from '../types';
 
-// HEDEF: Mail.tm (Stabil ve hızlı API)
-const API_BASE = "https://api.mail.tm";
+// HEDEF: Guerrilla Mail (Sharklasers)
+const API_BASE = "https://api.guerrillamail.com/ajax.php";
 
-// Yardımcı: Rastgele Şifre Oluşturucu
-const generatePassword = () => {
-  return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+// PROXY LİSTESİ (Sırayla dener)
+// Not: CORS engeli için public proxy kullanıyoruz.
+const PROXIES = [
+  "https://api.codetabs.com/v1/proxy?quest=",    
+  "https://thingproxy.freeboard.io/fetch/",      
+  "https://api.allorigins.win/raw?url="          
+];
+
+const STORAGE_KEY = "mephisto_final_fix";
+const CACHE_KEY = (id: string) => `final_cache_v3:${id}`;
+
+interface SharkSession {
+  sid_token: string;
+  email_addr: string;
+  alias: string;
+}
+
+// --- YARDIMCI: HTML Temizleyici (Resimleri Düzeltir) ---
+const cleanEmailHtml = (html: string): string => {
+  if (!html) return "";
+  // "res.php?q=..." şeklindeki bozuk linkleri bulup orijinal haline çevirir
+  // Ayrıca http kaynakları https yapmaya çalışır (Mixed Content hatasını önlemek için)
+  return html
+    .replace(
+      /(src=["'])(.*?res\.php.*?q=)(.*?)(["'])/g, 
+      (match, prefix, junk, encodedUrl, suffix) => {
+        try {
+          return prefix + decodeURIComponent(encodedUrl) + suffix;
+        } catch {
+          return match;
+        }
+      }
+    )
+    .replace(/http:\/\//g, 'https://'); // Basit SSL zorlaması
 };
 
-// Yardımcı: Kategori Belirleme (Yapay Zeka Taklidi)
+// --- YARDIMCI: Akıllı İstek (TIMEOUT EKLENDİ) ---
+async function smartFetch(params: string): Promise<any> {
+  const targetUrl = `${API_BASE}?${params}`;
+  
+  for (const proxy of PROXIES) {
+    try {
+      const finalUrl = `${proxy}${encodeURIComponent(targetUrl)}`;
+      
+      // 5 Saniyelik Timeout ayarı (Site donmasın diye)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const res = await fetch(finalUrl, { 
+        signal: controller.signal 
+      });
+      
+      clearTimeout(timeoutId); // İşlem biterse sayacı durdur
+
+      if (!res.ok) continue;
+      
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      // Proxy hatası veya timeout durumunda diğer proxy'ye geç
+      continue;
+    }
+  }
+  return null;
+}
+
 const determineCategory = (subject: string, from: string, intro: string): AICategory => {
   const text = `${subject} ${from} ${intro}`.toLowerCase();
   if (/(code|verify|verification|otp|confirm|activation|pin\b|doğrulama|kod|şifre)/.test(text)) return 'Verification';
@@ -19,180 +79,138 @@ const determineCategory = (subject: string, from: string, intro: string): AICate
 
 // --- ANA FONKSİYONLAR ---
 
-// 1. Hesap Oluştur (Rastgele - "mephisto" ön eki kaldırıldı)
+// 1. Hesap Oluştur
 export const generateMailbox = async (): Promise<Mailbox> => {
   try {
-    // Önce domainleri çek
-    const domainData = await fetchDomains();
-    const domain = domainData.domains[0] || "karenkey.com";
+    const data = await smartFetch("f=get_email_address");
     
-    // DEĞİŞİKLİK BURADA YAPILDI: Artık başında isim yok, tamamen rastgele.
-    // 2. indeksten 12. indekse kadar alarak yaklaşık 10 karakterli random isim üretir.
-    const username = Math.random().toString(36).substring(2, 12);
-    
-    const address = `${username}@${domain}`;
-    const password = generatePassword();
+    if (!data || !data.email_addr) {
+        // Fallback: Eğer API tamamen çökerse rastgele bir string üret (UI bozulmasın)
+        const fake = `error_${Math.floor(Math.random() * 1000)}@sharklasers.com`;
+        return { id: fake, address: fake, apiBase: 'shark_final' };
+    }
 
-    // Hesabı Kaydet
-    await fetch(`${API_BASE}/accounts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, password })
-    });
-
-    // Token Al (Giriş Yap)
-    const tokenRes = await fetch(`${API_BASE}/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, password })
-    });
-    
-    const tokenData = await tokenRes.json();
-
-    if (!tokenData.token) throw new Error("Token alınamadı");
-
-    const newMailbox: Mailbox = {
-      id: tokenData.id || address,
-      address: address,
-      apiBase: 'mail_tm',
-      token: tokenData.token,
-      password: password
+    const session: SharkSession = {
+      sid_token: data.sid_token,
+      email_addr: data.email_addr,
+      alias: data.alias
     };
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 
-    return newMailbox;
-  } catch (error) {
-    console.error("Hesap oluşturma hatası:", error);
-    // Hata durumunda fake bir veri dönelim
-    return { id: 'error', address: 'error@connection.failed', apiBase: 'error' };
+    return {
+      id: data.email_addr,
+      address: data.email_addr,
+      apiBase: 'shark_final'
+    };
+  } catch {
+    const fake = `connection_err@sharklasers.com`;
+    return { id: fake, address: fake, apiBase: 'shark_final' };
   }
 };
 
-// 2. Özel Hesap Oluştur (Custom)
+// 2. Custom Hesap
 export const createCustomMailbox = async (username: string, domain: string, apiBase: string): Promise<Mailbox> => {
-  try {
-    const address = `${username}@${domain}`;
-    const password = generatePassword();
-
-    // Hesabı oluşturmayı dene
-    const accRes = await fetch(`${API_BASE}/accounts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, password })
-    });
-
-    if (accRes.status === 422) {
-       throw new Error("Bu kullanıcı adı zaten alınmış.");
-    }
-
-    // Token Al
-    const tokenRes = await fetch(`${API_BASE}/token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, password })
-    });
-    const tokenData = await tokenRes.json();
+  // Önce token al
+  const initData = await smartFetch("f=get_email_address");
+  
+  if (initData && initData.sid_token) {
+    // Sonra kullanıcı adını set et
+    await smartFetch(`f=set_email_user&email_user=${username}&lang=en&sid_token=${initData.sid_token}&site=${domain}`);
+    
+    const session = {
+      sid_token: initData.sid_token,
+      email_addr: `${username}@${domain}`,
+      alias: username
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    localStorage.setItem(CACHE_KEY(session.email_addr), JSON.stringify([]));
 
     return {
-      id: tokenData.id || address,
-      address: address,
-      apiBase: 'mail_tm',
-      token: tokenData.token,
-      password: password
+      id: session.email_addr,
+      address: session.email_addr,
+      apiBase: 'shark_final'
     };
-
-  } catch (error) {
-    console.error(error);
-    throw error;
   }
+  return generateMailbox();
 };
 
 // 3. Mesajları Getir
 export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[] | null> => {
-  if (!mailbox.token) return [];
+  const rawSession = localStorage.getItem(STORAGE_KEY);
+  if (!rawSession) return [];
+  const session = JSON.parse(rawSession);
 
-  try {
-    const res = await fetch(`${API_BASE}/messages?page=1`, {
-      headers: { "Authorization": `Bearer ${mailbox.token}` }
-    });
-    
-    if (!res.ok) return [];
-    
-    const data = await res.json();
-    
-    return data['hydra:member'].map((msg: any) => ({
-      id: msg.id,
-      from: { 
-        address: msg.from.address, 
-        name: msg.from.name || msg.from.address.split('@')[0] 
-      },
-      subject: msg.subject,
-      intro: msg.intro || "No preview available",
-      seen: msg.seen,
-      createdAt: msg.createdAt,
-      aiCategory: determineCategory(msg.subject, msg.from.address, msg.intro || "")
-    }));
+  // Aktif olmayan hesabı sorgulama
+  if (session.email_addr !== mailbox.address) return [];
 
-  } catch (error) {
-    console.error("Mesaj getirme hatası", error);
-    return [];
+  const data = await smartFetch(`f=get_email_list&offset=0&sid_token=${session.sid_token}`);
+
+  if (!data || !data.list) {
+    // İnternet yoksa cache'den oku
+    const cached = localStorage.getItem(CACHE_KEY(session.email_addr));
+    return cached ? JSON.parse(cached) : [];
   }
+
+  const newEmails = data.list.map((msg: any) => ({
+    id: String(msg.mail_id),
+    from: { 
+      address: msg.mail_from, 
+      name: msg.mail_from.split('<')[0].replace(/"/g, '').trim() 
+    },
+    subject: msg.mail_subject,
+    intro: msg.mail_excerpt,
+    seen: msg.mail_read === "1",
+    createdAt: new Date(parseInt(msg.mail_timestamp) * 1000).toISOString(),
+    aiCategory: determineCategory(msg.mail_subject, msg.mail_from, msg.mail_excerpt)
+  }));
+
+  // Cache güncelle
+  localStorage.setItem(CACHE_KEY(session.email_addr), JSON.stringify(newEmails));
+  return newEmails;
 };
 
 // 4. Mesaj Detayı
 export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
-  if (!mailbox.token) return null;
+  const rawSession = localStorage.getItem(STORAGE_KEY);
+  if (!rawSession) return null;
+  const session = JSON.parse(rawSession);
 
-  try {
-    const res = await fetch(`${API_BASE}/messages/${messageId}`, {
-      headers: { "Authorization": `Bearer ${mailbox.token}` }
-    });
-    
-    if (!res.ok) return null;
-    
-    const msg = await res.json();
+  const msg = await smartFetch(`f=fetch_email&email_id=${messageId}&sid_token=${session.sid_token}`);
 
-    return {
-      id: msg.id,
-      from: { address: msg.from.address, name: msg.from.name || msg.from.address },
-      subject: msg.subject,
-      intro: msg.intro,
-      seen: true,
-      createdAt: msg.createdAt,
-      aiCategory: determineCategory(msg.subject, msg.from.address, msg.intro),
-      text: msg.text,
-      html: msg.html ? [msg.html] : [],
-      hasAttachments: msg.hasAttachments,
-      attachments: msg.attachments || []
-    };
+  if (!msg) return null;
 
-  } catch (error) {
-    return null;
-  }
+  const cleanBody = cleanEmailHtml(msg.mail_body);
+
+  return {
+    id: String(msg.mail_id),
+    from: { address: msg.mail_from, name: msg.mail_from },
+    subject: msg.mail_subject,
+    intro: msg.mail_excerpt,
+    seen: true,
+    createdAt: new Date(parseInt(msg.mail_timestamp) * 1000).toISOString(),
+    aiCategory: determineCategory(msg.mail_subject, msg.mail_from, ''),
+    text: msg.mail_body,
+    html: [cleanBody],
+    hasAttachments: false, // Guerrilla API attachment desteği proxy ile zor olduğu için false
+    attachments: []
+  };
 };
 
 // 5. Silme
 export const deleteMessage = async (mailbox: Mailbox, messageId: string): Promise<boolean> => {
-  if (!mailbox.token) return false;
-  
-  try {
-    await fetch(`${API_BASE}/messages/${messageId}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${mailbox.token}` }
-    });
-    return true;
-  } catch {
-    return false;
+  const rawSession = localStorage.getItem(STORAGE_KEY);
+  if (rawSession) {
+    const session = JSON.parse(rawSession);
+    await smartFetch(`f=del_email&email_ids[]=${messageId}&sid_token=${session.sid_token}`);
   }
+  return true;
 };
 
-// 6. Domain Listesi (Canlı Çekiyoruz)
+// 6. Domain Listesi
 export const fetchDomains = async (): Promise<{ domains: string[], apiBase: string }> => {
-  try {
-    const res = await fetch(`${API_BASE}/domains`);
-    const data = await res.json();
-    const domains = data['hydra:member'].map((d: any) => d.domain);
-    return { domains: domains, apiBase: 'mail_tm' };
-  } catch {
-    return { domains: ["karenkey.com", "mymail.com"], apiBase: 'mail_tm' };
-  }
+  return { 
+    domains: ["sharklasers.com", "guerrillamail.com", "guerrillamail.info", "grr.la"], 
+    apiBase: 'shark_final' 
+  };
 };
