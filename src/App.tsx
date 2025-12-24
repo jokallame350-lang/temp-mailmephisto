@@ -11,7 +11,8 @@ import PasswordGenModal from './components/PasswordGenModal';
 import LimitModal from './components/LimitModal';
 import { SEOContent } from './components/SEOContent'; 
 
-import { Mailbox, EmailSummary, EmailDetail } from './types';
+// DÜZELTME BURADA: './types' yerine './appTypes'
+import { Mailbox, EmailSummary, EmailDetail } from './appTypes';
 import { generateMailbox, createCustomMailbox, getMessages, getMessageDetail, deleteMessage, fetchDomains } from './services/mailService';
 import { Terminal, Activity } from 'lucide-react';
 import { translations, Language } from './translations';
@@ -21,19 +22,17 @@ const MAX_ACTIVE_ACCOUNTS = 3;
 const DAILY_CREATION_LIMIT = 5; 
 
 const App: React.FC = () => {
-  // --- TEMA VE DİL AYARLARI (EN ÜSTTE) ---
+  // --- TEMA VE DİL AYARLARI ---
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [lang, setLang] = useState<Language>('en');
   const t = translations[lang];
 
-  // EKSİK OLAN FONKSİYON BU:
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
     localStorage.setItem('mephisto_theme', newTheme);
   };
 
-  // Tema Başlangıç Ayarı
   useEffect(() => {
     const root = window.document.documentElement;
     const savedTheme = localStorage.getItem('mephisto_theme') as 'dark' | 'light';
@@ -43,11 +42,10 @@ const App: React.FC = () => {
       root.classList.remove('dark', 'light');
       root.classList.add(savedTheme);
     } else {
-      root.classList.add('dark'); // Varsayılan Dark
+      root.classList.add('dark');
     }
   }, []);
 
-  // Theme state değişince class'ı güncelle
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('dark', 'light');
@@ -81,7 +79,6 @@ const App: React.FC = () => {
   const [isLoadingEmails, setIsLoadingEmails] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [progress, setProgress] = useState(0); 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState<string | null>(null);
 
   const STORAGE_KEY = 'nexus_accounts_v4_mailtm';
@@ -232,7 +229,6 @@ const App: React.FC = () => {
 
   useEffect(() => { fetchEmails(); const i = setInterval(fetchEmails, REFRESH_INTERVAL); return () => clearInterval(i); }, [fetchEmails]);
 
-  // Sayfa Başlığı Çevirisi
   useEffect(() => {
     const unreadCount = emails.length;
     if (unreadCount > 0) {
