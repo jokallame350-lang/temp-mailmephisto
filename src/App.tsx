@@ -144,11 +144,14 @@ const App: React.FC = () => {
             The Ultimate Shield <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">For Your Privacy.</span>
           </h1>
+          
+          {/* GÜNCELLEME: progress prop'u eklendi */}
           <AddressBar 
             mailbox={activeAccount} 
             isLoading={isLoadingAccount} 
             onRefresh={fetchEmails} 
-            lang={lang} 
+            lang={lang}
+            progress={progress}
           />
         </div>
 
