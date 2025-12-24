@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, ChevronDown, Globe } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, ChevronDown, Check, Globe, Command } from 'lucide-react';
+import { translations, Language } from '../translations';
 
 interface AddressBarProps {
   mailbox: Mailbox | null;
@@ -10,85 +11,108 @@ interface AddressBarProps {
   onChange: () => void;
   onDelete: () => void;
   onDomainChange: (domain: string) => void;
+  domains?: string[];
+  progress: number;
+  lang: Language;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({ 
-  mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete, onDomainChange 
+  mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete, onDomainChange, 
+  domains = [], progress, lang 
 }) => {
-  const [showDomains, setShowDomains] = useState(false);
-  const domains = ["sharklasers.com", "guerrillamail.com", "guerrillamail.info", "grr.la", "guerrillamail.net", "guerrillamail.org", "pokemail.net", "spam4.me"];
+  const t = translations[lang];
+  const [copied, setCopied] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const copyToClipboard = () => {
-    if (mailbox) {
+  const handleCopy = () => {
+    if (mailbox?.address) {
       navigator.clipboard.writeText(mailbox.address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) { setIsDropdownOpen(false); }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
-    <div className="w-full bg-[#0a0a0c] border border-white/5 rounded-xl p-1.5 flex flex-col md:flex-row items-center gap-2 shadow-2xl">
-      {/* SOL KISIM: E-POSTA ADRES ALANI (DÜZELTİLEN YER) */}
-      <div className="flex-grow flex items-center gap-3 px-4 py-2.5 bg-white/[0.02] rounded-lg border border-white/5 w-full overflow-hidden">
-        <Globe className="w-4 h-4 text-slate-500 shrink-0" />
-        <span className="text-slate-200 font-mono text-[13px] truncate lowercase tracking-normal leading-none mb-[-1px]">
-          {isLoading ? "generating encryption..." : mailbox?.address || "no-signal"}
-        </span>
-      </div>
+    <div className="w-full relative group flex flex-col gap-1">
+      {/* Arka plan efekti */}
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+      
+      <div className="relative flex items-center bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/10 rounded-lg p-1.5 shadow-xl overflow-hidden">
+        {/* İlerleme Çubuğu */}
+        <div className="absolute bottom-0 left-0 h-[2px] bg-red-500/50 transition-all duration-100 ease-linear" style={{ width: `${progress}%` }}></div>
 
-      {/* SAĞ KISIM: BUTONLAR */}
-      <div className="flex items-center gap-1.5 w-full md:w-auto shrink-0">
-        <button 
-          onClick={copyToClipboard} 
-          className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-all text-[11px] font-bold uppercase tracking-wider border border-white/5 active:scale-95"
-        >
-          <Copy className="w-3.5 h-3.5" /> 
-          <span>Copy</span>
-        </button>
-        
-        <button 
-          onClick={onRefresh} 
-          className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-all border border-white/5 active:scale-95"
-          title="Refresh Inbox"
-        >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </button>
-
-        <div className="relative">
-          <button 
-            onClick={() => setShowDomains(!showDomains)} 
-            className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-lg transition-all border border-white/5 active:scale-95"
-          >
-            <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showDomains ? 'rotate-180' : ''}`} />
-          </button>
-          
-          {showDomains && (
-            <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowDomains(false)}></div>
-              <div className="absolute right-0 mt-2 w-56 bg-[#0f0f11] border border-white/10 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div className="px-3 py-2 border-b border-white/5 text-[9px] uppercase tracking-[0.2em] text-slate-500 font-bold">Select Domain</div>
-                <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                  {domains.map(d => (
-                    <button 
-                      key={d} 
-                      onClick={() => { onDomainChange(d); setShowDomains(false); }} 
-                      className="w-full px-4 py-2.5 text-left text-[12px] text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors border-b border-white/5 last:border-0 font-mono flex justify-between items-center group"
-                    >
-                      {d}
-                      <Globe className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+        <div className="pl-3 pr-2 text-slate-400 dark:text-slate-500 hidden sm:block">
+           <Globe className="w-4 h-4 animate-pulse" />
         </div>
 
-        <button 
-          onClick={onDelete} 
-          className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all border border-red-500/20 active:scale-95"
-          title="Delete Address"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        {/* Input Alanı */}
+        <input 
+          type="text" readOnly
+          value={isLoading ? t.generating : (mailbox?.address || t.noShield)}
+          className="flex-grow bg-transparent border-none text-slate-700 dark:text-slate-200 text-sm font-mono focus:ring-0 px-2 placeholder-slate-400 dark:placeholder-slate-600 w-full min-w-0"
+        />
+
+        {/* BUTON GRUBU - DÜZELTİLDİ */}
+        {/* flex-shrink-0 eklendi: Mobilde butonların ezilmesini engeller */}
+        {/* z-20 eklendi: Tıklamaların inputun altında kalmasını engeller */}
+        <div className="flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-white/5 relative z-20 flex-shrink-0 bg-white dark:bg-[#0a0a0c]">
+            
+            <button onClick={handleCopy} className="group/btn p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors relative touch-manipulation" title={t.tipCopy}>
+              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+            </button>
+            
+            <button onClick={onRefresh} className="group/btn p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors relative touch-manipulation" title={t.tipRefresh}>
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            
+            {/* DROPDOWN KISMI - DÜZELTİLDİ */}
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); // Tıklamanın hemen kapanmayı tetiklemesini önle
+                  setIsDropdownOpen(!isDropdownOpen);
+                }} 
+                className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors flex items-center gap-1 touch-manipulation" 
+                title={t.tipDomain}
+              >
+                <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/10 rounded-lg shadow-2xl z-50 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-gray-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">{t.selectDomain}</div>
+                  <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                    {domains.length > 0 ? domains.map((domain) => (
+                      <button key={domain} onClick={() => { onDomainChange(domain); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-black dark:hover:text-white transition-colors flex items-center justify-between touch-manipulation">
+                        <span className="font-mono">{domain}</span>
+                        {mailbox?.address.endsWith(domain) && <Check className="w-3 h-3 text-red-500" />}
+                      </button>
+                    )) : <div className="px-4 py-3 text-xs text-slate-500">{t.loadingDomains}</div>}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <button onClick={onDelete} className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors touch-manipulation" title={t.tipDestroy}>
+              <Trash2 className="w-4 h-4" />
+            </button>
+        </div>
+      </div>
+      
+      {/* Alt bilgi kısayolları (Sadece masaüstünde anlamlı ama kalabilir) */}
+      <div className="flex justify-center gap-4 text-[9px] text-slate-400 dark:text-slate-600 font-mono uppercase tracking-widest opacity-60">
+        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> R : {t.refresh}</span>
+        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> C : {t.copy}</span>
+        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> N : {t.new}</span>
       </div>
     </div>
   );

@@ -4,8 +4,8 @@ export interface Mailbox {
   id: string;
   address: string;
   apiBase: string;
-  token?: string;    
-  password?: string; 
+  token?: string;    // Mail.tm için gerekli
+  password?: string; // Mail.tm için gerekli
 }
 
 export interface EmailSummary {

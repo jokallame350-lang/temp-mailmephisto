@@ -1,40 +1,19 @@
-// src/components/Footer.tsx
 import React from 'react';
-import { Github, Shield, Lock } from 'lucide-react';
+import { translations, Language } from '../translations';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+  lang: Language;
+}
+
+const Footer: React.FC<FooterProps> = ({ lang }) => {
+  const t = translations[lang];
   return (
-    <footer className="border-t border-white/5 bg-[#0a0a0c] py-6 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-        
-        {/* Sol: Copyright & Status */}
-        <div className="flex items-center gap-4 text-slate-500">
-          <div className="flex items-center gap-2">
-            <Shield className="w-3 h-3 text-indigo-500" />
-            <span>© {new Date().getFullYear()} MephistoMail. Secure & Anonymous.</span>
-          </div>
-          <div className="hidden md:flex items-center gap-2 border-l border-white/10 pl-4">
-            <Lock className="w-3 h-3 text-emerald-500" />
-            <span>Zero-Persistence RAM Storage</span>
-          </div>
-        </div>
-
-        {/* Sağ: Linkler & GitHub */}
-        <div className="flex items-center gap-6 text-slate-500">
-          <a href="/privacy-policy.html" className="hover:text-white transition-colors">Privacy</a>
-          <a href="/terms.html" className="hover:text-white transition-colors">Terms</a>
-          <div className="h-3 w-[1px] bg-white/10"></div> {/* Ayırıcı çizgi */}
-          <a 
-            href="https://github.com/jokallame350-lang/temp-mailmephisto" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="flex items-center gap-2 hover:text-white transition-colors group"
-          >
-            <span className="hidden sm:inline">Source Code</span>
-            <Github className="w-4 h-4 group-hover:scale-110 transition-transform" />
-          </a>
-        </div>
-
+    <footer className="w-full py-6 text-center text-[10px] text-slate-400 dark:text-slate-600 border-t border-gray-200 dark:border-white/5 bg-slate-50 dark:bg-[#050505]">
+      <p className="mb-2">&copy; {new Date().getFullYear()} Mephisto Mail. {t.footerRights}</p>
+      <div className="flex justify-center gap-4">
+        <a href="#" className="hover:text-red-500 transition-colors">{t.footerPrivacy}</a>
+        <span>&bull;</span>
+        <a href="#" className="hover:text-red-500 transition-colors">{t.footerTerms}</a>
       </div>
     </footer>
   );
