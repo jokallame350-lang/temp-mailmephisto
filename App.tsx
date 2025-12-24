@@ -3,221 +3,188 @@ import Header from './components/Header';
 import AddressBar from './components/AddressBar';
 import EmailList from './components/EmailList';
 import EmailViewer from './components/EmailViewer';
-import CustomAddressModal from './components/CustomAddressModal';
+import PremiumModal from './components/PremiumModal';
 import Footer from './components/Footer';
 import PersonaModal from './components/PersonaModal';
 import { Mailbox, EmailSummary, EmailDetail } from './types';
-import { generateMailbox, createCustomMailbox, getMessages, getMessageDetail, deleteMessage } from './services/mailService';
+import { generateMailbox, getMessages, getMessageDetail } from './services/mailService';
 import { Activity, Terminal } from 'lucide-react';
-import { SEOContent } from './components/SEOContent'; 
+import { SEOContent } from './components/SEOContent';
+import { Language } from './translations';
 
 const App: React.FC = () => {
-  // --- State Yönetimi ---
   const [accounts, setAccounts] = useState<Mailbox[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [emails, setEmails] = useState<EmailSummary[]>([]);
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [currentEmailDetail, setCurrentEmailDetail] = useState<EmailDetail | null>(null);
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-
-  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [deletedIds] = useState<Set<string>>(new Set());
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
-  
   const [isLoadingAccount, setIsLoadingAccount] = useState(false);
-  const [isLoadingEmails, setIsLoadingEmails] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [progress, setProgress] = useState(0);
+  const [lang, setLang] = useState<Language>('en');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isPremium] = useState(false);
+  const [isFireTransition, setIsFireTransition] = useState(false);
   const previousEmailCountRef = useRef(0);
-  const STORAGE_KEY = 'nexus_accounts_v3';
 
-  // --- Aktif Hesap ---
+  const STORAGE_KEY = 'nexus_accounts_v5';
   const activeAccount = accounts.find(a => a.id === activeAccountId) || null;
 
-  // --- Temel Fonksiyonlar ---
-  const createAccount = async () => {
+  // --- TEMA VE BİLDİRİM MANTIĞI ---
+  const playNotificationSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
+  const toggleThemeWithFire = () => {
+    setIsFireTransition(true);
+    setTimeout(() => setTheme(prev => prev === 'dark' ? 'light' : 'dark'), 400);
+    setTimeout(() => setIsFireTransition(false), 800);
+  };
+
+  useEffect(() => {
+    const root = document.documentElement;
+    theme === 'dark' ? root.classList.add('dark') : root.classList.remove('dark');
+  }, [theme]);
+
+  // --- HESAP YÖNETİMİ ---
+  const createQuickAccount = async () => {
+    if (!isPremium && accounts.length >= 3) { setShowPremiumModal(true); return; }
     setIsLoadingAccount(true);
     try {
       const newMailbox = await generateMailbox();
       setAccounts(prev => [newMailbox, ...prev]);
       setActiveAccountId(newMailbox.id);
-      setEmails([]);
-      setDeletedIds(new Set());
-      setSelectedEmailId(null);
-      setCurrentEmailDetail(null);
-    } catch (e) { setError("Connection Error."); } finally { setIsLoadingAccount(false); }
+      previousEmailCountRef.current = 0;
+    } catch (e) { console.error(e); } finally { setIsLoadingAccount(false); }
   };
 
-  const deleteAccount = (id: string) => {
-    const newAccounts = accounts.filter(a => a.id !== id);
-    setAccounts(newAccounts);
-    if (newAccounts.length > 0) {
-      if (activeAccountId === id) setActiveAccountId(newAccounts[0].id);
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-      createAccount(); 
-    }
-  };
-
-  const handleDomainChange = async (newDomain: string) => {
-    if (!activeAccount) return;
-    const username = activeAccount.address.split('@')[0];
-    setIsLoadingAccount(true);
-    try {
-      const updatedMailbox = await createCustomMailbox(username, newDomain, 'shark_final');
-      setAccounts(prev => prev.map(acc => acc.id === activeAccountId ? updatedMailbox : acc));
-      setActiveAccountId(updatedMailbox.id);
-      setEmails([]);
-      setDeletedIds(new Set());
-      setSelectedEmailId(null);
-    } catch (e) { console.error("Domain change failed"); } finally { setIsLoadingAccount(false); }
-  };
-
-  const handleCreateCustom = async (username: string, domain: string, apiBase: string) => {
-    setIsLoadingAccount(true);
-    try {
-      const newMailbox = await createCustomMailbox(username, domain, apiBase);
-      setAccounts(prev => [newMailbox, ...prev]);
-      setActiveAccountId(newMailbox.id);
-      setEmails([]);
-      setDeletedIds(new Set());
-      setSelectedEmailId(null);
-      setShowCustomModal(false);
-    } catch (e) { console.error("Custom creation failed"); } finally { setIsLoadingAccount(false); }
-  };
-
-  // --- Veri Çekme Efektleri ---
   useEffect(() => {
-    const savedAccounts = localStorage.getItem(STORAGE_KEY);
-    if (savedAccounts) {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
       try {
-        const parsed = JSON.parse(savedAccounts);
+        const parsed = JSON.parse(saved);
         if (parsed.length > 0) { setAccounts(parsed); setActiveAccountId(parsed[0].id); }
-        else { createAccount(); }
-      } catch { createAccount(); }
-    } else { createAccount(); }
-    document.documentElement.classList.add('dark');
+        else createQuickAccount();
+      } catch { createQuickAccount(); }
+    } else createQuickAccount();
   }, []);
 
+  useEffect(() => { if (accounts.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); }, [accounts]);
+
+  // --- MAİL ÇEKME ---
   const fetchEmails = useCallback(async () => {
     if (!activeAccount) return;
     try {
-      const fetchedEmails = await getMessages(activeAccount);
-      if (fetchedEmails) {
-        setEmails(prev => {
-          const filtered = fetchedEmails.filter(email => !deletedIds.has(email.id));
-          const emailMap = new Map();
-          filtered.forEach(e => emailMap.set(e.id, e));
-          return Array.from(emailMap.values()).sort((a, b) => Number(b.id) - Number(a.id));
-        });
+      const fetched = await getMessages(activeAccount);
+      if (fetched) {
+        const filtered = fetched.filter(e => !deletedIds.has(e.id));
+        if (filtered.length > previousEmailCountRef.current && previousEmailCountRef.current !== 0) {
+          playNotificationSound();
+          if (Notification.permission === "granted") {
+            new Notification("Mephisto", { body: lang === 'tr' ? "Yeni mesaj!" : "New message!", icon: "/logo.png" });
+          }
+        }
+        previousEmailCountRef.current = filtered.length;
+        setEmails(filtered.sort((a, b) => Number(b.id) - Number(a.id)));
       }
-    } catch (e) { console.error("Silent Refresh fail"); }
-  }, [activeAccount, deletedIds]);
+      setProgress(0);
+    } catch { }
+  }, [activeAccount, deletedIds, lang]);
 
   useEffect(() => {
     fetchEmails();
-    const interval = setInterval(fetchEmails, 5000);
-    return () => clearInterval(interval);
+    const pInt = setInterval(() => setProgress(prev => prev >= 100 ? 0 : prev + 1.5), 100);
+    const dInt = setInterval(fetchEmails, 7000);
+    return () => { clearInterval(pInt); clearInterval(dInt); };
   }, [fetchEmails]);
 
   useEffect(() => {
-    const fetchDetail = async () => {
+    const fetchDet = async () => {
       if (!selectedEmailId || !activeAccount) { setCurrentEmailDetail(null); return; }
       setIsLoadingDetail(true);
       try {
-        const detail = await getMessageDetail(activeAccount, selectedEmailId);
-        if (detail) setCurrentEmailDetail(detail);
-      } catch (e) { console.error(e); } finally { setIsLoadingDetail(false); }
+        const det = await getMessageDetail(activeAccount, selectedEmailId);
+        if (det) setCurrentEmailDetail(det);
+      } catch { } finally { setIsLoadingDetail(false); }
     };
-    fetchDetail();
+    fetchDet();
   }, [selectedEmailId, activeAccount]);
 
-  const handleDeleteEmail = async (id: string, e: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setEmails(prev => prev.filter(email => email.id !== id));
-    setDeletedIds(prev => new Set(prev).add(id));
-    if (selectedEmailId === id) setSelectedEmailId(null);
-    if (activeAccount) await deleteMessage(activeAccount, id);
-  };
-
-  const isMobileDetailView = !!selectedEmailId;
-
   return (
-    // APP SHELL YAPISI: h-[100dvh] ile mobil tarayıcı çubuğu sorununu çözer.
-    // overflow-hidden ile tüm sayfanın kaymasını engeller.
-    <div className="h-[100dvh] flex flex-col font-['Sora'] bg-[#050505] text-slate-200 overflow-hidden text-[13px]">
+    <div className={`min-h-screen flex flex-col font-['Sora'] transition-colors duration-500 ${theme === 'dark' ? 'bg-[#050505] text-slate-200' : 'bg-slate-50 text-slate-900'} overflow-x-hidden`}>
       
-      {/* HEADER: Sabit kalır (flex-col yapısında en üstte) */}
-      <div className="flex-shrink-0">
-        <Header accounts={accounts} currentAccount={activeAccount} onSwitchAccount={(id) => { setActiveAccountId(id); setDeletedIds(new Set()); setSelectedEmailId(null); }} onNewAccount={createAccount} onNewCustomAccount={() => setShowCustomModal(true)} onDeleteAccount={deleteAccount} theme={'dark'} toggleTheme={() => {}} />
-      </div>
+      {/* ALEV GEÇİŞ KATMANI */}
+      <div className={`fire-transition-overlay ${isFireTransition ? 'fire-transition-active' : ''}`} />
 
+      <Header 
+        accounts={accounts} 
+        currentAccount={activeAccount} 
+        onSwitchAccount={setActiveAccountId} 
+        onNewAccount={createQuickAccount} 
+        onOpenPremium={() => setShowPremiumModal(true)} 
+        theme={theme} 
+        toggleTheme={toggleThemeWithFire} 
+        lang={lang} 
+        setLang={setLang} 
+      />
+
+      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
       <PersonaModal isOpen={showPersonaModal} onClose={() => setShowPersonaModal(false)} currentEmail={activeAccount?.address} />
+      
+      <main className="flex-grow flex flex-col items-center justify-start pt-8 px-4 gap-8 w-full max-w-7xl mx-auto z-10">
+        <div className="w-full max-w-3xl flex flex-col items-center text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/20 bg-red-500/5 text-red-500 text-[10px] font-black uppercase tracking-widest animate-pulse">
+            <Activity className="w-3 h-3" /> System Active
+          </div>
+          <h1 className="text-2xl md:text-4xl font-black dark:text-white tracking-tighter italic uppercase">
+            The Ultimate Shield <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">For Your Privacy.</span>
+          </h1>
+          {/* HATA BURADAYDI: progress prop'u eklendi */}
+          <AddressBar 
+            mailbox={activeAccount} 
+            isLoading={isLoadingAccount} 
+            onRefresh={fetchEmails} 
+            lang={lang}
+            progress={progress}
+          />
+        </div>
 
-      {/* MAIN: Kalan alanı doldurur (flex-1) ve kendi içinde scroll olmaz (overflow-hidden) */}
-      <main className="flex-grow flex flex-col items-center justify-start pt-4 px-4 gap-4 overflow-hidden relative w-full max-w-7xl mx-auto">
-        
-        {/* ÜST KISIM: Başlık ve Adres Çubuğu. Mobilde çok yer kaplamaması için marginleri kıstım. */}
-        <div className="w-full max-w-3xl flex flex-col items-center text-center space-y-2 flex-shrink-0 z-10">
-           <div className="space-y-1 flex flex-col items-center">
-              <div className="h-4 inline-flex items-center gap-1.5 px-2 rounded border border-red-500/20 bg-red-500/5 text-red-400 text-[9px] font-bold uppercase tracking-widest">
-                <Activity className="w-2.5 h-2.5" /> System Active
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6 pb-12">
+          <div className={`md:col-span-4 flex flex-col ${selectedEmailId ? 'hidden md:flex' : 'flex'}`}>
+            <div className="bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/5 rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[500px]">
+              <div className="flex justify-between items-center px-6 py-4 bg-slate-50 dark:bg-white/[0.02] border-b dark:border-white/5">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Active Nodes</span>
+                <span className={`text-[10px] font-black px-3 py-1 rounded-full ${isPremium ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
+                   {accounts.length} / {isPremium ? '15' : '3'}
+                </span>
               </div>
-              {/* Mobilde Başlığı gizleyebiliriz veya küçültebiliriz. Şimdilik küçük tuttum. */}
-              <h1 className="text-lg md:text-2xl font-bold text-white tracking-tight hidden sm:block">
-                The Ultimate Shield <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">For Your Privacy.</span>
-              </h1>
-           </div>
-
-           <AddressBar mailbox={activeAccount} isLoading={isLoadingAccount} isRefreshing={isLoadingEmails} onRefresh={() => fetchEmails()} onChange={createAccount} onDelete={() => activeAccount && deleteAccount(activeAccount.id)} onDomainChange={handleDomainChange} />
-        </div>
-
-        {/* İÇERİK ALANI: E-posta listesi. 
-            flex-1: Kalan TÜM boşluğu doldurur.
-            min-h-0: Flexbox içinde scroll'un çalışması için kritik koddur.
-        */}
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 pb-2">
+              <EmailList emails={emails} selectedId={selectedEmailId} onSelect={setSelectedEmailId} loading={false} lang={lang} />
+            </div>
+          </div>
           
-          {/* LİSTE */}
-          <div className={`md:col-span-4 flex flex-col h-full ${isMobileDetailView ? 'hidden md:flex' : 'flex'}`}>
-             <div className="flex-grow bg-[#0a0a0c] border border-white/5 rounded-lg overflow-hidden relative shadow-2xl h-full">
-                <div className="absolute inset-0 overflow-y-auto custom-scrollbar">
-                  <EmailList emails={emails} selectedId={selectedEmailId} onSelect={(id) => setSelectedEmailId(id)} onDelete={handleDeleteEmail} onDeleteAll={() => setEmails([])} loading={isLoadingEmails} />
+          <div className={`md:col-span-8 flex flex-col ${selectedEmailId ? 'flex' : 'hidden md:flex'}`}>
+            <div className="bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/5 rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[500px]">
+              {!selectedEmailId ? (
+                <div className="flex-grow flex flex-col items-center justify-center text-slate-400 dark:text-slate-800 p-12">
+                  <Terminal className="w-12 h-12 mb-4 opacity-10" />
+                  <span className="text-[10px] uppercase tracking-[0.3em] font-black italic">Awaiting Signal...</span>
                 </div>
-             </div>
-          </div>
-
-          {/* DETAY */}
-          <div className={`md:col-span-8 flex flex-col h-full ${isMobileDetailView ? 'flex' : 'hidden md:flex'}`}>
-             <div className="flex-grow bg-[#0a0a0c] border border-white/5 rounded-lg overflow-hidden relative shadow-2xl flex flex-col h-full">
-                {!selectedEmailId ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-800 pointer-events-none">
-                        <Terminal className="w-10 h-10 mb-2 opacity-20" />
-                        <span className="text-[9px] uppercase tracking-[0.2em] font-mono">Awaiting Signal...</span>
-                    </div>
-                ) : (
-                    <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} />
-                )}
-             </div>
+              ) : (
+                <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} lang={lang} />
+              )}
+            </div>
           </div>
         </div>
+        
+        <SEOContent lang={lang} />
       </main>
 
-      {/* FOOTER: Sabit kalır (flex-shrink-0) */}
-      <div className="flex-shrink-0 w-full bg-[#050505] border-t border-white/5">
-        {/* SEO İçeriği sadece masaüstünde görünsün, mobilde app hissini bozmasın */}
-        <div className="hidden md:block">
-           <SEOContent />
-        </div>
-        <Footer />
-      </div>
-
-      <CustomAddressModal 
-        isOpen={showCustomModal} 
-        onClose={() => setShowCustomModal(false)} 
-        onCreate={handleCreateCustom} 
-      />
+      <Footer lang={lang} />
     </div>
   );
 };
