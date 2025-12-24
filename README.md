@@ -1,56 +1,24 @@
-🔥 Mephisto Temp Mail - The Ultimate Privacy Shield
-Mephisto is a high-performance, disposable email service designed to protect your digital footprint. It combines a modern "Fire & Dark" aesthetic with robust security features to ensure total anonymity.
+# Mephisto: Ephemeral, 100% Cookie-Free Disposable Email
 
-🚀 Key Features
-Instant Disposable Addresses: Generate a secure node in seconds with a single click.
+Mephisto is a privacy-first, temporary email service designed to bypass trackers and maintain zero-persistence. Unlike traditional services, Mephisto operates without cookies and stores data exclusively in volatile memory (RAM) and local client-side storage (IndexedDB).
 
-Fire UI Experience: Features dynamic fire transitions and a sleek dark mode for a premium user experience.
+## Key Features
+- **Zero-Persistence:** Emails are stored in backend RAM and purged instantly upon session termination.
+- **Client-Side Caching:** Uses IndexedDB to keep your session snappy without server-side logging.
+- **100% Cookie-Free:** No tracking cookies, no consent banners, no bullshit.
+- **Domain Rotation:** Manually switch between 8+ different TLDs to bypass site-specific filters.
+- **PWA Ready:** Fully installable as a lightweight web app on iOS and Android.
 
-Advanced Privacy Toolkit:
+## Tech Stack
+- **Frontend:** React + TypeScript + Vite
+- **State Management:** React Hooks + Context API
+- **Storage:** IndexedDB (for local caching)
+- **Styling:** Tailwind CSS + Lucide Icons
+- **Backend:** Node.js (High-performance WebSocket/RAM architecture)
 
-Secure Password Generator: Create high-entropy, cryptographically random passwords.
+## Running Locally
 
-Mobile QR Handoff: Instantly transfer your active burner mail session to your smartphone via an "Air-Gapped" transfer method.
+1. Clone the repo:
+   ```bash
+   git clone [https://github.com/jokallame350-lang/temp-mailmephisto.git](https://github.com/jokallame350-lang/temp-mailmephisto.git)
 
-Premium Advantages: Connect your own custom domains, manage up to 15 addresses simultaneously, and enjoy 100MB of extended storage.
-
-Real-Time Synchronization: Powered by WebSockets for instant email delivery without the need to refresh the page.
-
-🛠 Technical Architecture
-Built with modern web technologies focused on speed and stateless security:
-
-Frontend: React (TypeScript) & Tailwind CSS.
-
-Icons: Lucide React.
-
-State Management: Optimized React Hooks (useCallback, useRef, useEffect) for real-time updates.
-
-Security Infrastructure: RAM-only storage (no HDD traces) and end-to-end encrypted signals.
-
-📁 Project Structure
-Plaintext
-
-api/             # Serverless backend functions (1secmail proxy, ping logic)
-public/          # Logo, icons, and static assets
-src/
- ┣ components/   # UI components (Header, AddressBar, EmailList, etc.)
- ┣ services/     # API, DB, and Auth service layers
- ┣ translations/ # Multi-language support (EN/TR)
- ┗ types/        # TypeScript type definitions
-🔧 Installation & Setup
-Install Dependencies:
-
-Bash
-
-npm install
-Start Development Server:
-
-Bash
-
-npm run dev
-Environment Variables: Ensure your API endpoints are correctly defined in your .env file for local development.
-
-🛡 Privacy & Digital Hygiene
-Mephisto is architected to be "state-less," meaning we physically cannot sell your data because we don't store it. All session data is permanently wiped when the browser is closed or the node is cleared.
-
-© 2025 Mephisto Mail. All Rights Reserved.

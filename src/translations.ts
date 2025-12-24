@@ -2,9 +2,12 @@ export type Language = 'en' | 'tr';
 
 export const translations = {
   en: {
+    // --- EKSİK OLAN KISAYOL METİNLERİ (BUNLAR EKLENDİ) ---
     refresh: "Refresh",
     copy: "Copy",
     new: "New",
+    
+    // --- GENEL SİTE METİNLERİ ---
     systemActive: "System Active",
     heroTitle: "The Ultimate Shield",
     heroSubtitle: "For Your Privacy.",
@@ -59,6 +62,8 @@ export const translations = {
     footerRights: "All Rights Reserved.",
     footerPrivacy: "Privacy Policy",
     footerTerms: "Terms of Service",
+
+    // --- SEO BÖLÜMÜ ---
     featVolatileTitle: "Volatile Memory",
     featVolatileDesc: "RAM-only storage. No HDD traces.",
     featLatencyTitle: "Low Latency",
@@ -106,9 +111,12 @@ export const translations = {
     faq4A: "Immediate termination. Mephisto runs on a 'No-Logs' policy backed by volatile memory storage. Closing the tab triggers a wipe sequence, removing the email address and all its contents."
   },
   tr: {
+    // --- EKSİK OLAN KISAYOL METİNLERİ (BUNLAR EKLENDİ) ---
     refresh: "Yenile",
     copy: "Kopyala",
     new: "Yeni",
+
+    // --- GENEL SİTE METİNLERİ ---
     systemActive: "Sistem Aktif",
     heroTitle: "Nihai Kalkan",
     heroSubtitle: "Gizliliğiniz İçin.",
@@ -163,6 +171,8 @@ export const translations = {
     footerRights: "Tüm Hakları Saklıdır.",
     footerPrivacy: "Gizlilik Politikası",
     footerTerms: "Kullanım Koşulları",
+
+    // --- SEO BÖLÜMÜ (TÜRKÇE) ---
     featVolatileTitle: "Uçucu Bellek",
     featVolatileDesc: "Sadece RAM depolama. HDD izi yok.",
     featLatencyTitle: "Düşük Gecikme",
