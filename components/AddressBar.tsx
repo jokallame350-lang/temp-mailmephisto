@@ -1,119 +1,101 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, ChevronDown, Check, Globe, Command } from 'lucide-react';
-import { translations, Language } from '../translations';
+import React, { useState } from 'react';
+import { Copy, Check, RefreshCw, ShieldCheck, QrCode, Key, X } from 'lucide-react';
+// YENİ İSİM: appTypes
+import { Mailbox } from '../appTypes';
 
 interface AddressBarProps {
   mailbox: Mailbox | null;
   isLoading: boolean;
-  isRefreshing: boolean;
   onRefresh: () => void;
-  onChange: () => void;
-  onDelete: () => void;
-  onDomainChange: (domain: string) => void;
-  domains?: string[];
-  progress: number;
-  lang: Language;
+  lang: string;
+  // EKLENEN PROPLAR (Hata vermemesi için):
+  progress?: number; 
+  isRefreshing?: boolean;
+  onChange?: () => void;
+  onDelete?: () => void;
+  onDomainChange?: (newDomain: string) => void;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({ 
-  mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete, onDomainChange, 
-  domains = [], progress, lang 
+  mailbox, isLoading, onRefresh, lang, progress = 0 
 }) => {
-  const t = translations[lang];
   const [copied, setCopied] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showQR, setShowQR] = useState(false);
+  const [showPassGen, setShowPassGen] = useState(false);
+  const [generatedPass, setGeneratedPass] = useState('');
 
-  const handleCopy = () => {
-    if (mailbox?.address) {
-      navigator.clipboard.writeText(mailbox.address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+    let password = "";
+    for (let i = 0; i < 16; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+    setGeneratedPass(password);
+    setShowPassGen(true);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) { setIsDropdownOpen(false); }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div className="w-full relative group flex flex-col gap-1">
-      {/* Arka plan efekti */}
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-      
-      <div className="relative flex items-center bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/10 rounded-lg p-1.5 shadow-xl overflow-hidden">
-        {/* İlerleme Çubuğu */}
-        <div className="absolute bottom-0 left-0 h-[2px] bg-red-500/50 transition-all duration-100 ease-linear" style={{ width: `${progress}%` }}></div>
+    <div className="w-full max-w-3xl space-y-4">
+      {isLoading && (
+         <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+            <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${progress}%` }}></div>
+         </div>
+      )}
 
-        <div className="pl-3 pr-2 text-slate-400 dark:text-slate-500 hidden sm:block">
-           <Globe className="w-4 h-4 animate-pulse" />
+      <div className="flex flex-col md:flex-row items-center gap-3">
+        <div 
+          onClick={() => mailbox && handleCopy(mailbox.address)}
+          className="flex-grow flex items-center px-5 py-4 bg-[#0a0a0c] border border-white/5 rounded-2xl cursor-pointer hover:border-red-500/50 transition-all group min-w-0 w-full"
+        >
+          <ShieldCheck className="w-5 h-5 text-red-600 mr-3 shrink-0" />
+          <span className="text-sm md:text-base font-black text-white truncate font-mono tracking-tight select-none">
+            {isLoading 
+              ? (lang === 'tr' ? 'Bağlantı Kuruluyor...' : 'Establishing secure link...') 
+              : (mailbox?.address || (lang === 'tr' ? 'Node Bekleniyor...' : 'Awaiting Node...'))}
+          </span>
         </div>
 
-        {/* Input Alanı */}
-        <input 
-          type="text" readOnly
-          value={isLoading ? t.generating : (mailbox?.address || t.noShield)}
-          className="flex-grow bg-transparent border-none text-slate-700 dark:text-slate-200 text-sm font-mono focus:ring-0 px-2 placeholder-slate-400 dark:placeholder-slate-600 w-full min-w-0"
-        />
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <button onClick={() => setShowQR(true)} className="p-3.5 bg-white/5 rounded-xl hover:bg-white/10 text-slate-400 border border-white/5"><QrCode className="w-5 h-5" /></button>
+          <button onClick={generatePassword} className="p-3.5 bg-white/5 rounded-xl hover:bg-white/10 text-slate-400 border border-white/5"><Key className="w-5 h-5" /></button>
+          <button onClick={onRefresh} className="p-3.5 bg-white/5 rounded-xl hover:bg-white/10 text-white border border-white/5 active:rotate-180 transition-all"><RefreshCw className="w-5 h-5" /></button>
+          <button onClick={() => mailbox && handleCopy(mailbox.address)} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all ${copied ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? (lang === 'tr' ? 'KOPYALANDI' : 'COPIED') : (lang === 'tr' ? 'KOPYALA' : 'COPY')}
+          </button>
+        </div>
+      </div>
+      
+      {showQR && mailbox && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+           <div className="bg-[#0f0f12] p-8 rounded-[40px] border border-white/10 flex flex-col items-center relative max-w-sm w-full">
+             <button onClick={() => setShowQR(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
+             <div className="p-4 bg-white rounded-3xl mb-6">
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${mailbox.address}`} alt="QR" className="w-48 h-48" />
+             </div>
+             <button onClick={() => setShowQR(false)} className="w-full py-4 bg-white/5 rounded-2xl font-black uppercase text-[10px] text-white">Close</button>
+           </div>
+        </div>
+      )}
 
-        {/* BUTON GRUBU - DÜZELTİLDİ */}
-        {/* flex-shrink-0 eklendi: Mobilde butonların ezilmesini engeller */}
-        {/* z-20 eklendi: Tıklamaların inputun altında kalmasını engeller */}
-        <div className="flex items-center gap-1 pl-2 border-l border-gray-200 dark:border-white/5 relative z-20 flex-shrink-0 bg-white dark:bg-[#0a0a0c]">
-            
-            <button onClick={handleCopy} className="group/btn p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors relative touch-manipulation" title={t.tipCopy}>
-              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-            </button>
-            
-            <button onClick={onRefresh} className="group/btn p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors relative touch-manipulation" title={t.tipRefresh}>
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-            
-            {/* DROPDOWN KISMI - DÜZELTİLDİ */}
-            <div className="relative" ref={dropdownRef}>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation(); // Tıklamanın hemen kapanmayı tetiklemesini önle
-                  setIsDropdownOpen(!isDropdownOpen);
-                }} 
-                className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-md text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-colors flex items-center gap-1 touch-manipulation" 
-                title={t.tipDomain}
-              >
-                <ChevronDown className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/10 rounded-lg shadow-2xl z-50 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-gray-200 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">{t.selectDomain}</div>
-                  <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                    {domains.length > 0 ? domains.map((domain) => (
-                      <button key={domain} onClick={() => { onDomainChange(domain); setIsDropdownOpen(false); }} className="w-full text-left px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-black dark:hover:text-white transition-colors flex items-center justify-between touch-manipulation">
-                        <span className="font-mono">{domain}</span>
-                        {mailbox?.address.endsWith(domain) && <Check className="w-3 h-3 text-red-500" />}
-                      </button>
-                    )) : <div className="px-4 py-3 text-xs text-slate-500">{t.loadingDomains}</div>}
-                  </div>
-                </div>
-              )}
+      {showPassGen && (
+         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+            <div className="bg-[#0f0f12] p-10 rounded-[40px] border border-white/10 flex flex-col items-center relative max-w-sm w-full">
+               <button onClick={() => setShowPassGen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white"><X className="w-6 h-6" /></button>
+               <div className="w-full bg-white/5 border border-white/5 p-5 rounded-2xl mb-8 flex items-center justify-between">
+                  <span className="text-sm font-mono font-black text-red-500 tracking-wider truncate">{generatedPass}</span>
+                  <button onClick={() => handleCopy(generatedPass)} className="p-2 text-slate-400 hover:text-white"><Copy className="w-4 h-4" /></button>
+               </div>
+               <button onClick={generatePassword} className="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px]">New Password</button>
             </div>
-            
-            <button onClick={onDelete} className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors touch-manipulation" title={t.tipDestroy}>
-              <Trash2 className="w-4 h-4" />
-            </button>
-        </div>
-      </div>
-      
-      {/* Alt bilgi kısayolları (Sadece masaüstünde anlamlı ama kalabilir) */}
-      <div className="flex justify-center gap-4 text-[9px] text-slate-400 dark:text-slate-600 font-mono uppercase tracking-widest opacity-60">
-        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> R : {t.refresh}</span>
-        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> C : {t.copy}</span>
-        <span className="flex items-center gap-1"><Command className="w-3 h-3" /> N : {t.new}</span>
-      </div>
+         </div>
+      )}
     </div>
   );
 };

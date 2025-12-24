@@ -1,217 +1,76 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import AddressBar from './components/AddressBar';
 import EmailList from './components/EmailList';
 import EmailViewer from './components/EmailViewer';
-import CustomAddressModal from './components/CustomAddressModal';
+import PremiumModal from './components/PremiumModal';
 import Footer from './components/Footer';
 import PersonaModal from './components/PersonaModal';
-import QRCodeModal from './components/QRCodeModal';
-import PasswordGenModal from './components/PasswordGenModal';
-import LimitModal from './components/LimitModal';
-import { SEOContent } from './components/SEOContent'; 
-
-import { Mailbox, EmailSummary, EmailDetail } from './types';
-import { generateMailbox, createCustomMailbox, getMessages, getMessageDetail, deleteMessage, fetchDomains } from './services/mailService';
-import { Terminal, Activity } from 'lucide-react';
-import { translations, Language } from './translations';
-
-const REFRESH_INTERVAL = 7000; 
-const MAX_ACTIVE_ACCOUNTS = 3; 
-const DAILY_CREATION_LIMIT = 5; 
+// YENİ İSİM: appTypes
+import { Mailbox, EmailSummary, EmailDetail } from './appTypes';
+import { generateMailbox, getMessages, getMessageDetail } from './services/mailService';
+import { Activity, Terminal } from 'lucide-react';
+import { SEOContent } from './components/SEOContent';
+// YENİ İSİM: appTranslations
+import { Language } from './appTranslations';
 
 const App: React.FC = () => {
-  // --- TEMA VE DİL AYARLARI (EN ÜSTTE) ---
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [lang, setLang] = useState<Language>('en');
-  const t = translations[lang];
-
-  // EKSİK OLAN FONKSİYON BU:
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('mephisto_theme', newTheme);
-  };
-
-  // Tema Başlangıç Ayarı
-  useEffect(() => {
-    const root = window.document.documentElement;
-    const savedTheme = localStorage.getItem('mephisto_theme') as 'dark' | 'light';
-    
-    if (savedTheme) {
-      setTheme(savedTheme);
-      root.classList.remove('dark', 'light');
-      root.classList.add(savedTheme);
-    } else {
-      root.classList.add('dark'); // Varsayılan Dark
-    }
-  }, []);
-
-  // Theme state değişince class'ı güncelle
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('dark', 'light');
-    root.classList.add(theme);
-  }, [theme]);
-
-  // --- STATE TANIMLARI ---
   const [accounts, setAccounts] = useState<Mailbox[]>([]);
   const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
   const [emails, setEmails] = useState<EmailSummary[]>([]);
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [currentEmailDetail, setCurrentEmailDetail] = useState<EmailDetail | null>(null);
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-  const [availableDomains, setAvailableDomains] = useState<string[]>([]);
-
-  // Modallar
-  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [deletedIds] = useState<Set<string>>(new Set());
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [showPassModal, setShowPassModal] = useState(false);
-  
-  // Limit Modal
-  const [limitModal, setLimitModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    type: 'daily' | 'capacity';
-  }>({ isOpen: false, title: '', message: '', type: 'daily' });
-  
   const [isLoadingAccount, setIsLoadingAccount] = useState(false);
-  const [isLoadingEmails, setIsLoadingEmails] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [progress, setProgress] = useState(0); 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [lang, setLang] = useState<Language>('en');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isPremium] = useState(false);
+  const [isFireTransition, setIsFireTransition] = useState(false);
+  const previousEmailCountRef = useRef(0);
 
-  const STORAGE_KEY = 'nexus_accounts_v4_mailtm';
-  const LIMIT_KEY = 'nexus_daily_limit_v1';
+  const STORAGE_KEY = 'nexus_accounts_v5';
   const activeAccount = accounts.find(a => a.id === activeAccountId) || null;
 
-  // --- LIMIT KONTROL ---
-  const checkDailyLimit = (): boolean => {
-    const today = new Date().toDateString(); 
-    const rawData = localStorage.getItem(LIMIT_KEY);
-    let usage = { date: today, count: 0 };
-    if (rawData) {
-      const parsed = JSON.parse(rawData);
-      if (parsed.date === today) usage = parsed;
-    }
-    return usage.count < DAILY_CREATION_LIMIT;
+  const playNotificationSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(() => {});
   };
 
-  const incrementDailyLimit = () => {
-    const today = new Date().toDateString();
-    const rawData = localStorage.getItem(LIMIT_KEY);
-    let usage = { date: today, count: 0 };
-    if (rawData) {
-      const parsed = JSON.parse(rawData);
-      if (parsed.date === today) usage = parsed;
-    }
-    usage.count += 1;
-    localStorage.setItem(LIMIT_KEY, JSON.stringify(usage));
+  const toggleThemeWithFire = () => {
+    setIsFireTransition(true);
+    setTimeout(() => setTheme(prev => prev === 'dark' ? 'light' : 'dark'), 400);
+    setTimeout(() => setIsFireTransition(false), 800);
   };
 
-  const showLimitAlert = (type: 'daily' | 'capacity') => {
-    setLimitModal({
-      isOpen: true, 
-      type,
-      title: type === 'daily' ? t.limitDailyTitle : t.limitCapacityTitle,
-      message: type === 'daily' ? t.limitDailyMsg : t.limitCapacityMsg
-    });
-  };
-
-  // --- KISAYOLLAR ---
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      switch(e.key.toLowerCase()) {
-        case 'r': fetchEmails(); break;
-        case 'c': if (activeAccount) navigator.clipboard.writeText(activeAccount.address); break;
-        case 'n': createAccount(); break;
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeAccount, accounts]);
+    const root = document.documentElement;
+    theme === 'dark' ? root.classList.add('dark') : root.classList.remove('dark');
+  }, [theme]);
 
-  useEffect(() => { fetchDomains().then(data => setAvailableDomains(data.domains)); }, []);
-  
-  useEffect(() => {
-    const step = 100 / (REFRESH_INTERVAL / 100);
-    const timer = setInterval(() => setProgress(p => (p >= 100 ? 0 : p + step)), 100);
-    return () => clearInterval(timer);
-  }, []);
-
-  // --- ACTIONS ---
-  const createAccount = async () => {
-    if (accounts.length >= MAX_ACTIVE_ACCOUNTS) { showLimitAlert('capacity'); return; }
-    if (!checkDailyLimit()) { showLimitAlert('daily'); return; }
-
+  const createQuickAccount = async () => {
+    if (!isPremium && accounts.length >= 3) { setShowPremiumModal(true); return; }
     setIsLoadingAccount(true);
     try {
       const newMailbox = await generateMailbox();
-      if (newMailbox.id === 'error') { alert(t.connFailed); return; }
-      incrementDailyLimit();
       setAccounts(prev => [newMailbox, ...prev]);
       setActiveAccountId(newMailbox.id);
-      setEmails([]);
-      setDeletedIds(new Set());
-      setSelectedEmailId(null);
-      setCurrentEmailDetail(null);
-    } catch { alert(t.connError); } finally { setIsLoadingAccount(false); }
-  };
-
-  const deleteAccount = (id: string) => {
-    const newAccounts = accounts.filter(a => a.id !== id);
-    setAccounts(newAccounts);
-    if (newAccounts.length > 0) {
-      if (activeAccountId === id) setActiveAccountId(newAccounts[0].id);
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-      setActiveAccountId(null);
-    }
-  };
-
-  const handleDomainChange = async (newDomain: string) => {
-    if (!activeAccount) return;
-    if (!checkDailyLimit()) { showLimitAlert('daily'); return; }
-    const username = activeAccount.address.split('@')[0];
-    setIsLoadingAccount(true);
-    try {
-      const newMailbox = await createCustomMailbox(username, newDomain, 'mail_tm');
-      incrementDailyLimit();
-      setAccounts(prev => prev.map(acc => acc.id === activeAccountId ? newMailbox : acc));
-      setActiveAccountId(newMailbox.id);
-      setEmails([]);
-      setDeletedIds(new Set());
-      setSelectedEmailId(null);
-    } catch { alert(t.errorDomain); } finally { setIsLoadingAccount(false); }
-  };
-
-  const handleCreateCustom = async (username: string, domain: string, apiBase: string) => {
-    if (accounts.length >= MAX_ACTIVE_ACCOUNTS) { showLimitAlert('capacity'); setShowCustomModal(false); return; }
-    if (!checkDailyLimit()) { showLimitAlert('daily'); setShowCustomModal(false); return; }
-
-    setIsLoadingAccount(true);
-    try {
-      const newMailbox = await createCustomMailbox(username, domain, apiBase);
-      incrementDailyLimit();
-      setAccounts(prev => [newMailbox, ...prev]);
-      setActiveAccountId(newMailbox.id);
-      setEmails([]);
-      setDeletedIds(new Set());
-      setSelectedEmailId(null);
-      setShowCustomModal(false);
-    } catch { alert(t.usernameTaken); } finally { setIsLoadingAccount(false); }
+      previousEmailCountRef.current = 0;
+    } catch (e) { console.error(e); } finally { setIsLoadingAccount(false); }
   };
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) { try {
+    if (saved) {
+      try {
         const parsed = JSON.parse(saved);
         if (parsed.length > 0) { setAccounts(parsed); setActiveAccountId(parsed[0].id); }
-      } catch {} }
+        else createQuickAccount();
+      } catch { createQuickAccount(); }
+    } else createQuickAccount();
   }, []);
 
   useEffect(() => { if (accounts.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts)); }, [accounts]);
@@ -221,132 +80,108 @@ const App: React.FC = () => {
     try {
       const fetched = await getMessages(activeAccount);
       if (fetched) {
-        setEmails(prev => {
-          const m = new Map(); fetched.forEach(e => m.set(e.id, e));
-          return Array.from(m.values()).filter(e => !deletedIds.has(e.id)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        });
-        setProgress(0);
+        const filtered = fetched.filter(e => !deletedIds.has(e.id));
+        if (filtered.length > previousEmailCountRef.current && previousEmailCountRef.current !== 0) {
+          playNotificationSound();
+          if (Notification.permission === "granted") {
+            new Notification("Mephisto", { body: lang === 'tr' ? "Yeni mesaj!" : "New message!", icon: "/logo.png" });
+          }
+        }
+        previousEmailCountRef.current = filtered.length;
+        setEmails(filtered.sort((a, b) => Number(b.id) - Number(a.id)));
       }
-    } catch {}
-  }, [activeAccount, deletedIds]);
-
-  useEffect(() => { fetchEmails(); const i = setInterval(fetchEmails, REFRESH_INTERVAL); return () => clearInterval(i); }, [fetchEmails]);
-
-  // Sayfa Başlığı Çevirisi
-  useEffect(() => {
-    const unreadCount = emails.length;
-    if (unreadCount > 0) {
-      document.title = `(${unreadCount}) Mephisto Mail`;
-    } else {
-      document.title = lang === 'tr' ? "Mephisto Mail - Gizlilik Kalkanı" : "Mephisto Mail - Privacy Shield";
-    }
-  }, [emails, lang]);
+      setProgress(0);
+    } catch { }
+  }, [activeAccount, deletedIds, lang]);
 
   useEffect(() => {
-    const fetchDetail = async () => {
+    fetchEmails();
+    const pInt = setInterval(() => setProgress(prev => prev >= 100 ? 0 : prev + 1.5), 100);
+    const dInt = setInterval(fetchEmails, 7000);
+    return () => { clearInterval(pInt); clearInterval(dInt); };
+  }, [fetchEmails]);
+
+  useEffect(() => {
+    const fetchDet = async () => {
       if (!selectedEmailId || !activeAccount) { setCurrentEmailDetail(null); return; }
       setIsLoadingDetail(true);
       try {
-        const d = await getMessageDetail(activeAccount, selectedEmailId);
-        if (d) setCurrentEmailDetail(d);
-      } catch {} finally { setIsLoadingDetail(false); }
+        const det = await getMessageDetail(activeAccount, selectedEmailId);
+        if (det) setCurrentEmailDetail(det);
+      } catch { } finally { setIsLoadingDetail(false); }
     };
-    fetchDetail();
+    fetchDet();
   }, [selectedEmailId, activeAccount]);
 
-  const handleDeleteEmail = async (id: string, e: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setEmails(prev => prev.filter(email => email.id !== id));
-    setDeletedIds(prev => new Set(prev).add(id));
-    if (selectedEmailId === id) setSelectedEmailId(null);
-    if (activeAccount) await deleteMessage(activeAccount, id);
-  };
-
-  const isMobileDetailView = !!selectedEmailId;
-
   return (
-    <div className="min-h-screen flex flex-col font-['Sora'] bg-slate-50 dark:bg-[#050505] text-slate-900 dark:text-slate-200 overflow-x-hidden text-[13px] transition-colors duration-300">
+    <div className={`min-h-screen flex flex-col font-['Sora'] transition-colors duration-500 ${theme === 'dark' ? 'bg-[#050505] text-slate-200' : 'bg-slate-50 text-slate-900'} overflow-x-hidden`}>
+      <div className={`fire-transition-overlay ${isFireTransition ? 'fire-transition-active' : ''}`} />
+
       <Header 
-        accounts={accounts} currentAccount={activeAccount} 
-        onSwitchAccount={(id) => { setActiveAccountId(id); setDeletedIds(new Set()); setSelectedEmailId(null); }} 
-        onNewAccount={createAccount} 
-        onNewCustomAccount={() => {
-           if (accounts.length >= MAX_ACTIVE_ACCOUNTS) { showLimitAlert('capacity'); return; }
-           setShowCustomModal(true);
-        }} 
-        onDeleteAccount={deleteAccount} 
-        theme={theme} toggleTheme={toggleTheme} lang={lang} setLang={setLang}
-        onOpenQR={() => setShowQRModal(true)} onOpenPass={() => setShowPassModal(true)}
+        accounts={accounts} 
+        currentAccount={activeAccount} 
+        onSwitchAccount={setActiveAccountId} 
+        onNewAccount={createQuickAccount} 
+        onOpenPremium={() => setShowPremiumModal(true)} 
+        theme={theme} 
+        toggleTheme={toggleThemeWithFire} 
+        lang={lang} 
+        setLang={setLang} 
       />
-      
+
+      <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
       <PersonaModal isOpen={showPersonaModal} onClose={() => setShowPersonaModal(false)} currentEmail={activeAccount?.address} />
       
-      <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} email={activeAccount?.address || ''} lang={lang} />
-      <PasswordGenModal isOpen={showPassModal} onClose={() => setShowPassModal(false)} lang={lang} />
-      <LimitModal isOpen={limitModal.isOpen} onClose={() => setLimitModal(p => ({ ...p, isOpen: false }))} title={limitModal.title} message={limitModal.message} type={limitModal.type} lang={lang} />
-
-      <main className="flex-grow flex flex-col items-center justify-start pt-6 pb-8 px-4 gap-5">
-        <div className="w-full max-w-3xl flex flex-col items-center text-center space-y-3 animate-in fade-in slide-in-from-top-4 duration-500">
-           <div className="space-y-1 flex flex-col items-center">
-              <div className="h-5 inline-flex items-center gap-1.5 px-2 rounded border border-red-500/20 bg-red-50 dark:bg-red-500/5 text-red-600 dark:text-red-400 text-[9px] font-bold uppercase tracking-widest">
-                <Activity className="w-2.5 h-2.5" /> {t.systemActive}
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                {t.heroTitle} <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-500 dark:to-orange-500">{t.heroSubtitle}</span>
-              </h1>
-           </div>
-
-           {accounts.length === 0 ? (
-             <div className="p-8 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-[#0a0a0c] text-center space-y-4 animate-in fade-in zoom-in duration-300 shadow-xl dark:shadow-none">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t.noAccountTitle}</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mx-auto">{t.noAccountDesc}</p>
-                <button onClick={createAccount} className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-red-500/20 transition-all active:scale-95">
-                  {t.generateBtn}
-                </button>
-             </div>
-           ) : (
-             <AddressBar 
-               mailbox={activeAccount} isLoading={isLoadingAccount} isRefreshing={isLoadingEmails} 
-               onRefresh={() => fetchEmails()} onChange={createAccount} onDelete={() => activeAccount && deleteAccount(activeAccount.id)} 
-               onDomainChange={handleDomainChange} domains={availableDomains} progress={progress} 
-               lang={lang}
-             />
-           )}
+      <main className="flex-grow flex flex-col items-center justify-start pt-8 px-4 gap-8 w-full max-w-7xl mx-auto z-10">
+        <div className="w-full max-w-3xl flex flex-col items-center text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/20 bg-red-500/5 text-red-500 text-[10px] font-black uppercase tracking-widest animate-pulse">
+            <Activity className="w-3 h-3" /> System Active
+          </div>
+          <h1 className="text-2xl md:text-4xl font-black dark:text-white tracking-tighter italic uppercase">
+            The Ultimate Shield <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-orange-600">For Your Privacy.</span>
+          </h1>
+          
+          <AddressBar 
+            mailbox={activeAccount} 
+            isLoading={isLoadingAccount} 
+            onRefresh={fetchEmails} 
+            lang={lang} 
+            progress={progress}
+          />
         </div>
 
-        {accounts.length > 0 && (
-          <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-3 h-[500px]">
-            <div className={`md:col-span-4 flex flex-col ${isMobileDetailView ? 'hidden md:flex' : 'flex'}`}>
-               <div className="flex-grow bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/5 rounded-lg overflow-hidden relative shadow-xl dark:shadow-2xl">
-                  <div className="absolute inset-0 overflow-y-auto">
-                    <EmailList emails={emails} selectedId={selectedEmailId} onSelect={(id) => setSelectedEmailId(id)} onDelete={handleDeleteEmail} onDeleteAll={() => setEmails([])} loading={isLoadingEmails} lang={lang} />
-                  </div>
-               </div>
-            </div>
-
-            <div className={`md:col-span-8 flex flex-col ${isMobileDetailView ? 'flex' : 'hidden md:flex'}`}>
-               <div className="flex-grow bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/5 rounded-lg overflow-hidden relative shadow-xl dark:shadow-2xl flex flex-col">
-                  {!selectedEmailId ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 dark:text-slate-800 pointer-events-none">
-                          <Terminal className="w-10 h-10 mb-2 opacity-20" />
-                          <span className="text-[9px] uppercase tracking-[0.2em] font-mono">{t.awaitingSignal}</span>
-                      </div>
-                  ) : (
-                      <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} lang={lang} />
-                  )}
-               </div>
+        <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-6 pb-12">
+          <div className={`md:col-span-4 flex flex-col ${selectedEmailId ? 'hidden md:flex' : 'flex'}`}>
+            <div className="bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/5 rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[500px]">
+              <div className="flex justify-between items-center px-6 py-4 bg-slate-50 dark:bg-white/[0.02] border-b dark:border-white/5">
+                <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Active Nodes</span>
+                <span className={`text-[10px] font-black px-3 py-1 rounded-full ${isPremium ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
+                   {accounts.length} / {isPremium ? '15' : '3'}
+                </span>
+              </div>
+              <EmailList emails={emails} selectedId={selectedEmailId} onSelect={setSelectedEmailId} loading={false} lang={lang} />
             </div>
           </div>
-        )}
+          
+          <div className={`md:col-span-8 flex flex-col ${selectedEmailId ? 'flex' : 'hidden md:flex'}`}>
+            <div className="bg-white dark:bg-[#0a0a0c] border border-gray-200 dark:border-white/5 rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[500px]">
+              {!selectedEmailId ? (
+                <div className="flex-grow flex flex-col items-center justify-center text-slate-400 dark:text-slate-800 p-12">
+                  <Terminal className="w-12 h-12 mb-4 opacity-10" />
+                  <span className="text-[10px] uppercase tracking-[0.3em] font-black italic">Awaiting Signal...</span>
+                </div>
+              ) : (
+                <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} lang={lang} />
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <SEOContent lang={lang} />
       </main>
 
-      <div className="w-full bg-slate-50 dark:bg-[#050505] transition-colors duration-300">
-         <SEOContent lang={lang} />
-      </div>
-      
       <Footer lang={lang} />
-      <CustomAddressModal isOpen={showCustomModal} onClose={() => setShowCustomModal(false)} onCreate={handleCreateCustom} lang={lang} />
     </div>
   );
 };
