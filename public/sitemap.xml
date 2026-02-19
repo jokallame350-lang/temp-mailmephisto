@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Main page (English default) -->
+  <url>
+    <loc>https://mephistomail.site/</loc>
+    <lastmod>2026-02-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mephistomail.site/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://mephistomail.site/?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mephistomail.site/" />
+    <image:image>
+      <image:loc>https://mephistomail.site/og-image.png</image:loc>
+      <image:title>MephistoMail - Free Temporary Disposable Email Service</image:title>
+    </image:image>
+  </url>
+  
+  <!-- Turkish version -->
+  <url>
+    <loc>https://mephistomail.site/?lang=tr</loc>
+    <lastmod>2026-02-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://mephistomail.site/" />
+    <xhtml:link rel="alternate" hreflang="tr" href="https://mephistomail.site/?lang=tr" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mephistomail.site/" />
+  </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://mephistomail.site/blog</loc>
+    <lastmod>2026-02-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Tools -->
+  <url>
+    <loc>https://mephistomail.site/tools</loc>
+    <lastmod>2026-02-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 10 Minute Mail -->
+  <url>
+    <loc>https://mephistomail.site/10minutemail</loc>
+    <lastmod>2026-02-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Help Center -->
+  <url>
+    <loc>https://mephistomail.site/help</loc>
+    <lastmod>2026-02-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+</urlset>

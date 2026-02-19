@@ -1,0 +1,456 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: #050505;
+    color: #e2e8f0;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(356, 85%, 26%, 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(24, 94%, 30%, 0.2) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(260, 50%, 15%, 0.2) 0px, transparent 50%);
+    background-attachment: fixed;
+    font-family: 'Sora', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Focus indicators (WCAG 2.1 AA) */
+  :focus-visible {
+    outline: 2px solid rgba(239, 68, 68, 0.7);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ===== SCREEN READER ONLY ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only:focus,
+.focus\:not-sr-only:focus {
+  position: fixed;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(220, 38, 38, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 38, 38, 0.5);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(220, 38, 38, 0.15);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(220, 38, 38, 0.4);
+}
+
+/* ===== GLASSMORPHISM ===== */
+.glass-card {
+  background: rgba(10, 10, 12, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-card:hover {
+  background: rgba(15, 15, 20, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.glass-panel {
+  background: rgba(10, 10, 12, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== EMAIL CARD ANİMASYONU ===== */
+.email-card-enter {
+  animation: emailSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes emailSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* ===== MICRO-INTERACTION: Email Arrival Pulse ===== */
+@keyframes emailArrivalPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.email-arrival-pulse {
+  animation: emailArrivalPulse 0.6s ease-out;
+}
+
+/* ===== MICRO-INTERACTION: Copy Success ===== */
+@keyframes copySuccess {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.copy-success {
+  animation: copySuccess 0.3s ease-out;
+}
+
+/* ===== MICRO-INTERACTION: Delete Slide Out ===== */
+@keyframes slideOutLeft {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+.slide-out-left {
+  animation: slideOutLeft 0.3s ease-in forwards;
+}
+
+/* ===== TOAST ANİMASYONU ===== */
+.animate-toast-progress {
+  animation: toastProgress 6s linear forwards;
+}
+
+@keyframes toastProgress {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}
+
+/* ===== OTP PULSE ===== */
+.otp-glow {
+  animation: otpGlow 2s ease-in-out infinite;
+}
+
+@keyframes otpGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+
+  50% {
+    box-shadow: 0 0 20px 4px rgba(34, 197, 94, 0.15);
+  }
+}
+
+/* ===== HERO GRADİENT ANİMASYON ===== */
+.hero-gradient-text {
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ===== FLOATING PARTICLES ===== */
+.floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  animation: floatOrb 20s ease-in-out infinite;
+}
+
+@keyframes floatOrb {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+
+  50% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+
+  75% {
+    transform: translate(25px, 10px) scale(1.05);
+  }
+}
+
+/* ===== STAGGER ANİMASYON ===== */
+.stagger-1 {
+  animation-delay: 0ms;
+}
+
+.stagger-2 {
+  animation-delay: 60ms;
+}
+
+.stagger-3 {
+  animation-delay: 120ms;
+}
+
+.stagger-4 {
+  animation-delay: 180ms;
+}
+
+.stagger-5 {
+  animation-delay: 240ms;
+}
+
+.stagger-6 {
+  animation-delay: 300ms;
+}
+
+/* ===== KLAVYE KISAYOL ROZETİ ===== */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'Sora', monospace;
+  color: rgba(148, 163, 184, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  line-height: 1;
+}
+
+/* ===== PULL TO REFRESH İNDİKATÖR ===== */
+@keyframes pullDown {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.pull-indicator {
+  animation: pullDown 0.3s ease-out;
+}
+
+/* ===== SWIPE DELETE GLOW  ===== */
+.swipe-delete-bg {
+  background: linear-gradient(90deg, transparent 60%, rgba(239, 68, 68, 0.15) 100%);
+}
+
+/* ===== RATE LIMIT BANNER ===== */
+@keyframes rateLimitShake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  50% {
+    transform: translateX(4px);
+  }
+
+  75% {
+    transform: translateX(-2px);
+  }
+}
+
+.rate-limit-shake {
+  animation: rateLimitShake 0.4s ease-in-out;
+}
+
+/* ===== MOBİL OPTİMİZASYON ===== */
+@media (max-width: 768px) {
+  .glass-panel {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Header logo küçültme */
+  header img {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Daha büyük dokunma hedefleri (WCAG) */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Email kartları daha kompakt */
+  .email-card-enter {
+    animation-duration: 0.3s;
+  }
+
+  /* Swipe desteği */
+  .email-card-enter {
+    touch-action: pan-y;
+  }
+}
+
+@media (max-width: 480px) {
+
+  /* Çok küçük ekran */
+  .hero-title {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* ===== HIGH CONTRAST MODE ===== */
+@media (forced-colors: active) {
+
+  .glass-card,
+  .glass-panel {
+    border: 2px solid CanvasText;
+    background: Canvas;
+  }
+
+  .kbd {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* ===== GENEL TRANSITION ===== */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* iOS overscroll engelle */
+@supports (-webkit-touch-callout: none) {
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+
+  .floating-orb,
+  .glass-panel,
+  header,
+  footer,
+  .kbd,
+  button {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+}
