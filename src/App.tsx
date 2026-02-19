@@ -13,7 +13,7 @@ import AdBanner from './components/AdBanner';
 import RewardedAdModal, { getCredits } from './components/RewardedAdModal';
 import { useMailbox } from './hooks/useMailbox';
 import { useEmails } from './hooks/useEmails';
-import { Activity, Terminal, Loader2, Sparkles, BarChart3, Bell, Tag } from 'lucide-react';
+import { Activity, Terminal, Loader2, Sparkles, BarChart3, Bell, Tag, ShieldCheck, UserX, Globe, ArrowDown } from 'lucide-react';
 import { SEOContent } from './components/SEOContent';
 import { translations, Language } from './translations';
 
@@ -281,6 +281,22 @@ const App: React.FC = () => {
               </div>
             </div>
 
+            {/* Trust Signals */}
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/5 border border-green-500/10 text-green-500/70 text-[9px] font-bold uppercase tracking-wider">
+                <UserX className="w-3 h-3" aria-hidden="true" />
+                {lang === 'tr' ? 'Kayıt Gereksiz' : 'No Registration'}
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/5 border border-red-500/10 text-red-500/70 text-[9px] font-bold uppercase tracking-wider">
+                <ShieldCheck className="w-3 h-3" aria-hidden="true" />
+                {lang === 'tr' ? 'Sıfır Kayıt' : 'Zero Logs'}
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/5 border border-orange-500/10 text-orange-500/70 text-[9px] font-bold uppercase tracking-wider">
+                <Globe className="w-3 h-3" aria-hidden="true" />
+                {lang === 'tr' ? 'Çoklu Domain' : 'Multi-Domain'}
+              </div>
+            </div>
+
             {accounts.length === 0 || isLoadingAccount ? (
               <div className="w-full max-w-2xl h-16 flex items-center justify-center border border-white/10 rounded-2xl bg-[#0f1115] shadow-lg animate-pulse gap-3" role="status" aria-live="polite">
                 <Loader2 className="w-5 h-5 text-red-500 animate-spin" aria-hidden="true" />
@@ -341,8 +357,17 @@ const App: React.FC = () => {
                     <div className="absolute inset-0 flex items-center justify-center opacity-[0.02]" aria-hidden="true">
                       <Sparkles className="w-64 h-64" />
                     </div>
-                    <Terminal className="w-12 h-12 mb-4 opacity-10" aria-hidden="true" />
-                    <span className="text-[10px] uppercase tracking-[0.3em] font-black italic">{t.awaitingSignal}</span>
+                    <div className="relative mb-6">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500/10 to-orange-500/5 border border-white/5 flex items-center justify-center">
+                        <Terminal className="w-10 h-10 opacity-20" aria-hidden="true" />
+                      </div>
+                      <div className="absolute -inset-3 border border-red-500/5 rounded-3xl animate-ping" style={{ animationDuration: '3s' }} aria-hidden="true" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-[0.3em] font-black italic mb-3">{t.awaitingSignal}</span>
+                    <div className="flex items-center gap-2 mt-2 px-4 py-2 rounded-xl bg-white/[0.02] border border-white/5 max-w-xs">
+                      <ArrowDown className="w-3 h-3 text-red-500/50 animate-bounce flex-shrink-0" aria-hidden="true" />
+                      <p className="text-[10px] text-slate-600 leading-relaxed">{t.awaitingHint}</p>
+                    </div>
                   </div>
                 ) : (
                   <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} lang={lang} />

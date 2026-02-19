@@ -27,7 +27,7 @@ export const translations = {
     clearAll: 'CLEAR ALL',
     emptyInboxTitle: 'Inbox Empty',
     emptyInboxDesc: 'Waiting for incoming messages...',
-    scanningNetwork: 'Scanning Network...',
+    scanningNetwork: 'Listening for Mail...',
     activeNodes: 'Active Nodes',
     activeLabel: 'ACTIVE',
     encryptedLabel: 'End-to-End Encrypted',
@@ -42,13 +42,14 @@ export const translations = {
     noSubject: '(No Subject)',
 
     // Hero
-    heroTitle: 'The Ultimate Shield',
-    heroSubtitle: 'For Your Privacy.',
+    heroTitle: 'One Click. Zero Traces.',
+    heroSubtitle: 'Instant Anonymous Email.',
     systemActive: 'System Active',
     noAccountTitle: 'No Active Shield',
     noAccountDesc: 'Generate a disposable secure email address instantly.',
     generateBtn: 'Generate Secure Address',
     awaitingSignal: 'Awaiting Signal...',
+    awaitingHint: 'Send an email to your address above and it will appear here instantly.',
 
     // Limit/Error Modals
     limitDailyTitle: 'Daily Limit Reached',
@@ -196,7 +197,7 @@ export const translations = {
     clearAll: 'HEPSİNİ SİL',
     emptyInboxTitle: 'Gelen Kutusu Boş',
     emptyInboxDesc: 'Gelen mesajlar bekleniyor...',
-    scanningNetwork: 'Ağ Taranıyor...',
+    scanningNetwork: 'Mail Dinleniyor...',
     activeNodes: 'Aktif Düğümler',
     activeLabel: 'AKTİF',
     encryptedLabel: 'Uçtan Uca Şifreli',
@@ -211,13 +212,14 @@ export const translations = {
     noSubject: '(Konu Yok)',
 
     // Hero
-    heroTitle: 'Gizliliğiniz İçin',
-    heroSubtitle: 'Nihai Kalkan.',
+    heroTitle: 'Tek Tık. Sıfır İz.',
+    heroSubtitle: 'Anlık Anonim E-posta.',
     systemActive: 'Sistem Aktif',
     noAccountTitle: 'Aktif Kalkan Yok',
     noAccountDesc: 'Anında güvenli, kullan-at bir e-posta adresi oluşturun.',
     generateBtn: 'Güvenli Adres Oluştur',
     awaitingSignal: 'Sinyal Bekleniyor...',
+    awaitingHint: 'Yukarıdaki adresinize bir e-posta gönderin, burada anında görünecek.',
 
     // Limit/Error Modals
     limitDailyTitle: 'Günlük Limit',
