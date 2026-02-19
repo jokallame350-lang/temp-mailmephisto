@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://api.mail.tm" />
+  <link rel="preconnect" href="https://api.mail.gw" />
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
   <link rel="dns-prefetch" href="https://www.google-analytics.com" />
 
@@ -57,6 +58,8 @@
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.mail.tm https://api.mail.gw https://www.google-analytics.com https://assets.mixkit.co; frame-src 'none'; object-src 'none'; base-uri 'self';" />
 
   <!-- ========== GOOGLE ANALYTICS ========== -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-M8K2MN0ZGH"></script>
