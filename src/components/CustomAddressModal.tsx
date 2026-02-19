@@ -15,6 +15,7 @@ const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose
   const [username, setUsername] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [domains, setDomains] = useState<string[]>([]);
+  const [domainProviderMap, setDomainProviderMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose
       setIsLoading(true);
       fetchDomains().then(data => {
         setDomains(data.domains);
+        setDomainProviderMap(data.domainProviderMap);
         if (data.domains.length > 0) setSelectedDomain(data.domains[0]);
         setIsLoading(false);
       }).catch(() => {
@@ -60,7 +62,7 @@ const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose
             </select>
           </div>
           <button
-            onClick={() => onCreate(username, selectedDomain, 'mail_tm')}
+            onClick={() => onCreate(username, selectedDomain, domainProviderMap[selectedDomain] || 'mail_tm')}
             disabled={!username || isLoading}
             className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 active:scale-95"
           >

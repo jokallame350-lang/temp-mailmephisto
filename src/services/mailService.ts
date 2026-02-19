@@ -1,38 +1,59 @@
 import { Mailbox, EmailSummary, EmailDetail, AICategory } from '../types';
 
-const API_BASE = 'https://api.mail.tm';
+/**
+ * Multi-Provider Temporary Email Service
+ * 
+ * Supports:
+ * - mail.tm  (primary)
+ * - mail.gw  (secondary — same API structure, different domains)
+ * 
+ * Both providers use identical Hydra-based REST APIs,
+ * so all account/message operations work the same way.
+ */
 
-// Rate limit tracking
-let rateLimitHit = false;
-let rateLimitResetTime = 0;
+const PROVIDERS: Record<string, string> = {
+  mail_tm: 'https://api.mail.tm',
+  mail_gw: 'https://api.mail.gw',
+};
 
-export const isRateLimited = (): boolean => {
-  if (!rateLimitHit) return false;
-  if (Date.now() > rateLimitResetTime) {
-    rateLimitHit = false;
+// Rate limit tracking (per-provider)
+const rateLimitState: Record<string, { hit: boolean; resetTime: number }> = {};
+
+export const isRateLimited = (provider = 'mail_tm'): boolean => {
+  const state = rateLimitState[provider];
+  if (!state?.hit) return false;
+  if (Date.now() > state.resetTime) {
+    state.hit = false;
     return false;
   }
   return true;
 };
 
-export const getRateLimitRemainingMs = (): number => {
-  if (!rateLimitHit) return 0;
-  return Math.max(0, rateLimitResetTime - Date.now());
+export const getRateLimitRemainingMs = (provider = 'mail_tm'): number => {
+  const state = rateLimitState[provider];
+  if (!state?.hit) return 0;
+  return Math.max(0, state.resetTime - Date.now());
+};
+
+/** Resolve API base URL from provider key */
+const getApiBase = (provider: string): string => {
+  return PROVIDERS[provider] || PROVIDERS.mail_tm;
 };
 
 /** Rate limit kontrolü yapan fetch wrapper */
-const safeFetch = async (url: string, options?: RequestInit): Promise<Response> => {
-  if (isRateLimited()) {
-    throw new Error(`Rate limited. Retry after ${Math.ceil(getRateLimitRemainingMs() / 1000)}s`);
+const safeFetch = async (url: string, options?: RequestInit, provider = 'mail_tm'): Promise<Response> => {
+  if (isRateLimited(provider)) {
+    throw new Error(`Rate limited. Retry after ${Math.ceil(getRateLimitRemainingMs(provider) / 1000)}s`);
   }
 
   const res = await fetch(url, options);
 
   if (res.status === 429) {
-    rateLimitHit = true;
+    if (!rateLimitState[provider]) rateLimitState[provider] = { hit: false, resetTime: 0 };
+    rateLimitState[provider].hit = true;
     const retryAfter = res.headers.get('Retry-After');
     const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 60000;
-    rateLimitResetTime = Date.now() + waitMs;
+    rateLimitState[provider].resetTime = Date.now() + waitMs;
     throw new Error(`Rate limit exceeded. Please wait ${Math.ceil(waitMs / 1000)} seconds.`);
   }
 
@@ -41,7 +62,6 @@ const safeFetch = async (url: string, options?: RequestInit): Promise<Response> 
 
 /** Rastgele 16 karakterlik şifre üretir */
 const generatePassword = (): string => {
-  // Kripto güvenli rastgele şifre
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     const arr = new Uint8Array(16);
     crypto.getRandomValues(arr);
@@ -50,7 +70,7 @@ const generatePassword = (): string => {
   return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
 };
 
-/** E-posta konu/gönderici/intro'ya göre basit kategori belirler */
+/** E-posta konu/gönderici/intro'ya göre kategori belirler */
 const determineCategory = (subject: string, from: string, intro: string): AICategory => {
   const text = `${subject} ${from} ${intro}`.toLowerCase();
   if (/(code|verify|verification|otp|confirm|activation|pin\b|doğrulama|kod|şifre)/.test(text)) return 'Verification';
@@ -60,38 +80,87 @@ const determineCategory = (subject: string, from: string, intro: string): AICate
 };
 
 /**
- * Rastgele bir mail.tm hesabı oluşturur ve token alır.
- * Hata durumunda Error fırlatır — asla sahte veri dönmez.
+ * Tüm provider'lardan domain listesini toplar.
+ * Her domain hangi provider'a ait olduğunu da döner.
+ */
+export const fetchDomains = async (): Promise<{ domains: string[]; domainProviderMap: Record<string, string>; apiBase: string }> => {
+  const allDomains: string[] = [];
+  const domainProviderMap: Record<string, string> = {};
+  const providerKeys = Object.keys(PROVIDERS);
+
+  // Tüm provider'ları paralel olarak sorgula
+  const results = await Promise.allSettled(
+    providerKeys.map(async (providerKey) => {
+      const apiBase = PROVIDERS[providerKey];
+      try {
+        const res = await safeFetch(`${apiBase}/domains`, undefined, providerKey);
+        if (!res.ok) return { providerKey, domains: [] as string[] };
+        const data = await res.json();
+        const domains = data['hydra:member']?.map((d: any) => d.domain).filter(Boolean) || [];
+        return { providerKey, domains };
+      } catch {
+        return { providerKey, domains: [] as string[] };
+      }
+    })
+  );
+
+  for (const result of results) {
+    if (result.status === 'fulfilled' && result.value.domains.length > 0) {
+      for (const domain of result.value.domains) {
+        if (!allDomains.includes(domain)) {
+          allDomains.push(domain);
+          domainProviderMap[domain] = result.value.providerKey;
+        }
+      }
+    }
+  }
+
+  // Hiç domain bulunamazsa fallback
+  if (allDomains.length === 0) {
+    allDomains.push('dollicons.com');
+    domainProviderMap['dollicons.com'] = 'mail_tm';
+  }
+
+  return { domains: allDomains, domainProviderMap, apiBase: 'multi' };
+};
+
+/**
+ * Rastgele bir hesap oluşturur.
+ * Tüm provider'lardan domain toplar, rastgele birini seçer.
  */
 export const generateMailbox = async (): Promise<Mailbox> => {
-  // Domain'leri çek
-  const domainData = await fetchDomains();
-  const domain = domainData.domains[0];
-  if (!domain) {
+  const { domains, domainProviderMap } = await fetchDomains();
+
+  if (domains.length === 0) {
     throw new Error('Kullanılabilir domain bulunamadı.');
   }
+
+  // Rastgele domain seç
+  const domain = domains[Math.floor(Math.random() * domains.length)];
+  const provider = domainProviderMap[domain] || 'mail_tm';
+  const apiBase = getApiBase(provider);
 
   const username = Math.random().toString(36).substring(2, 12);
   const address = `${username}@${domain}`;
   const password = generatePassword();
 
   // Hesabı oluştur
-  const accRes = await safeFetch(`${API_BASE}/accounts`, {
+  const accRes = await safeFetch(`${apiBase}/accounts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, password })
-  });
+  }, provider);
 
   if (!accRes.ok && accRes.status !== 422) {
     throw new Error(`Hesap oluşturulamadı (HTTP ${accRes.status})`);
   }
 
   // Token al
-  const tokenRes = await safeFetch(`${API_BASE}/token`, {
+  const tokenRes = await safeFetch(`${apiBase}/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, password })
-  });
+  }, provider);
 
   if (!tokenRes.ok) {
     throw new Error(`Token alınamadı (HTTP ${tokenRes.status})`);
@@ -106,7 +175,7 @@ export const generateMailbox = async (): Promise<Mailbox> => {
   return {
     id: tokenData.id || address,
     address,
-    apiBase: 'mail_tm',
+    apiBase: provider,
     token: tokenData.token,
     password,
   };
@@ -114,16 +183,18 @@ export const generateMailbox = async (): Promise<Mailbox> => {
 
 /**
  * Kullanıcının belirlediği username + domain ile hesap oluşturur.
+ * Provider, domain'e göre otomatik belirlenir.
  */
-export const createCustomMailbox = async (username: string, domain: string, _apiBase: string): Promise<Mailbox> => {
+export const createCustomMailbox = async (username: string, domain: string, provider: string): Promise<Mailbox> => {
+  const apiBase = getApiBase(provider);
   const address = `${username}@${domain}`;
   const password = generatePassword();
 
-  const accRes = await safeFetch(`${API_BASE}/accounts`, {
+  const accRes = await safeFetch(`${apiBase}/accounts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, password })
-  });
+  }, provider);
 
   if (accRes.status === 422) {
     throw new Error('Bu kullanıcı adı zaten alınmış.');
@@ -133,11 +204,11 @@ export const createCustomMailbox = async (username: string, domain: string, _api
     throw new Error(`Hesap oluşturulamadı (HTTP ${accRes.status})`);
   }
 
-  const tokenRes = await safeFetch(`${API_BASE}/token`, {
+  const tokenRes = await safeFetch(`${apiBase}/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, password })
-  });
+  }, provider);
 
   if (!tokenRes.ok) {
     throw new Error(`Token alınamadı (HTTP ${tokenRes.status})`);
@@ -148,7 +219,7 @@ export const createCustomMailbox = async (username: string, domain: string, _api
   return {
     id: tokenData.id || address,
     address,
-    apiBase: 'mail_tm',
+    apiBase: provider,
     token: tokenData.token,
     password,
   };
@@ -156,13 +227,16 @@ export const createCustomMailbox = async (username: string, domain: string, _api
 
 /**
  * Aktif hesabın gelen kutusundaki mesajları çeker.
+ * Mailbox'ın apiBase'ine göre doğru provider'a yönlendirir.
  */
 export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   if (!mailbox.token) return [];
 
-  const res = await safeFetch(`${API_BASE}/messages?page=1`, {
+  const apiBase = getApiBase(mailbox.apiBase);
+
+  const res = await safeFetch(`${apiBase}/messages?page=1`, {
     headers: { Authorization: `Bearer ${mailbox.token}` }
-  });
+  }, mailbox.apiBase);
 
   if (!res.ok) return [];
 
@@ -191,9 +265,11 @@ export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => 
 export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
   if (!mailbox.token) return null;
 
-  const res = await safeFetch(`${API_BASE}/messages/${messageId}`, {
+  const apiBase = getApiBase(mailbox.apiBase);
+
+  const res = await safeFetch(`${apiBase}/messages/${messageId}`, {
     headers: { Authorization: `Bearer ${mailbox.token}` }
-  });
+  }, mailbox.apiBase);
 
   if (!res.ok) return null;
 
@@ -229,29 +305,15 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
 export const deleteMessage = async (mailbox: Mailbox, messageId: string): Promise<boolean> => {
   if (!mailbox.token) return false;
 
+  const apiBase = getApiBase(mailbox.apiBase);
+
   try {
-    const res = await safeFetch(`${API_BASE}/messages/${messageId}`, {
+    const res = await safeFetch(`${apiBase}/messages/${messageId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${mailbox.token}` }
-    });
+    }, mailbox.apiBase);
     return res.ok || res.status === 204;
   } catch {
     return false;
-  }
-};
-
-/**
- * Kullanılabilir domain listesini çeker.
- */
-export const fetchDomains = async (): Promise<{ domains: string[]; apiBase: string }> => {
-  try {
-    const res = await safeFetch(`${API_BASE}/domains`);
-    if (!res.ok) throw new Error(`Domain fetch failed (HTTP ${res.status})`);
-    const data = await res.json();
-    const domains = data['hydra:member']?.map((d: any) => d.domain) || [];
-    return { domains, apiBase: 'mail_tm' };
-  } catch {
-    // Fallback domain listesi
-    return { domains: ['karenkey.com'], apiBase: 'mail_tm' };
   }
 };
