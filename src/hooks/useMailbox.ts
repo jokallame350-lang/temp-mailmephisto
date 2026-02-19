@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Mailbox } from '../types';
-import { generateMailbox, createCustomMailbox, fetchDomains } from '../services/mailService';
+import { generateMailbox, createCustomMailbox, fetchDomains, storeCredentials, onTokenRefresh } from '../services/mailService';
 import { getCredits } from '../components/RewardedAdModal';
 
 const STORAGE_KEY = 'nexus_accounts_v5';
@@ -48,6 +48,12 @@ export function useMailbox() {
                         setAccounts(valid);
                         setActiveAccountId(valid[0].id);
                         isFirstLoadRef.current = false;
+                        // Re-store credentials for token refresh
+                        valid.forEach((a: Mailbox) => {
+                            if (a.password && a.id && a.address) {
+                                storeCredentials(a.id, a.address, a.password);
+                            }
+                        });
                         if (valid.length !== parsed.length) {
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(valid));
                         }
@@ -59,6 +65,19 @@ export function useMailbox() {
         // Hiç hesap yoksa yeni oluştur (ilk kullanım — ücretsiz)
         createQuickAccount(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Token refresh listener — update token in accounts when auto-refreshed
+    useEffect(() => {
+        onTokenRefresh((mailboxId: string, newToken: string) => {
+            setAccounts(prev => {
+                const updated = prev.map(a =>
+                    a.id === mailboxId ? { ...a, token: newToken } : a
+                );
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+                return updated;
+            });
+        });
     }, []);
 
     // Hesaplar değiştiğinde localStorage'a kaydet
@@ -117,6 +136,10 @@ export function useMailbox() {
             if (!newMailbox || !newMailbox.address || newMailbox.id === 'error') {
                 throw new Error('Connection failed');
             }
+            // Store credentials for token refresh
+            if (newMailbox.password) {
+                storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
+            }
             setAccounts(prev => [newMailbox, ...prev]);
             setActiveAccountId(newMailbox.id);
             return { success: true };
@@ -143,6 +166,10 @@ export function useMailbox() {
             const newMailbox: Mailbox = { ...await createCustomMailbox(username, domain, apiBase), createdAt: Date.now() };
             if (!newMailbox || newMailbox.id === 'error') {
                 throw new Error('Connection failed');
+            }
+            // Store credentials for token refresh
+            if (newMailbox.password) {
+                storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
             }
             setAccounts(prev => [newMailbox, ...prev]);
             setActiveAccountId(newMailbox.id);

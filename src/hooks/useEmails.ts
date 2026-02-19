@@ -29,8 +29,10 @@ export function useEmails(
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
     const [currentEmailDetail, setCurrentEmailDetail] = useState<EmailDetail | null>(null);
     const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+    const deletedIdsRef = useRef<Set<string>>(new Set());
     const [isLoadingDetail, setIsLoadingDetail] = useState(false);
     const [isLoadingEmails, setIsLoadingEmails] = useState(false);
+    const [fetchError, setFetchError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
     const [stats, setStats] = useState<AppStats>(() => {
@@ -45,11 +47,18 @@ export function useEmails(
     const previousEmailCountRef = useRef(0);
 
     // Aktif hesap değiştiğinde sıfırla
+    // Keep deletedIdsRef in sync
+    useEffect(() => {
+        deletedIdsRef.current = deletedIds;
+    }, [deletedIds]);
+
     useEffect(() => {
         setEmails([]);
         setSelectedEmailId(null);
         setCurrentEmailDetail(null);
         setDeletedIds(new Set());
+        deletedIdsRef.current = new Set();
+        setFetchError(null);
         previousEmailCountRef.current = 0;
     }, [activeAccount?.id]);
 
@@ -92,7 +101,8 @@ export function useEmails(
         try {
             const fetched = await getMessages(activeAccount);
             if (fetched) {
-                const filtered = fetched.filter(e => !deletedIds.has(e.id));
+                const currentDeletedIds = deletedIdsRef.current;
+                const filtered = fetched.filter(e => !currentDeletedIds.has(e.id));
 
                 // Yeni mail geldi mi?
                 if (filtered.length > previousEmailCountRef.current && previousEmailCountRef.current !== 0) {
@@ -124,13 +134,26 @@ export function useEmails(
                     });
                 }
                 previousEmailCountRef.current = filtered.length;
-                setEmails(filtered.sort((a, b) => Number(b.id) - Number(a.id)));
+                // Sort by createdAt date (descending) — NOT by id which can be UUID
+                setEmails(filtered.sort((a, b) => {
+                    const dateA = new Date(a.createdAt).getTime();
+                    const dateB = new Date(b.createdAt).getTime();
+                    if (!isNaN(dateB) && !isNaN(dateA)) return dateB - dateA;
+                    // Fallback: string comparison
+                    return String(b.id).localeCompare(String(a.id));
+                }));
+                setFetchError(null);
             }
             setProgress(0);
-        } catch (err) {
+        } catch (err: any) {
             console.warn('Email fetch failed:', err);
+            const msg = err?.message || '';
+            if (msg.includes('Rate limit')) {
+                setFetchError(msg);
+            }
         }
-    }, [activeAccount, deletedIds, playNotificationSound, shouldNotify, onNewEmail]);
+        // deletedIds is accessed via ref, so it doesn't need to be a dependency
+    }, [activeAccount, playNotificationSound, shouldNotify, onNewEmail]);
 
     const handleManualRefresh = useCallback(async () => {
         setIsLoadingEmails(true);
@@ -239,6 +262,7 @@ export function useEmails(
         currentEmailDetail,
         isLoadingDetail,
         isLoadingEmails,
+        fetchError,
         progress,
         searchQuery,
         stats,

@@ -17,6 +17,37 @@ const HYDRA_PROVIDERS: Record<string, string> = {
 
 const GUERRILLA_API = 'https://api.guerrillamail.com/ajax.php';
 
+// ─── Credential Store (for token refresh) ────────────────────────────
+const credentialStore: Record<string, { address: string; password: string }> = {};
+
+export const storeCredentials = (mailboxId: string, address: string, password: string) => {
+  credentialStore[mailboxId] = { address, password };
+};
+
+const refreshHydraToken = async (provider: string, address: string, password: string): Promise<string | null> => {
+  try {
+    const apiBase = getApiBase(provider);
+    const res = await fetch(`${apiBase}/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, password }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.token || null;
+  } catch {
+    return null;
+  }
+};
+
+// Event to notify when a token is refreshed
+type TokenRefreshCallback = (mailboxId: string, newToken: string) => void;
+let tokenRefreshListener: TokenRefreshCallback | null = null;
+
+export const onTokenRefresh = (cb: TokenRefreshCallback) => {
+  tokenRefreshListener = cb;
+};
+
 // ─── Rate Limit Tracking ─────────────────────────────────────────────
 const rateLimitState: Record<string, { hit: boolean; resetTime: number }> = {};
 
@@ -41,12 +72,39 @@ const getApiBase = (provider: string): string => {
   return HYDRA_PROVIDERS[provider] || HYDRA_PROVIDERS.mail_tm;
 };
 
-const safeFetch = async (url: string, options?: RequestInit, provider = 'mail_tm'): Promise<Response> => {
+const safeFetch = async (
+  url: string,
+  options?: RequestInit,
+  provider = 'mail_tm',
+  mailboxId?: string,
+  _retried = false
+): Promise<Response> => {
   if (isRateLimited(provider)) {
     throw new Error(`Rate limited. Retry after ${Math.ceil(getRateLimitRemainingMs(provider) / 1000)}s`);
   }
 
   const res = await fetch(url, options);
+
+  // Token expired — auto-refresh
+  if (res.status === 401 && !_retried && mailboxId && !isGuerrilla(provider)) {
+    const creds = credentialStore[mailboxId];
+    if (creds) {
+      const newToken = await refreshHydraToken(provider, creds.address, creds.password);
+      if (newToken) {
+        // Notify listener (useMailbox) about refreshed token
+        tokenRefreshListener?.(mailboxId, newToken);
+        // Retry the request with new token
+        const newOptions = {
+          ...options,
+          headers: {
+            ...(options?.headers || {}),
+            Authorization: `Bearer ${newToken}`,
+          },
+        };
+        return safeFetch(url, newOptions, provider, mailboxId, true);
+      }
+    }
+  }
 
   if (res.status === 429) {
     if (!rateLimitState[provider]) rateLimitState[provider] = { hit: false, resetTime: 0 };
@@ -388,7 +446,7 @@ export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => 
   const apiBase = getApiBase(mailbox.apiBase);
   const res = await safeFetch(`${apiBase}/messages?page=1`, {
     headers: { Authorization: `Bearer ${mailbox.token}` }
-  }, mailbox.apiBase);
+  }, mailbox.apiBase, mailbox.id);
 
   if (!res.ok) return [];
 
@@ -425,7 +483,7 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
   const apiBase = getApiBase(mailbox.apiBase);
   const res = await safeFetch(`${apiBase}/messages/${messageId}`, {
     headers: { Authorization: `Bearer ${mailbox.token}` }
-  }, mailbox.apiBase);
+  }, mailbox.apiBase, mailbox.id);
 
   if (!res.ok) return null;
 
@@ -472,7 +530,7 @@ export const deleteMessage = async (mailbox: Mailbox, messageId: string): Promis
     const res = await safeFetch(`${apiBase}/messages/${messageId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${mailbox.token}` }
-    }, mailbox.apiBase);
+    }, mailbox.apiBase, mailbox.id);
     return res.ok || res.status === 204;
   } catch {
     return false;
