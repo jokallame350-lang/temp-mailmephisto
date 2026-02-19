@@ -4,19 +4,20 @@ import { Mailbox, EmailSummary, EmailDetail, AICategory } from '../types';
  * Multi-Provider Temporary Email Service
  * 
  * Supports:
- * - mail.tm  (primary)
- * - mail.gw  (secondary — same API structure, different domains)
- * 
- * Both providers use identical Hydra-based REST APIs,
- * so all account/message operations work the same way.
+ * - mail.tm    (Hydra REST API)
+ * - mail.gw    (Hydra REST API — sister of mail.tm)
+ * - guerrilla  (Session-based REST API — different domains)
  */
 
-const PROVIDERS: Record<string, string> = {
+// ─── Provider Registry ───────────────────────────────────────────────
+const HYDRA_PROVIDERS: Record<string, string> = {
   mail_tm: 'https://api.mail.tm',
   mail_gw: 'https://api.mail.gw',
 };
 
-// Rate limit tracking (per-provider)
+const GUERRILLA_API = 'https://api.guerrillamail.com/ajax.php';
+
+// ─── Rate Limit Tracking ─────────────────────────────────────────────
 const rateLimitState: Record<string, { hit: boolean; resetTime: number }> = {};
 
 export const isRateLimited = (provider = 'mail_tm'): boolean => {
@@ -35,12 +36,11 @@ export const getRateLimitRemainingMs = (provider = 'mail_tm'): number => {
   return Math.max(0, state.resetTime - Date.now());
 };
 
-/** Resolve API base URL from provider key */
+// ─── Utilities ───────────────────────────────────────────────────────
 const getApiBase = (provider: string): string => {
-  return PROVIDERS[provider] || PROVIDERS.mail_tm;
+  return HYDRA_PROVIDERS[provider] || HYDRA_PROVIDERS.mail_tm;
 };
 
-/** Rate limit kontrolü yapan fetch wrapper */
 const safeFetch = async (url: string, options?: RequestInit, provider = 'mail_tm'): Promise<Response> => {
   if (isRateLimited(provider)) {
     throw new Error(`Rate limited. Retry after ${Math.ceil(getRateLimitRemainingMs(provider) / 1000)}s`);
@@ -60,7 +60,6 @@ const safeFetch = async (url: string, options?: RequestInit, provider = 'mail_tm
   return res;
 };
 
-/** Rastgele 16 karakterlik şifre üretir */
 const generatePassword = (): string => {
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     const arr = new Uint8Array(16);
@@ -70,7 +69,6 @@ const generatePassword = (): string => {
   return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
 };
 
-/** E-posta konu/gönderici/intro'ya göre kategori belirler */
 const determineCategory = (subject: string, from: string, intro: string): AICategory => {
   const text = `${subject} ${from} ${intro}`.toLowerCase();
   if (/(code|verify|verification|otp|confirm|activation|pin\b|doğrulama|kod|şifre)/.test(text)) return 'Verification';
@@ -79,19 +77,157 @@ const determineCategory = (subject: string, from: string, intro: string): AICate
   return 'Other';
 };
 
+const isGuerrilla = (provider: string): boolean => provider === 'guerrilla';
+
+// ─── Guerrilla Mail Helpers ──────────────────────────────────────────
+
+/** Guerrilla Mail'den kullanılabilir domainleri çeker */
+const getGuerrillaDomains = async (): Promise<string[]> => {
+  try {
+    const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
+    if (!res.ok) return [];
+    const data = await res.json();
+    // Guerrilla Mail'in ana domainini al
+    const addr: string = data.email_addr || '';
+    const domain = addr.split('@')[1];
+    // Guerrilla Mail birden fazla domain sunabilir, ama API tek hesap döner
+    // Bilinen domainleri de ekleyelim
+    const domains = new Set<string>();
+    if (domain) domains.add(domain);
+    // Guerrilla'nın bilinen domainleri
+    ['guerrillamailblock.com', 'guerrillamail.com', 'grr.la', 'sharklasers.com', 'guerrillamail.info', 'guerrillamail.net', 'guerrillamail.de'].forEach(d => domains.add(d));
+    return Array.from(domains);
+  } catch {
+    return [];
+  }
+};
+
+/** Guerrilla Mail ile hesap oluşturur */
+const createGuerrillaMailbox = async (emailUser?: string): Promise<Mailbox> => {
+  // İlk adım: yeni email adresi al
+  const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
+  if (!res.ok) throw new Error(`Guerrilla Mail hesabı oluşturulamadı (HTTP ${res.status})`);
+  const data = await res.json();
+  const sid = data.sid_token;
+
+  let address = data.email_addr;
+
+  // Eğer custom username istendiyse, set_email_user ile değiştir
+  if (emailUser) {
+    const setRes = await safeFetch(
+      `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(emailUser)}&lang=en&sid_token=${sid}`,
+      undefined, 'guerrilla'
+    );
+    if (setRes.ok) {
+      const setData = await setRes.json();
+      address = setData.email_addr || address;
+    }
+  }
+
+  return {
+    id: sid,
+    address,
+    apiBase: 'guerrilla',
+    token: sid,
+    password: '',
+  };
+};
+
+/** Guerrilla Mail mesajlarını çeker */
+const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
+  const sid = mailbox.token;
+  if (!sid) return [];
+
+  try {
+    const res = await safeFetch(
+      `${GUERRILLA_API}?f=check_email&seq=0&sid_token=${sid}`,
+      undefined, 'guerrilla'
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = data.list;
+    if (!Array.isArray(list)) return [];
+
+    return list.map((msg: any) => ({
+      id: String(msg.mail_id),
+      from: {
+        address: msg.mail_from || 'unknown',
+        name: msg.mail_from?.split('@')[0] || 'unknown',
+      },
+      subject: msg.mail_subject || '',
+      intro: msg.mail_excerpt || 'No preview available',
+      seen: msg.mail_read === 1,
+      createdAt: msg.mail_date || '',
+      aiCategory: determineCategory(msg.mail_subject || '', msg.mail_from || '', msg.mail_excerpt || ''),
+    }));
+  } catch {
+    return [];
+  }
+};
+
+/** Guerrilla Mail tek mesaj detayını çeker */
+const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
+  const sid = mailbox.token;
+  if (!sid) return null;
+
+  try {
+    const res = await safeFetch(
+      `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${sid}`,
+      undefined, 'guerrilla'
+    );
+    if (!res.ok) return null;
+    const msg = await res.json();
+
+    return {
+      id: String(msg.mail_id),
+      from: {
+        address: msg.mail_from || 'unknown',
+        name: msg.mail_from?.split('@')[0] || 'unknown',
+      },
+      subject: msg.mail_subject || '',
+      intro: msg.mail_excerpt || '',
+      seen: true,
+      createdAt: msg.mail_date || '',
+      aiCategory: determineCategory(msg.mail_subject || '', msg.mail_from || '', msg.mail_excerpt || ''),
+      text: msg.mail_body ? msg.mail_body.replace(/<[^>]*>/g, '') : '',
+      html: msg.mail_body ? [msg.mail_body] : [],
+      hasAttachments: false,
+      attachments: [],
+    };
+  } catch {
+    return null;
+  }
+};
+
+/** Guerrilla Mail mesaj silme */
+const deleteGuerrillaMessage = async (mailbox: Mailbox, messageId: string): Promise<boolean> => {
+  const sid = mailbox.token;
+  if (!sid) return false;
+  try {
+    const res = await safeFetch(
+      `${GUERRILLA_API}?f=del_email&email_ids[]=${messageId}&sid_token=${sid}`,
+      undefined, 'guerrilla'
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+};
+
+// ─── Unified Public API ──────────────────────────────────────────────
+
 /**
  * Tüm provider'lardan domain listesini toplar.
- * Her domain hangi provider'a ait olduğunu da döner.
  */
 export const fetchDomains = async (): Promise<{ domains: string[]; domainProviderMap: Record<string, string>; apiBase: string }> => {
   const allDomains: string[] = [];
   const domainProviderMap: Record<string, string> = {};
-  const providerKeys = Object.keys(PROVIDERS);
 
-  // Tüm provider'ları paralel olarak sorgula
-  const results = await Promise.allSettled(
-    providerKeys.map(async (providerKey) => {
-      const apiBase = PROVIDERS[providerKey];
+  // Hydra providers + Guerrilla Mail paralel sorgula
+  const results = await Promise.allSettled([
+    // Hydra providers (mail.tm, mail.gw)
+    ...Object.keys(HYDRA_PROVIDERS).map(async (providerKey) => {
+      const apiBase = HYDRA_PROVIDERS[providerKey];
       try {
         const res = await safeFetch(`${apiBase}/domains`, undefined, providerKey);
         if (!res.ok) return { providerKey, domains: [] as string[] };
@@ -101,8 +237,13 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
       } catch {
         return { providerKey, domains: [] as string[] };
       }
-    })
-  );
+    }),
+    // Guerrilla Mail
+    (async () => {
+      const domains = await getGuerrillaDomains();
+      return { providerKey: 'guerrilla', domains };
+    })(),
+  ]);
 
   for (const result of results) {
     if (result.status === 'fulfilled' && result.value.domains.length > 0) {
@@ -115,7 +256,7 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
     }
   }
 
-  // Hiç domain bulunamazsa fallback
+  // Fallback
   if (allDomains.length === 0) {
     allDomains.push('dollicons.com');
     domainProviderMap['dollicons.com'] = 'mail_tm';
@@ -125,8 +266,7 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
 };
 
 /**
- * Rastgele bir hesap oluşturur.
- * Tüm provider'lardan domain toplar, rastgele birini seçer.
+ * Rastgele hesap oluşturur — tüm provider'lardan domain toplar, rastgele seçer.
  */
 export const generateMailbox = async (): Promise<Mailbox> => {
   const { domains, domainProviderMap } = await fetchDomains();
@@ -135,16 +275,20 @@ export const generateMailbox = async (): Promise<Mailbox> => {
     throw new Error('Kullanılabilir domain bulunamadı.');
   }
 
-  // Rastgele domain seç
   const domain = domains[Math.floor(Math.random() * domains.length)];
   const provider = domainProviderMap[domain] || 'mail_tm';
-  const apiBase = getApiBase(provider);
 
+  // Guerrilla Mail — farklı akış
+  if (isGuerrilla(provider)) {
+    return createGuerrillaMailbox();
+  }
+
+  // Hydra providers (mail.tm / mail.gw)
+  const apiBase = getApiBase(provider);
   const username = Math.random().toString(36).substring(2, 12);
   const address = `${username}@${domain}`;
   const password = generatePassword();
 
-  // Hesabı oluştur
   const accRes = await safeFetch(`${apiBase}/accounts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -155,7 +299,6 @@ export const generateMailbox = async (): Promise<Mailbox> => {
     throw new Error(`Hesap oluşturulamadı (HTTP ${accRes.status})`);
   }
 
-  // Token al
   const tokenRes = await safeFetch(`${apiBase}/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -182,10 +325,15 @@ export const generateMailbox = async (): Promise<Mailbox> => {
 };
 
 /**
- * Kullanıcının belirlediği username + domain ile hesap oluşturur.
- * Provider, domain'e göre otomatik belirlenir.
+ * Custom username + domain ile hesap oluşturur.
  */
 export const createCustomMailbox = async (username: string, domain: string, provider: string): Promise<Mailbox> => {
+  // Guerrilla Mail — set_email_user kullanır
+  if (isGuerrilla(provider)) {
+    return createGuerrillaMailbox(username);
+  }
+
+  // Hydra providers
   const apiBase = getApiBase(provider);
   const address = `${username}@${domain}`;
   const password = generatePassword();
@@ -226,14 +374,18 @@ export const createCustomMailbox = async (username: string, domain: string, prov
 };
 
 /**
- * Aktif hesabın gelen kutusundaki mesajları çeker.
- * Mailbox'ın apiBase'ine göre doğru provider'a yönlendirir.
+ * Mesajları çeker — provider'a göre doğru API'ye yönlendirir.
  */
 export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   if (!mailbox.token) return [];
 
-  const apiBase = getApiBase(mailbox.apiBase);
+  // Guerrilla Mail
+  if (isGuerrilla(mailbox.apiBase)) {
+    return getGuerrillaMessages(mailbox);
+  }
 
+  // Hydra providers
+  const apiBase = getApiBase(mailbox.apiBase);
   const res = await safeFetch(`${apiBase}/messages?page=1`, {
     headers: { Authorization: `Bearer ${mailbox.token}` }
   }, mailbox.apiBase);
@@ -242,7 +394,6 @@ export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => 
 
   const data = await res.json();
   const members = data['hydra:member'];
-
   if (!Array.isArray(members)) return [];
 
   return members.map((msg: any) => ({
@@ -260,13 +411,18 @@ export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => 
 };
 
 /**
- * Tek bir mesajın tam detayını çeker.
+ * Tek mesaj detayı çeker.
  */
 export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
   if (!mailbox.token) return null;
 
-  const apiBase = getApiBase(mailbox.apiBase);
+  // Guerrilla Mail
+  if (isGuerrilla(mailbox.apiBase)) {
+    return getGuerrillaMessageDetail(mailbox, messageId);
+  }
 
+  // Hydra providers
+  const apiBase = getApiBase(mailbox.apiBase);
   const res = await safeFetch(`${apiBase}/messages/${messageId}`, {
     headers: { Authorization: `Bearer ${mailbox.token}` }
   }, mailbox.apiBase);
@@ -300,13 +456,18 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
 };
 
 /**
- * Bir mesajı siler.
+ * Mesaj siler.
  */
 export const deleteMessage = async (mailbox: Mailbox, messageId: string): Promise<boolean> => {
   if (!mailbox.token) return false;
 
-  const apiBase = getApiBase(mailbox.apiBase);
+  // Guerrilla Mail
+  if (isGuerrilla(mailbox.apiBase)) {
+    return deleteGuerrillaMessage(mailbox, messageId);
+  }
 
+  // Hydra providers
+  const apiBase = getApiBase(mailbox.apiBase);
   try {
     const res = await safeFetch(`${apiBase}/messages/${messageId}`, {
       method: 'DELETE',

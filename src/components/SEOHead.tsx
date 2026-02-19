@@ -28,6 +28,9 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang }) => {
             ? 'geçici e-posta, kullan at mail, temp mail, anonim e-posta, sahte mail, güvenli e-posta, gizlilik, disposable email'
             : 'temp mail, temporary email, disposable email, fake email, anonymous email, privacy, burner email, throwaway email');
 
+        // Google Site Verification
+        updateMeta('google-site-verification', 'ilHoKSVNnesPjnRlavAgpYELKUaVhvyk7YiyS2a02NE');
+
         // Canonical
         updateLink('canonical', siteUrl + '/');
 
