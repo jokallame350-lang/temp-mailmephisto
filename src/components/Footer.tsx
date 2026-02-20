@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { translations, Language } from '../translations';
 import LegalModal from './LegalModal';
-import { Mail, Shield, Clock, Wrench, BookOpen, HelpCircle, FileText, Scale, ExternalLink } from 'lucide-react';
+import { Mail, Shield, Clock, Wrench, BookOpen, HelpCircle, FileText, Scale, ExternalLink, Code2, MessageSquare } from 'lucide-react';
 
 interface FooterProps {
   lang: Language;
@@ -95,6 +95,18 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                   <Link to="/help" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
                     <HelpCircle size={10} />
                     FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <MessageSquare size={10} />
+                    {lang === 'tr' ? 'İletişim' : 'Contact'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/api-docs" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Code2 size={10} />
+                    API
                   </Link>
                 </li>
               </ul>

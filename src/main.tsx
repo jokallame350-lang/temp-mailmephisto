@@ -11,6 +11,8 @@ const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
 const ToolsPage = lazy(() => import('./pages/ToolsPage'));
 const TenMinuteMailPage = lazy(() => import('./pages/TenMinuteMailPage'));
 const HelpPage = lazy(() => import('./pages/HelpPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -53,6 +55,8 @@ const AppRouter = () => {
           <Route path="/tools" element={<ToolsPage lang={lang} />} />
           <Route path="/10minutemail" element={<TenMinuteMailPage lang={lang} />} />
           <Route path="/help" element={<HelpPage lang={lang} />} />
+          <Route path="/contact" element={<ContactPage lang={lang} />} />
+          <Route path="/api-docs" element={<ApiDocsPage lang={lang} />} />
           {/* Catch-all: redirect to home */}
           <Route path="*" element={<App />} />
         </Routes>
