@@ -1,63 +1,107 @@
-# MephistoMail — Privacy-First Disposable Email
+# 🛡️ MephistoMail — The Privacy-First Disposable Email Shield
 
-MephistoMail is a privacy-first, temporary email service designed to bypass trackers and maintain zero-persistence. It operates without cookies and stores data exclusively in volatile memory (RAM) and local client-side storage (localStorage).
+![License](https://img.shields.io/badge/license-MIT-blue.svg) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue) ![React](https://img.shields.io/badge/React-18-61DAFB) ![Vite](https://img.shields.io/badge/Vite-5.0-646CFF) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC)
 
-## Key Features
-- **Zero-Persistence:** Emails are stored in backend RAM and purged upon session termination.
-- **100% Cookie-Free:** No tracking cookies, no consent banners.
-- **Domain Rotation:** Switch between available TLDs.
-- **QR Code Handoff:** Transfer your email session to mobile instantly.
-- **Secure Password Generator:** Create high-entropy passwords client-side.
-- **Multi-Language:** English and Turkish support.
-- **PWA Ready:** Installable as a lightweight web app.
+> **"Identity is fluid. Privacy is absolute."**
 
-## Tech Stack
-- **Frontend:** React 18 + TypeScript + Vite
-- **State Management:** React Hooks (useState, useCallback, useRef)
-- **Storage:** localStorage (for account persistence)
-- **Styling:** Tailwind CSS + Lucide Icons
-- **Email API:** mail.tm (REST API with JWT auth)
-- **Deployment:** Vercel (Static)
+MephistoMail is a cutting-edge, **RAM-only** disposable email service built for speed, anonymity, and zero-persistence. Designed to bypass trackers and protect your primary inbox from spam, it operates entirely in volatile memory, ensuring no logs are ever written to disk.
 
-## Project Structure
-```
-src/
-├── main.tsx              # React entry point
-├── App.tsx               # Main app component & state management
-├── types.ts              # TypeScript type definitions
-├── translations.ts       # EN/TR translations
-├── index.css             # Global styles + Tailwind
-├── components/
-│   ├── Header.tsx        # Navigation bar with account switcher
-│   ├── AddressBar.tsx    # Email address display & actions
-│   ├── EmailList.tsx     # Inbox message list
-│   ├── EmailViewer.tsx   # Email detail viewer with DOMPurify
-│   ├── CustomAddressModal.tsx  # Custom email creation
-│   ├── QRCodeModal.tsx   # QR code for mobile transfer
-│   ├── PasswordGenModal.tsx    # Secure password generator
-│   ├── LimitModal.tsx    # Account limit alerts
-│   ├── LegalModal.tsx    # Privacy policy & Terms
-│   ├── Footer.tsx        # Footer with legal links
-│   └── SEOContent.tsx    # SEO article & FAQ section
-└── services/
-    └── mailService.ts    # mail.tm API integration
-```
+🌐 **Live Demo:** [mephistomail.site](https://mephistomail.site)
 
-## Running Locally
+<p align="center">
+  <img src="public/screenshot_preview.png" alt="MephistoMail Interface" width="800" onerror="this.style.display='none'"/>
+  <br>
+  <em>(Add a screenshot here to showcase the UI)</em>
+</p>
 
-```bash
-git clone https://github.com/jokallame350-lang/temp-mailmephisto.git
-cd temp-mailmephisto
-npm install
-npm run dev
-```
+## ✨ Key Features
 
-The app will be available at `http://localhost:3000`.
+- 🚀 **Instant Delivery:** Real-time WebSocket connection for sub-second email reception.
+- 🧠 **RAM-Only Architecture:** Emails are stored in volatile memory and purged instantly upon session termination. **Zero logs.**
+- 📱 **PWA Support:** Installable as a native-like app on iOS and Android. Works offline.
+- 🔄 **Smart Domain Rotation:** Automatically cycles through available domains to bypass blocklists.
+- 📲 **QR Code Handoff:** Instantly transfer your active session to mobile via QR code.
+- 🔐 **Client-Side Encryption:** Passwords and keys are generated locally in your browser.
+- 🌑 **Dark Mode UI:** Sleek, modern interface designed for focus and readability.
+- 🌍 **Multi-Language:** Built-in support for English, Turkish, Spanish, German, and French.
 
-## Building for Production
+## 🛠️ Tech Stack
+
+Built with modern web technologies for performance and maintainability:
+
+- **Frontend:** [React 18](https://react.dev/)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/)
+- **State Management:** React Hooks
+- **Email API:** [mail.tm](https://mail.tm/) / [mail.gw](https://mail.gw/)
+
+## 🚀 Getting Started
+
+Follow these steps to run MephistoMail locally on your machine.
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/jokallame350-lang/temp-mailmephisto.git
+    cd temp-mailmephisto
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
+
+3.  **Start the development server:**
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    ```
+
+4.  **Open your browser:**
+    Navigate to `http://localhost:5173` (or the port shown in your terminal).
+
+## 📦 Building for Production
+
+To create an optimized production build:
 
 ```bash
 npm run build
 ```
 
-Output will be in the `dist/` directory.
+The output will be in the `dist/` directory, ready to be deployed to Vercel, Netlify, or any static host.
+
+## 🤝 Contributing
+
+Contributions are welcome! If you have ideas for improvements or bug fixes:
+
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/amazing-feature`).
+3.  Commit your changes (`git commit -m 'Add amazing feature'`).
+4.  Push to the branch (`git push origin feature/amazing-feature`).
+5.  Open a Pull Request.
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## 👤 Author
+
+**Crow | Indie Developer**
+
+- 𝕏 (Twitter): [@benmxrt](https://x.com/benmxrt)
+- 🌐 Website: [mephistomail.site](https://mephistomail.site)
+
+---
+
+*Enjoying MephistoMail? Give it a ⭐️ star on GitHub!*
+
