@@ -25,13 +25,13 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
   };
 
   return (
-    <footer className="py-12 px-6 bg-black/30 border-t border-white/5 mt-auto" role="contentinfo">
+    <footer className="py-8 sm:py-12 px-4 sm:px-6 bg-black/30 border-t border-white/5 mt-auto" role="contentinfo">
       <div className="max-w-7xl mx-auto">
 
         {/* Newsletter Section */}
-        <div className="border-b border-white/5 pb-10 mb-10">
+        <div className="border-b border-white/5 pb-8 sm:pb-10 mb-8 sm:mb-10">
           <div className="max-w-2xl mx-auto text-center">
-            <h3 className="text-lg font-bold text-white mb-2">
+            <h3 className="text-base sm:text-lg font-bold text-white mb-2">
               {lang === 'tr' ? '📬 Gizlilik Bültenimize Abone Olun' : '📬 Subscribe to Our Privacy Newsletter'}
             </h3>
             <p className="text-slate-500 text-xs mb-5">
@@ -45,14 +45,14 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                 {lang === 'tr' ? 'Teşekkürler! Abone oldunuz.' : 'Thanks! You\'re subscribed.'}
               </div>
             ) : (
-              <form onSubmit={handleNewsletter} className="flex gap-2 max-w-md mx-auto">
+              <form onSubmit={handleNewsletter} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
                 <input
                   type="email"
                   required
                   value={newsletterEmail}
                   onChange={e => setNewsletterEmail(e.target.value)}
                   placeholder={lang === 'tr' ? 'E-posta adresiniz' : 'Your email address'}
-                  className="flex-1 px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-red-500/40 transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-xl text-white text-sm sm:text-xs placeholder:text-slate-600 focus:outline-none focus:border-red-500/40 transition-colors"
                 />
                 <button
                   type="submit"
@@ -67,9 +67,9 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
         </div>
 
         {/* Main Footer Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 mb-8 sm:mb-10">
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-1 sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-orange-600 flex items-center justify-center">
                 <Mail size={14} className="text-white" />

@@ -225,13 +225,13 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
       </div>
 
       {/* Konu + Gönderici */}
-      <div className="p-4 md:p-6 border-b border-white/5 space-y-4 bg-transparent">
-        <h1 className="text-lg md:text-2xl font-bold text-white leading-tight">{email.subject || t.noSubject}</h1>
-        <div className="flex flex-wrap items-center gap-3 md:gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-            <User className="w-3 h-3 text-red-500" aria-hidden="true" />
-            <span className="text-slate-200 font-medium">{fromName}</span>
-            <span className="text-slate-500 hidden sm:inline">&lt;{fromAddress}&gt;</span>
+      <div className="p-3 sm:p-4 md:p-6 border-b border-white/5 space-y-3 sm:space-y-4 bg-transparent">
+        <h1 className="text-base sm:text-lg md:text-2xl font-bold text-white leading-tight">{email.subject || t.noSubject}</h1>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-[11px] sm:text-xs text-slate-400">
+          <div className="flex items-center gap-2 bg-white/5 px-2.5 sm:px-3 py-1.5 rounded-full border border-white/5 max-w-full overflow-hidden">
+            <User className="w-3 h-3 text-red-500 flex-shrink-0" aria-hidden="true" />
+            <span className="text-slate-200 font-medium truncate">{fromName}</span>
+            <span className="text-slate-500 hidden sm:inline truncate">&lt;{fromAddress}&gt;</span>
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="w-3 h-3 text-slate-400" aria-hidden="true" />
@@ -242,21 +242,21 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
 
       {/* OTP Kodu Algılandıysa */}
       {otpCode && (
-        <div className="otp-glow mx-4 mt-4 flex items-center justify-between gap-3 bg-green-500/[0.07] border border-green-500/20 rounded-2xl p-4" role="alert">
+        <div className="otp-glow mx-3 sm:mx-4 mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-green-500/[0.07] border border-green-500/20 rounded-xl sm:rounded-2xl p-3 sm:p-4" role="alert">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-              <CheckCircle2 className="w-5 h-5 text-green-500" aria-hidden="true" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-green-500 mb-0.5">
+              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-green-500 mb-0.5">
                 {lang === 'tr' ? 'Doğrulama Kodu Algılandı' : 'Verification Code Detected'}
               </p>
-              <p className="font-mono text-2xl font-black text-green-400 tracking-[0.2em]" aria-label={`Verification code: ${otpCode.split('').join(' ')}`}>{otpCode}</p>
+              <p className="font-mono text-xl sm:text-2xl font-black text-green-400 tracking-[0.2em]" aria-label={`Verification code: ${otpCode.split('').join(' ')}`}>{otpCode}</p>
             </div>
           </div>
           <button
             onClick={handleCopyCode}
-            className="px-4 py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-xl font-bold text-sm flex items-center gap-2 transition-all active:scale-95 shrink-0"
+            className="w-full sm:w-auto px-4 py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0"
             aria-label={`Copy code ${otpCode}`}
           >
             {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -267,7 +267,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
 
       {/* Ek Dosyalar */}
       {email.hasAttachments && email.attachments && email.attachments.length > 0 && (
-        <div className="mx-4 mt-4 p-3 bg-white/[0.02] border border-white/5 rounded-2xl" role="region" aria-label="Attachments">
+        <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 p-3 bg-white/[0.02] border border-white/5 rounded-xl sm:rounded-2xl" role="region" aria-label="Attachments">
           <div className="flex items-center gap-2 mb-2">
             <Paperclip className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -313,7 +313,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
               ref={iframeRef}
               sandbox="allow-same-origin"
               title="Email content"
-              className="w-full border-0 rounded-xl min-h-[300px]"
+              className="w-full border-0 rounded-lg sm:rounded-xl min-h-[250px] sm:min-h-[300px]"
               style={{ colorScheme: 'normal', background: '#ffffff' }}
               aria-label="Email body content"
             />

@@ -333,10 +333,10 @@ const App: React.FC = () => {
           </div>
 
           {/* E-POSTA İÇERİK ALANI */}
-          <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 pb-12">
+          <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 md:gap-6 pb-8 sm:pb-12">
             <div className={`md:col-span-4 flex flex-col ${selectedEmailId ? 'hidden md:flex' : 'flex'}`}>
-              <div className="glass-panel rounded-[20px] md:rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[400px] md:min-h-[500px]" role="region" aria-label={t.inbox}>
-                <div className="flex justify-between items-center px-4 md:px-6 py-3 md:py-4 bg-white/[0.02] border-b border-white/5">
+              <div className="glass-panel rounded-2xl md:rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[350px] sm:min-h-[400px] md:min-h-[500px]" role="region" aria-label={t.inbox}>
+                <div className="flex justify-between items-center px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 bg-white/[0.02] border-b border-white/5">
                   <span className="text-[10px] font-black uppercase tracking-widest opacity-50">{t.activeNodes}</span>
                   <span className="text-[10px] font-black px-3 py-1 rounded-full text-green-500 bg-green-500/10 animate-pulse" role="status">
                     {accounts.length} {t.activeLabel}
@@ -357,9 +357,9 @@ const App: React.FC = () => {
             </div>
 
             <div className={`md:col-span-8 flex flex-col ${selectedEmailId ? 'flex' : 'hidden md:flex'}`}>
-              <div className="glass-panel rounded-[20px] md:rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[400px] md:min-h-[500px]" role="region" aria-label={lang === 'tr' ? 'E-posta İçeriği' : 'Email Content'}>
+              <div className="glass-panel rounded-2xl md:rounded-[24px] overflow-hidden shadow-2xl flex flex-col min-h-[350px] sm:min-h-[400px] md:min-h-[500px]" role="region" aria-label={lang === 'tr' ? 'E-posta İçeriği' : 'Email Content'}>
                 {!selectedEmailId ? (
-                  <div className="flex-grow flex flex-col items-center justify-center text-slate-800 p-12 relative" aria-label={t.awaitingSignal}>
+                  <div className="flex-grow flex flex-col items-center justify-center text-slate-800 p-6 sm:p-8 md:p-12 relative" aria-label={t.awaitingSignal}>
                     <div className="absolute inset-0 flex items-center justify-center opacity-[0.02]" aria-hidden="true">
                       <Sparkles className="w-64 h-64" />
                     </div>
