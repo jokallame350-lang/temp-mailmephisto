@@ -7,6 +7,7 @@ import { translations, Language } from './translations'
 
 // Lazy load pages for code splitting
 const BlogPage = lazy(() => import('./pages/BlogPage'));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage'));
 const ToolsPage = lazy(() => import('./pages/ToolsPage'));
 const TenMinuteMailPage = lazy(() => import('./pages/TenMinuteMailPage'));
 const HelpPage = lazy(() => import('./pages/HelpPage'));
@@ -48,6 +49,7 @@ const AppRouter = () => {
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/blog" element={<BlogPage lang={lang} />} />
+          <Route path="/blog/:slug" element={<BlogPostPage lang={lang} />} />
           <Route path="/tools" element={<ToolsPage lang={lang} />} />
           <Route path="/10minutemail" element={<TenMinuteMailPage lang={lang} />} />
           <Route path="/help" element={<HelpPage lang={lang} />} />

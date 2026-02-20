@@ -1,117 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, User, Tag, ArrowRight, Shield, Mail, Zap, Eye } from 'lucide-react';
-import { translations, Language } from '../translations';
+import { ArrowLeft, Clock, ArrowRight } from 'lucide-react';
+import { Language } from '../translations';
+import { blogPosts } from '../data/blogContent';
 import SEOPageMeta from '../components/SEOPageMeta';
 
 interface BlogPageProps {
     lang: Language;
 }
 
-const blogPosts = {
-    en: [
-        {
-            id: 'what-is-temp-mail',
-            title: 'What is Temporary Email? Complete Guide 2026',
-            excerpt: 'Learn everything about disposable email addresses — how they work, why you need one, and how to protect your online privacy with temp mail services.',
-            date: '2026-02-15',
-            readTime: '8 min',
-            category: 'Guide',
-            icon: Mail,
-        },
-        {
-            id: 'temp-mail-vs-regular-email',
-            title: 'Temp Mail vs Regular Email: When to Use Which?',
-            excerpt: 'Discover the key differences between temporary and permanent email addresses. Learn when a disposable email is the smarter choice for online security.',
-            date: '2026-02-10',
-            readTime: '6 min',
-            category: 'Comparison',
-            icon: Shield,
-        },
-        {
-            id: 'protect-privacy-online',
-            title: '10 Ways to Protect Your Privacy Online in 2026',
-            excerpt: 'From disposable emails to VPNs, discover the top privacy tools and strategies to keep your personal data safe from trackers and data breaches.',
-            date: '2026-02-05',
-            readTime: '10 min',
-            category: 'Privacy',
-            icon: Eye,
-        },
-        {
-            id: 'avoid-spam-with-temp-mail',
-            title: 'How to Avoid Spam Forever Using Disposable Email',
-            excerpt: 'Tired of spam flooding your inbox? Learn how temporary email addresses can permanently solve your spam problem and keep your real email clean.',
-            date: '2026-01-28',
-            readTime: '5 min',
-            category: 'Tips',
-            icon: Zap,
-        },
-        {
-            id: 'best-temp-mail-services-2026',
-            title: 'Best Temporary Email Services Compared (2026)',
-            excerpt: 'We compare MephistoMail, Temp-Mail.org, Guerrilla Mail, and 10MinuteMail. Find out which disposable email service offers the best privacy and speed.',
-            date: '2026-01-20',
-            readTime: '12 min',
-            category: 'Review',
-            icon: Tag,
-        },
-    ],
-    tr: [
-        {
-            id: 'gecici-mail-nedir',
-            title: 'Geçici Mail Nedir? 2026 Tam Rehber',
-            excerpt: 'Kullan at e-posta adresleri hakkında her şeyi öğrenin — nasıl çalışır, neden ihtiyacınız var ve temp mail servisleriyle çevrimiçi gizliliğinizi nasıl korursunuz.',
-            date: '2026-02-15',
-            readTime: '8 dk',
-            category: 'Rehber',
-            icon: Mail,
-        },
-        {
-            id: 'gecici-mail-vs-normal-mail',
-            title: 'Geçici Mail vs Normal E-posta: Hangisini Ne Zaman Kullanmalı?',
-            excerpt: 'Geçici ve kalıcı e-posta adresleri arasındaki temel farkları keşfedin. Kullan at e-postanın ne zaman daha akıllıca bir seçim olduğunu öğrenin.',
-            date: '2026-02-10',
-            readTime: '6 dk',
-            category: 'Karşılaştırma',
-            icon: Shield,
-        },
-        {
-            id: 'cevrimici-gizlilik-koruma',
-            title: '2026\'da Çevrimiçi Gizliliğinizi Korumanın 10 Yolu',
-            excerpt: 'Geçici e-postalardan VPN\'lere kadar, kişisel verilerinizi izleyicilerden ve veri ihlallerinden korumak için en iyi gizlilik araçlarını keşfedin.',
-            date: '2026-02-05',
-            readTime: '10 dk',
-            category: 'Gizlilik',
-            icon: Eye,
-        },
-        {
-            id: 'spam-engelleme-temp-mail',
-            title: 'Kullan At E-posta ile Spam\'den Sonsuza Kadar Kurtulun',
-            excerpt: 'Gelen kutunuzun spam ile dolmasından bıktınız mı? Geçici e-posta adreslerinin spam probleminizi kalıcı olarak nasıl çözeceğini öğrenin.',
-            date: '2026-01-28',
-            readTime: '5 dk',
-            category: 'İpuçları',
-            icon: Zap,
-        },
-        {
-            id: 'en-iyi-gecici-mail-servisleri-2026',
-            title: 'En İyi Geçici Mail Servisleri Karşılaştırması (2026)',
-            excerpt: 'MephistoMail, Temp-Mail.org, Guerrilla Mail ve 10MinuteMail\'i karşılaştırıyoruz. En iyi gizlilik ve hız sunan kullan at e-posta servisini bulun.',
-            date: '2026-01-20',
-            readTime: '12 dk',
-            category: 'İnceleme',
-            icon: Tag,
-        },
-    ],
-};
-
 const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
-    const t = translations[lang];
     const posts = blogPosts[lang];
 
     return (
         <div className="min-h-screen bg-[#0a0a0f] text-white">
             <SEOPageMeta lang={lang} page="blog" />
+
             {/* Header */}
             <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -120,7 +24,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
                         <span className="text-sm font-medium">MephistoMail</span>
                     </Link>
                     <h1 className="text-lg font-bold tracking-tight">
-                        {lang === 'tr' ? 'Blog' : 'Blog'}
+                        Blog
                     </h1>
                     <div className="w-24" />
                 </div>
@@ -147,9 +51,10 @@ const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
                     {posts.map((post, index) => {
                         const Icon = post.icon;
                         return (
-                            <article
+                            <Link
+                                to={`/blog/${post.id}`}
                                 key={post.id}
-                                className="group bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 hover:bg-white/[0.06] hover:border-red-500/20 transition-all duration-300 cursor-pointer"
+                                className="group bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 hover:bg-white/[0.06] hover:border-red-500/20 transition-all duration-300 cursor-pointer block"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
                                 <div className="flex items-center gap-2 mb-4">
@@ -181,7 +86,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
                                         <ArrowRight size={14} />
                                     </span>
                                 </div>
-                            </article>
+                            </Link>
                         );
                     })}
                 </div>
