@@ -24,7 +24,7 @@ export function useNotification() {
     const notify = useCallback((title: string, body: string, icon?: string) => {
         if (permission !== 'granted') return;
         try {
-            new Notification(title, { body, icon: icon || '/logo.png' });
+            new Notification(title, { body, icon: icon || '/logo.svg' });
         } catch { /* */ }
     }, [permission]);
 

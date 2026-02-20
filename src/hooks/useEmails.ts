@@ -112,7 +112,7 @@ export function useEmails(
                     if (shouldPlay) {
                         playNotificationSound();
                         if (Notification.permission === 'granted') {
-                            new Notification('Mephisto', { body: 'New message!', icon: '/logo.png' });
+                            new Notification('Mephisto', { body: 'New message!', icon: '/logo.svg' });
                         }
                     }
 
