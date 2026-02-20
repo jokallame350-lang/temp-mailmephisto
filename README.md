@@ -8,10 +8,21 @@ MephistoMail is a cutting-edge, **RAM-only** disposable email service built for 
 
 🌐 **Live Demo:** [mephistomail.site](https://mephistomail.site)
 
+## 📸 Interface Gallery
+
+### 1. The Dashboard — Zero Distractions
 <p align="center">
-  <img src="public/screenshot_preview.png" alt="MephistoMail Interface" width="800" onerror="this.style.display='none'"/>
-  <br>
-  <em>(Add a screenshot here to showcase the UI)</em>
+  <img src="public/screenshots/dashboard_dark.png" alt="MephistoMail Dashboard - Dark Mode Priority Mail" width="100%" style="border-radius: 10px;">
+</p>
+
+### 2. Feature Walkthrough
+<p align="center">
+  <img src="public/screenshots/custom_aliasing.png" alt="Custom Alias Creation" width="32%" style="border-radius: 8px;">
+  <img src="public/screenshots/mobile_inbox.png" alt="Real-time Inbox Monitor" width="32%" style="border-radius: 8px;">
+  <img src="public/screenshots/verification_view.png" alt="Smart Verification & Code Detection" width="32%" style="border-radius: 8px;">
+</p>
+<p align="center">
+  <em>From left to right: Create custom domain aliases, manage active sessions, and view rich HTML emails with instant 2FA code detection.</em>
 </p>
 
 ## ✨ Key Features
