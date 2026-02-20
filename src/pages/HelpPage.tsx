@@ -52,7 +52,7 @@ const HelpPage: React.FC<HelpPageProps> = ({ lang }) => {
             <SEOPageMeta lang={lang} page="help" />
             {/* Header */}
             <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-3 text-white hover:text-red-400 transition-colors">
                         <ArrowLeft size={18} />
                         <span className="text-sm font-medium">MephistoMail</span>

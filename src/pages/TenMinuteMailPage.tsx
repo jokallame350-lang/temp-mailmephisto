@@ -14,7 +14,7 @@ const TenMinuteMailPage: React.FC<TenMinuteMailPageProps> = ({ lang }) => {
             <SEOPageMeta lang={lang} page="10minutemail" />
             {/* Header */}
             <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-3 text-white hover:text-red-400 transition-colors">
                         <ArrowLeft size={18} />
                         <span className="text-sm font-medium">MephistoMail</span>
@@ -27,27 +27,27 @@ const TenMinuteMailPage: React.FC<TenMinuteMailPageProps> = ({ lang }) => {
             </header>
 
             {/* Hero */}
-            <section className="py-20 px-6">
+            <section className="py-12 sm:py-20 px-4 sm:px-6">
                 <div className="max-w-4xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-full text-red-400 text-sm font-medium mb-6">
+                    <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-red-500/10 border border-red-500/20 rounded-full text-red-400 text-xs sm:text-sm font-medium mb-4 sm:mb-6">
                         <Clock size={16} />
                         10 {lang === 'tr' ? 'Dakika Temp Mail' : 'Minute Temp Mail'}
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6">
+                    <h1 className="text-2xl sm:text-4xl md:text-6xl font-black tracking-tight mb-4 sm:mb-6">
                         {lang === 'tr' ? (
                             <>10 Dakikalık <span className="text-red-500">Geçici E-posta</span></>
                         ) : (
                             <>10 Minute <span className="text-red-500">Disposable Email</span></>
                         )}
                     </h1>
-                    <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-8">
+                    <p className="text-slate-400 text-sm sm:text-lg max-w-2xl mx-auto mb-6 sm:mb-8">
                         {lang === 'tr'
                             ? 'MephistoMail ile 10 dakikalık geçici e-posta adresi oluşturun. Kayıt yok, spam yok, izleme yok. Anında kullan-at e-posta — ücretsiz ve anonim.'
                             : 'Create a 10 minute disposable email address with MephistoMail. No registration, no spam, no tracking. Instant throwaway email — free and anonymous.'}
                     </p>
                     <Link
                         to="/"
-                        className="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl text-lg hover:scale-105 transition-transform shadow-2xl shadow-red-500/20"
+                        className="inline-flex items-center gap-2 px-6 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl text-base sm:text-lg hover:scale-105 transition-transform shadow-2xl shadow-red-500/20"
                     >
                         <Zap size={20} />
                         {lang === 'tr' ? 'Hemen Oluştur — Ücretsiz' : 'Create Now — Free'}

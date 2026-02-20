@@ -39,13 +39,13 @@ const EmailValidator: React.FC<{ lang: Language }> = ({ lang }) => {
             <p className="text-slate-400 text-sm mb-4">
                 {lang === 'tr' ? 'E-posta adresinin formatını ve geçici olup olmadığını kontrol edin.' : 'Check if an email address format is valid and whether it\'s disposable.'}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
                 <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={lang === 'tr' ? 'ornek@mail.com' : 'example@mail.com'}
-                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-blue-500/50 focus:outline-none transition-colors"
+                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm sm:text-sm focus:border-blue-500/50 focus:outline-none transition-colors"
                     onKeyDown={(e) => e.key === 'Enter' && validate()}
                 />
                 <button
@@ -98,13 +98,13 @@ const DataBreachChecker: React.FC<{ lang: Language }> = ({ lang }) => {
             <p className="text-slate-400 text-sm mb-4">
                 {lang === 'tr' ? 'E-posta adresinizin bilinen veri ihlallerinde yer alıp almadığını kontrol edin.' : 'Check if your email address has been exposed in known data breaches.'}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
                 <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={lang === 'tr' ? 'kontrol@mail.com' : 'check@mail.com'}
-                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:border-red-500/50 focus:outline-none transition-colors"
+                    className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm sm:text-sm focus:border-red-500/50 focus:outline-none transition-colors"
                     onKeyDown={(e) => e.key === 'Enter' && check()}
                 />
                 <button
@@ -188,7 +188,7 @@ const ToolsPage: React.FC<ToolsPageProps> = ({ lang }) => {
             <SEOPageMeta lang={lang} page="tools" />
             {/* Header */}
             <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-3 text-white hover:text-red-400 transition-colors">
                         <ArrowLeft size={18} />
                         <span className="text-sm font-medium">MephistoMail</span>
@@ -201,13 +201,13 @@ const ToolsPage: React.FC<ToolsPageProps> = ({ lang }) => {
             </header>
 
             {/* Hero */}
-            <section className="py-16 px-6">
+            <section className="py-10 sm:py-16 px-4 sm:px-6">
                 <div className="max-w-4xl mx-auto text-center">
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
+                    <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4">
                         {lang === 'tr' ? 'Ücretsiz Gizlilik' : 'Free Privacy'}
                         <span className="text-red-500"> {lang === 'tr' ? 'Araçları' : 'Tools'}</span>
                     </h1>
-                    <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                    <p className="text-slate-400 text-sm sm:text-lg max-w-2xl mx-auto">
                         {lang === 'tr'
                             ? 'E-postanızın güvenliğini kontrol edin, şifre gücünüzü test edin ve veri sızıntılarını sorgulayın — tamamen ücretsiz.'
                             : 'Check your email security, test password strength, and query data breaches — completely free.'}
@@ -216,7 +216,7 @@ const ToolsPage: React.FC<ToolsPageProps> = ({ lang }) => {
             </section>
 
             {/* Tools Grid */}
-            <section className="pb-20 px-6">
+            <section className="pb-16 sm:pb-20 px-4 sm:px-6">
                 <div className="max-w-4xl mx-auto space-y-6">
                     <EmailValidator lang={lang} />
                     <DataBreachChecker lang={lang} />

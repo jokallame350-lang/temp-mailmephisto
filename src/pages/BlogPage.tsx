@@ -18,7 +18,7 @@ const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
 
             {/* Header */}
             <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-3 text-white hover:text-red-400 transition-colors">
                         <ArrowLeft size={18} />
                         <span className="text-sm font-medium">MephistoMail</span>
@@ -31,13 +31,13 @@ const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
             </header>
 
             {/* Hero */}
-            <section className="py-16 px-6">
+            <section className="py-10 sm:py-16 px-4 sm:px-6">
                 <div className="max-w-4xl mx-auto text-center">
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
+                    <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight mb-4">
                         {lang === 'tr' ? 'Gizlilik & Güvenlik' : 'Privacy & Security'}
                         <span className="text-red-500"> Blog</span>
                     </h1>
-                    <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                    <p className="text-slate-400 text-sm sm:text-lg max-w-2xl mx-auto">
                         {lang === 'tr'
                             ? 'Geçici e-posta, çevrimiçi gizlilik ve dijital güvenlik hakkında en güncel makaleler ve rehberler.'
                             : 'Latest articles and guides about temporary email, online privacy, and digital security.'}
@@ -46,15 +46,15 @@ const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
             </section>
 
             {/* Blog Grid */}
-            <section className="pb-20 px-6">
-                <div className="max-w-6xl mx-auto grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <section className="pb-16 sm:pb-20 px-4 sm:px-6">
+                <div className="max-w-6xl mx-auto grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {posts.map((post, index) => {
                         const Icon = post.icon;
                         return (
                             <Link
                                 to={`/blog/${post.id}`}
                                 key={post.id}
-                                className="group bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 hover:bg-white/[0.06] hover:border-red-500/20 transition-all duration-300 cursor-pointer block"
+                                className="group bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/[0.06] hover:border-red-500/20 transition-all duration-300 cursor-pointer block"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
                                 <div className="flex items-center gap-2 mb-4">
