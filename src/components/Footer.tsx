@@ -96,15 +96,7 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
               >
                 <Github size={14} />
               </a>
-              <a
-                href="https://x.com/benmxrt"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-blue-400 hover:border-blue-500/20 transition-all"
-                aria-label="X (Twitter)"
-              >
-                <Twitter size={14} />
-              </a>
+
               <a
                 href="https://www.producthunt.com/products/mephistomail"
                 target="_blank"
