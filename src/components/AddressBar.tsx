@@ -68,7 +68,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col items-center gap-6 max-w-2xl mx-auto px-4">
+    <div className="w-full flex flex-col items-center gap-4 sm:gap-6 max-w-2xl mx-auto px-3 sm:px-4">
 
       {/* ADRES KUTUSU */}
       <div
@@ -78,12 +78,12 @@ const AddressBar: React.FC<AddressBarProps> = ({
       >
         <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
-        <div className="relative bg-[#0f1115] border border-white/10 rounded-2xl p-1 shadow-xl flex items-center overflow-hidden h-16 transition-colors duration-300">
+        <div className="relative bg-[#0f1115] border border-white/10 rounded-xl sm:rounded-2xl p-1 shadow-xl flex items-center overflow-hidden h-14 sm:h-16 transition-colors duration-300">
           {/* İlerleme Çubuğu */}
           <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-100 ease-linear z-10" style={{ width: `${progress}%` }}></div>
 
           {/* Sol İkon */}
-          <div className="pl-4 pr-3 flex items-center justify-center">
+          <div className="pl-2 sm:pl-4 pr-1 sm:pr-3 flex items-center justify-center flex-shrink-0">
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
             ) : (
@@ -96,16 +96,16 @@ const AddressBar: React.FC<AddressBarProps> = ({
             {isLoading ? (
               <div className="h-5 w-40 bg-white/10 rounded animate-pulse"></div>
             ) : (
-              <span className={`text-lg md:text-xl font-bold font-mono tracking-tight truncate w-full text-center md:text-left transition-colors duration-300 ${copied ? 'text-green-500' : 'text-white'}`}>
+              <span className={`text-base sm:text-lg md:text-xl font-bold font-mono tracking-tight truncate w-full text-center md:text-left transition-colors duration-300 ${copied ? 'text-green-500' : 'text-white'}`}>
                 {mailbox?.address}
               </span>
             )}
           </div>
 
           {/* Kopyala Rozeti + Geri Sayım */}
-          <div className="pr-4 pl-2 hidden md:flex items-center gap-3">
+          <div className="pr-2 sm:pr-4 pl-1 sm:pl-2 flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
             {remainingMs !== null && (
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5 ${remainingMs < 3600000 ? 'animate-pulse' : ''}`}
+              <div className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5 ${remainingMs < 3600000 ? 'animate-pulse' : ''}`}
                 title={lang === 'tr' ? 'Hesap süresi' : 'Account expires in'}
               >
                 <Timer className={`w-3 h-3 ${getTimerColor(remainingMs)}`} />
@@ -114,7 +114,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
                 </span>
               </div>
             )}
-            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-white/5 transition-colors ${copied ? 'text-green-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
+            <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-1.5 sm:px-2 py-1 rounded bg-white/5 transition-colors whitespace-nowrap ${copied ? 'text-green-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
               {copied ? t.copied : t.copy}
             </span>
           </div>
@@ -122,11 +122,11 @@ const AddressBar: React.FC<AddressBarProps> = ({
       </div>
 
       {/* HAP BUTONLAR */}
-      <div className="flex flex-wrap items-center justify-center gap-3 w-full">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
 
         <button
           onClick={(e) => { e.stopPropagation(); handleCopy(); }}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
         >
           {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
           <span>{t.copy}</span>
@@ -134,7 +134,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
 
         <button
           onClick={onRefresh}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
         >
           <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
           <span>{t.refresh}</span>
@@ -142,7 +142,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
 
         <button
           onClick={onCreateCustom}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
         >
           <Pencil className="w-4 h-4 text-slate-400" />
           <span>{t.change}</span>
@@ -150,7 +150,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
 
         <button
           onClick={onDelete}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#111] text-red-500 hover:bg-red-900/10 border border-white/10 rounded-full font-bold text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-red-500 hover:bg-red-900/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
         >
           <Trash2 className="w-4 h-4" />
           <span>{t.delete}</span>

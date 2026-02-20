@@ -1,30 +1,50 @@
 {
-    "name": "MephistoMail",
+    "name": "MephistoMail - Temp Mail",
     "short_name": "Mephisto",
-    "description": "Privacy first disposable email. No tracking, no logs.",
+    "description": "Privacy first disposable email. No tracking, no logs. Instant anonymous email.",
     "start_url": "/",
+    "scope": "/",
+    "id": "/",
     "display": "standalone",
+    "display_override": [
+        "standalone",
+        "minimal-ui"
+    ],
     "background_color": "#050505",
     "theme_color": "#050505",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "icons": [
         {
             "src": "/logo.svg",
-            "sizes": "192x192",
+            "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any"
         },
         {
             "src": "/logo.svg",
-            "sizes": "512x512",
+            "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "maskable"
         }
     ],
     "categories": [
         "utilities",
-        "productivity"
+        "productivity",
+        "security"
     ],
     "lang": "en",
-    "dir": "ltr"
+    "dir": "ltr",
+    "prefer_related_applications": false,
+    "screenshots": [
+        {
+            "src": "/og-image.png",
+            "sizes": "1200x630",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "MephistoMail Desktop View"
+        }
+    ],
+    "edge_side_panel": {
+        "preferred_width": 400
+    }
 }

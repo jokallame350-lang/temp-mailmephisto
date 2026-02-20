@@ -23,10 +23,16 @@ const Header: React.FC<HeaderProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
 
+  const langDropRef = useRef<HTMLDivElement>(null);
+  const [langOpen, setLangOpen] = useState(false);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+      }
+      if (langDropRef.current && !langDropRef.current.contains(event.target as Node)) {
+        setLangOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -61,23 +67,25 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full h-16 border-b border-white/5 bg-[#0a0a0c]/90 backdrop-blur-xl z-50 flex items-center justify-between px-4 md:px-8 shadow-2xl transition-all duration-300">
+    <header className="fixed top-0 left-0 w-full h-14 sm:h-16 border-b border-white/5 bg-[#0a0a0c]/90 backdrop-blur-xl z-50 flex items-center justify-between px-2 sm:px-4 md:px-8 shadow-2xl transition-all duration-300">
 
       {/* Logo Alanı */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 min-w-0">
         <img
           src="/logo.svg"
           alt="Mephisto Logo"
-          className="w-10 h-10 rounded-xl shadow-lg shadow-red-500/20 object-cover hover:scale-105 transition-transform duration-300"
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-lg shadow-red-500/20 object-cover hover:scale-105 transition-transform duration-300 flex-shrink-0"
         />
         <div className="hidden md:flex flex-col">
           <span className="font-black text-lg text-white tracking-tighter leading-none font-['Sora']">Mephisto Temp Mail</span>
           <span className="text-[9px] text-slate-500 uppercase tracking-[0.3em] font-bold">Privacy Shield &amp; Disposable Addresses</span>
         </div>
+        {/* Mobile-only brand text */}
+        <span className="md:hidden font-black text-sm text-white tracking-tight leading-none font-['Sora'] truncate">Mephisto</span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           {/* PWA Install */}
           {pwaInstallable && (
             <button
@@ -90,47 +98,46 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Dil Seçimi - Dropdown */}
-          <div className="relative">
+          <div className="relative" ref={langDropRef}>
             <button
-              onClick={() => {
-                const el = document.getElementById('lang-dropdown');
-                if (el) el.classList.toggle('hidden');
-              }}
-              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1.5 font-bold text-[10px] tracking-widest"
+              onClick={() => setLangOpen(prev => !prev)}
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1 sm:gap-1.5 font-bold text-[10px] tracking-widest"
             >
               <Languages className="w-4 h-4" />
-              <span>{lang.toUpperCase()}</span>
-              <ChevronDown className="w-3 h-3" />
+              <span className="hidden sm:inline">{lang.toUpperCase()}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${langOpen ? 'rotate-180' : ''}`} />
             </button>
-            <div id="lang-dropdown" className="hidden absolute right-0 top-full mt-1 bg-[#111] border border-white/10 rounded-lg shadow-xl z-50 min-w-[120px] py-1 overflow-hidden">
-              {([
-                { code: 'en' as const, label: '🇬🇧 English' },
-                { code: 'tr' as const, label: '🇹🇷 Türkçe' },
-                { code: 'es' as const, label: '🇪🇸 Español' },
-                { code: 'de' as const, label: '🇩🇪 Deutsch' },
-                { code: 'fr' as const, label: '🇫🇷 Français' },
-              ]).map(l => (
-                <button
-                  key={l.code}
-                  onClick={() => {
-                    setLang(l.code);
-                    document.getElementById('lang-dropdown')?.classList.add('hidden');
-                  }}
-                  className={`w-full text-left px-3 py-1.5 text-[11px] transition-colors ${lang === l.code ? 'text-red-400 bg-red-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
+            {langOpen && (
+              <div className="absolute right-0 top-full mt-1 bg-[#111] border border-white/10 rounded-lg shadow-xl z-50 min-w-[130px] py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                {([
+                  { code: 'en' as const, label: '🇬🇧 English' },
+                  { code: 'tr' as const, label: '🇹🇷 Türkçe' },
+                  { code: 'es' as const, label: '🇪🇸 Español' },
+                  { code: 'de' as const, label: '🇩🇪 Deutsch' },
+                  { code: 'fr' as const, label: '🇫🇷 Français' },
+                ]).map(l => (
+                  <button
+                    key={l.code}
+                    onClick={() => {
+                      setLang(l.code);
+                      setLangOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${lang === l.code ? 'text-red-400 bg-red-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* QR Kod ve Şifre Araçları */}
-        <div className="flex items-center gap-1 mr-2 pr-2 border-r border-white/10">
-          <button onClick={onOpenQR} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title={t.qrTitle}>
+        {/* QR Kod ve Şifre Araçları — hidden on very small screens */}
+        <div className="hidden sm:flex items-center gap-0.5 sm:gap-1 mr-1 sm:mr-2 pr-1 sm:pr-2 border-r border-white/10">
+          <button onClick={onOpenQR} className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title={t.qrTitle}>
             <QrCode className="w-4 h-4" />
           </button>
-          <button onClick={onOpenPass} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title={t.passTitle}>
+          <button onClick={onOpenPass} className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors" title={t.passTitle}>
             <KeyRound className="w-4 h-4" />
           </button>
         </div>
@@ -139,24 +146,24 @@ const Header: React.FC<HeaderProps> = ({
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-3 bg-[#111] hover:bg-[#161616] border border-white/10 px-3 py-1.5 rounded-xl transition-all duration-200 group"
+            className="flex items-center gap-1.5 sm:gap-3 bg-[#111] hover:bg-[#161616] border border-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl transition-all duration-200 group"
           >
-            <div className="flex flex-col items-end text-right">
-              <span className="text-[11px] text-slate-200 font-mono max-w-[100px] truncate font-bold">
+            <div className="hidden sm:flex flex-col items-end text-right">
+              <span className="text-[10px] sm:text-[11px] text-slate-200 font-mono max-w-[80px] sm:max-w-[120px] md:max-w-[160px] truncate font-bold">
                 {currentAccount ? currentAccount.address : t.noAccount}
               </span>
               <span className="text-[8px] text-slate-500 uppercase tracking-wider font-black group-hover:text-red-500 transition-colors">
                 {accounts.length} {t.activeLabel}
               </span>
             </div>
-            <div className="w-8 h-8 rounded-lg bg-slate-900 border border-white/5 flex items-center justify-center group-hover:border-red-500/30 transition-colors">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-900 border border-white/5 flex items-center justify-center group-hover:border-red-500/30 transition-colors flex-shrink-0">
               <User className="w-4 h-4 text-slate-400 group-hover:text-red-500" />
             </div>
             <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isOpen && (
-            <div className="absolute right-0 top-full mt-2 w-72 bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[60]">
+            <div className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-72 max-w-[320px] bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[60]">
               <div className="max-h-64 overflow-y-auto custom-scrollbar p-2 space-y-1">
                 {accounts.length > 0 ? accounts.map((acc) => (
                   <div key={acc.id} onClick={() => { onSwitchAccount(acc.id); setIsOpen(false); }} className={`group flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all border border-transparent ${currentAccount?.id === acc.id ? 'bg-red-500/10 border-red-500/20' : 'hover:bg-white/5'}`}>
