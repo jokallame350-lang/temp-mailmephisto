@@ -89,14 +89,40 @@ const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Dil Seçimi */}
-          <button
-            onClick={() => setLang(lang === 'en' ? 'tr' : 'en')}
-            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1.5 font-bold text-[10px] tracking-widest"
-          >
-            <Languages className="w-4 h-4" />
-            <span>{lang.toUpperCase()}</span>
-          </button>
+          {/* Dil Seçimi - Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                const el = document.getElementById('lang-dropdown');
+                if (el) el.classList.toggle('hidden');
+              }}
+              className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1.5 font-bold text-[10px] tracking-widest"
+            >
+              <Languages className="w-4 h-4" />
+              <span>{lang.toUpperCase()}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            <div id="lang-dropdown" className="hidden absolute right-0 top-full mt-1 bg-[#111] border border-white/10 rounded-lg shadow-xl z-50 min-w-[120px] py-1 overflow-hidden">
+              {([
+                { code: 'en' as const, label: '🇬🇧 English' },
+                { code: 'tr' as const, label: '🇹🇷 Türkçe' },
+                { code: 'es' as const, label: '🇪🇸 Español' },
+                { code: 'de' as const, label: '🇩🇪 Deutsch' },
+                { code: 'fr' as const, label: '🇫🇷 Français' },
+              ]).map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => {
+                    setLang(l.code);
+                    document.getElementById('lang-dropdown')?.classList.add('hidden');
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-[11px] transition-colors ${lang === l.code ? 'text-red-400 bg-red-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* QR Kod ve Şifre Araçları */}

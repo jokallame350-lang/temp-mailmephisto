@@ -100,8 +100,13 @@ const App: React.FC = () => {
 
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('mephisto_lang');
-    if (saved === 'tr' || saved === 'en') return saved;
-    return navigator.language.startsWith('tr') ? 'tr' : 'en';
+    if (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'fr') return saved;
+    const bl = navigator.language.toLowerCase();
+    if (bl.startsWith('tr')) return 'tr';
+    if (bl.startsWith('es')) return 'es';
+    if (bl.startsWith('de')) return 'de';
+    if (bl.startsWith('fr')) return 'fr';
+    return 'en';
   });
 
   const t = useMemo(() => translations[lang], [lang]);
@@ -171,8 +176,9 @@ const App: React.FC = () => {
     }
   }, [accounts.length, MAX_ACTIVE_ACCOUNTS, createQuickAccount, incrementAccountStat, t]);
 
+  const langOrder: Language[] = ['en', 'tr', 'es', 'de', 'fr'];
   const toggleLang = useCallback(() => {
-    setLang(prev => prev === 'en' ? 'tr' : 'en');
+    setLang(prev => langOrder[(langOrder.indexOf(prev) + 1) % langOrder.length]);
   }, []);
 
   return (

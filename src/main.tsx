@@ -34,8 +34,13 @@ const ScrollToTop = () => {
 const useLang = (): Language => {
   const [lang] = useState<Language>(() => {
     const saved = localStorage.getItem('mephisto_lang');
-    if (saved === 'tr' || saved === 'en') return saved;
-    return navigator.language.startsWith('tr') ? 'tr' : 'en';
+    if (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'fr') return saved;
+    const bl = navigator.language.toLowerCase();
+    if (bl.startsWith('tr')) return 'tr';
+    if (bl.startsWith('es')) return 'es';
+    if (bl.startsWith('de')) return 'de';
+    if (bl.startsWith('fr')) return 'fr';
+    return 'en';
   });
   return lang;
 };

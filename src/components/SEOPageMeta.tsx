@@ -6,7 +6,7 @@ interface SEOPageMetaProps {
     page: 'blog' | 'tools' | '10minutemail' | 'help';
 }
 
-const pageMeta: Record<string, Record<Language, { title: string; description: string; keywords: string }>> = {
+const pageMeta: Record<string, Partial<Record<Language, { title: string; description: string; keywords: string }>>> = {
     blog: {
         en: {
             title: 'Privacy & Security Blog | MephistoMail - Temp Mail Guides',
@@ -63,7 +63,7 @@ const pageMeta: Record<string, Record<Language, { title: string; description: st
  */
 const SEOPageMeta: React.FC<SEOPageMetaProps> = ({ lang, page }) => {
     useEffect(() => {
-        const meta = pageMeta[page]?.[lang];
+        const meta = pageMeta[page]?.[lang] || pageMeta[page]?.['en'];
         if (!meta) return;
 
         // Set title
