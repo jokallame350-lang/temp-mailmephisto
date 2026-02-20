@@ -275,7 +275,7 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                 <ol className="space-y-2 text-slate-400 text-[12px] leading-relaxed">
                   <li className="flex gap-2">
                     <span className="text-red-400 font-bold shrink-0">1.</span>
-                    {lang === 'tr' ? 'Chrome\'da mephistomail.com adresini açın' : 'Open mephistomail.com in Chrome'}
+                    {lang === 'tr' ? 'Chrome\'da mephistomail.site adresini açın' : 'Open mephistomail.site in Chrome'}
                   </li>
                   <li className="flex gap-2">
                     <span className="text-red-400 font-bold shrink-0">2.</span>
@@ -297,7 +297,7 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                 <ol className="space-y-2 text-slate-400 text-[12px] leading-relaxed">
                   <li className="flex gap-2">
                     <span className="text-red-400 font-bold shrink-0">1.</span>
-                    {lang === 'tr' ? 'Mobil tarayıcınızda mephistomail.com adresini açın' : 'Open mephistomail.com in your mobile browser'}
+                    {lang === 'tr' ? 'Mobil tarayıcınızda mephistomail.site adresini açın' : 'Open mephistomail.site in your mobile browser'}
                   </li>
                   <li className="flex gap-2">
                     <span className="text-red-400 font-bold shrink-0">2.</span>

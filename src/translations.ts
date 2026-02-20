@@ -13,6 +13,7 @@ export const translations = {
     connecting: 'Connecting...',
     noShield: 'No Shield Active',
     noAccount: 'No Account',
+    shareOnX: 'Share on X',
 
     // Tooltip / İpuçları
     tipCopy: 'Copy Address',
@@ -183,6 +184,7 @@ export const translations = {
     connecting: 'Bağlanıyor...',
     noShield: 'Kalkan Aktif Değil',
     noAccount: 'Hesap Yok',
+    shareOnX: 'X\'te Paylaş',
 
     // Tooltip / İpuçları
     tipCopy: 'Adresi Kopyala',
@@ -344,6 +346,7 @@ export const translations = {
   es: {
     refresh: 'Actualizar', copy: 'Copiar', copied: 'Copiado', new: 'Nuevo', delete: 'Eliminar', change: 'Cambiar',
     generating: 'Generando...', connecting: 'Conectando...', noShield: 'Sin Escudo Activo', noAccount: 'Sin Cuenta',
+    shareOnX: 'Compartir en X',
     tipCopy: 'Copiar Dirección', tipRefresh: 'Actualizar Bandeja', tipDomain: 'Cambiar Dominio',
     selectDomain: 'Seleccionar Dominio', loadingDomains: 'Cargando dominios...', tipDestroy: 'Destruir Dirección',
     inbox: 'BANDEJA', clearAll: 'BORRAR TODO', emptyInboxTitle: 'Bandeja Vacía',
@@ -413,6 +416,7 @@ export const translations = {
   de: {
     refresh: 'Aktualisieren', copy: 'Kopieren', copied: 'Kopiert', new: 'Neu', delete: 'Löschen', change: 'Ändern',
     generating: 'Wird generiert...', connecting: 'Verbinden...', noShield: 'Kein Schutz aktiv', noAccount: 'Kein Konto',
+    shareOnX: 'Auf X teilen',
     tipCopy: 'Adresse kopieren', tipRefresh: 'Posteingang aktualisieren', tipDomain: 'Domain ändern',
     selectDomain: 'Domain auswählen', loadingDomains: 'Domains werden geladen...', tipDestroy: 'Adresse zerstören',
     inbox: 'POSTEINGANG', clearAll: 'ALLES LÖSCHEN', emptyInboxTitle: 'Posteingang leer',
@@ -482,6 +486,7 @@ export const translations = {
   fr: {
     refresh: 'Actualiser', copy: 'Copier', copied: 'Copié', new: 'Nouveau', delete: 'Supprimer', change: 'Changer',
     generating: 'Génération...', connecting: 'Connexion...', noShield: 'Aucun Bouclier Actif', noAccount: 'Aucun Compte',
+    shareOnX: 'Partager sur X',
     tipCopy: 'Copier l\'Adresse', tipRefresh: 'Actualiser la Boîte', tipDomain: 'Changer de Domaine',
     selectDomain: 'Sélectionner un Domaine', loadingDomains: 'Chargement des domaines...', tipDestroy: 'Détruire l\'Adresse',
     inbox: 'BOÎTE DE RÉCEPTION', clearAll: 'TOUT EFFACER', emptyInboxTitle: 'Boîte Vide',
