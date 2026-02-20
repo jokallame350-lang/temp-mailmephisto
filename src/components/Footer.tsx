@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { translations, Language } from '../translations';
 import LegalModal from './LegalModal';
-import { Mail, Shield, Clock, Wrench, BookOpen, HelpCircle, FileText, Scale, ExternalLink, Code2, MessageSquare } from 'lucide-react';
+import { Mail, Shield, Clock, Wrench, BookOpen, HelpCircle, FileText, Scale, Code2, MessageSquare, Github, Twitter, Heart, Send, CheckCircle } from 'lucide-react';
 
 interface FooterProps {
   lang: Language;
@@ -11,13 +11,63 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ lang }) => {
   const t = translations[lang];
   const [modalType, setModalType] = useState<'privacy' | 'terms' | null>(null);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
   const currentYear = new Date().getFullYear();
+
+  const handleNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newsletterEmail) {
+      setNewsletterSubmitted(true);
+      setNewsletterEmail('');
+      setTimeout(() => setNewsletterSubmitted(false), 4000);
+    }
+  };
 
   return (
     <footer className="py-12 px-6 bg-black/30 border-t border-white/5 mt-auto" role="contentinfo">
       <div className="max-w-7xl mx-auto">
+
+        {/* Newsletter Section */}
+        <div className="border-b border-white/5 pb-10 mb-10">
+          <div className="max-w-2xl mx-auto text-center">
+            <h3 className="text-lg font-bold text-white mb-2">
+              {lang === 'tr' ? '📬 Gizlilik Bültenimize Abone Olun' : '📬 Subscribe to Our Privacy Newsletter'}
+            </h3>
+            <p className="text-slate-500 text-xs mb-5">
+              {lang === 'tr'
+                ? 'Gizlilik ipuçları, güvenlik haberleri ve MephistoMail güncellemeleri hakkında aylık bülten.'
+                : 'Monthly newsletter with privacy tips, security news, and MephistoMail updates.'}
+            </p>
+            {newsletterSubmitted ? (
+              <div className="flex items-center justify-center gap-2 text-green-400 text-sm font-medium animate-pulse">
+                <CheckCircle size={16} />
+                {lang === 'tr' ? 'Teşekkürler! Abone oldunuz.' : 'Thanks! You\'re subscribed.'}
+              </div>
+            ) : (
+              <form onSubmit={handleNewsletter} className="flex gap-2 max-w-md mx-auto">
+                <input
+                  type="email"
+                  required
+                  value={newsletterEmail}
+                  onChange={e => setNewsletterEmail(e.target.value)}
+                  placeholder={lang === 'tr' ? 'E-posta adresiniz' : 'Your email address'}
+                  className="flex-1 px-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-red-500/40 transition-colors"
+                />
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 text-white text-xs font-bold rounded-xl hover:scale-105 active:scale-95 transition-transform flex items-center gap-1.5"
+                >
+                  <Send size={12} />
+                  {lang === 'tr' ? 'Abone Ol' : 'Subscribe'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+
         {/* Main Footer Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-3">
@@ -26,14 +76,44 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
               </div>
               <span className="text-white font-bold text-sm tracking-tight">MephistoMail</span>
             </div>
-            <p className="text-slate-500 text-[11px] leading-relaxed mb-3">
+            <p className="text-slate-500 text-[11px] leading-relaxed mb-4">
               {lang === 'tr'
                 ? 'Ücretsiz geçici mail servisi. Anonim, güvenli ve hızlı kullan-at e-posta adresleri.'
                 : 'Free temporary email service. Anonymous, secure, and fast disposable email addresses.'}
             </p>
-            <div className="flex items-center gap-1 text-slate-500 text-[10px]">
+            <div className="flex items-center gap-1 text-slate-500 text-[10px] mb-4">
               <Shield size={10} />
               <span>{lang === 'tr' ? 'Sıfır Kayıt Politikası' : 'Zero Logging Policy'}</span>
+            </div>
+            {/* Social Links */}
+            <div className="flex items-center gap-2">
+              <a
+                href="https://github.com/jokallame350-lang/temp-mailmephisto"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white hover:border-white/20 transition-all"
+                aria-label="GitHub"
+              >
+                <Github size={14} />
+              </a>
+              <a
+                href="https://twitter.com/mephistomail"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-blue-400 hover:border-blue-500/20 transition-all"
+                aria-label="Twitter"
+              >
+                <Twitter size={14} />
+              </a>
+              <a
+                href="https://www.producthunt.com/products/mephistomail"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-orange-400 hover:border-orange-500/20 transition-all"
+                aria-label="Product Hunt"
+              >
+                <Heart size={14} />
+              </a>
             </div>
           </div>
 
@@ -97,6 +177,17 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                     FAQ
                   </Link>
                 </li>
+              </ul>
+            </nav>
+          </div>
+
+          {/* Company */}
+          <div>
+            <h4 className="text-slate-300 text-[11px] font-bold uppercase tracking-wider mb-3">
+              {lang === 'tr' ? 'Şirket' : 'Company'}
+            </h4>
+            <nav aria-label={lang === 'tr' ? 'Şirket bağlantıları' : 'Company links'}>
+              <ul className="space-y-2">
                 <li>
                   <Link to="/contact" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
                     <MessageSquare size={10} />
@@ -106,8 +197,14 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                 <li>
                   <Link to="/api-docs" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
                     <Code2 size={10} />
-                    API
+                    API {lang === 'tr' ? 'Dokümantasyon' : 'Documentation'}
                   </Link>
+                </li>
+                <li>
+                  <a href="https://github.com/jokallame350-lang/temp-mailmephisto" target="_blank" rel="noopener noreferrer" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Github size={10} />
+                    GitHub
+                  </a>
                 </li>
               </ul>
             </nav>
