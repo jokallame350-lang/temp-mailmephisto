@@ -154,8 +154,6 @@ const App: React.FC = () => {
     if (result.success) {
       setShowCustomModal(false);
       incrementAccountStat();
-    } else if (result.reason === 'no_credits') {
-      setShowRewardedAd(true);
     } else {
       const msg = result.reason === 'taken' ? t.usernameTaken : t.connError;
       setLimitModal({ isOpen: true, title: t.connError, message: msg, type: 'daily' });
@@ -171,8 +169,6 @@ const App: React.FC = () => {
     const result = await createQuickAccount();
     if (result.success) {
       incrementAccountStat();
-    } else if (result.reason === 'no_credits') {
-      setShowRewardedAd(true);
     }
   }, [accounts.length, MAX_ACTIVE_ACCOUNTS, createQuickAccount, incrementAccountStat, t]);
 
