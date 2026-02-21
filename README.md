@@ -36,7 +36,7 @@ MephistoMail is a cutting-edge, **RAM-only** disposable email service built for 
 - 🌑 **Dark Mode UI:** Sleek, modern interface designed for focus and readability.
 - 🌍 **Multi-Language:** Built-in support for English, Turkish, Spanish, German, and French.
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
 Built with modern web technologies for performance and maintainability:
 
@@ -45,7 +45,9 @@ Built with modern web technologies for performance and maintainability:
 - **Build Tool:** [Vite](https://vitejs.dev/)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/)
 - **State Management:** React Hooks
-- **Email API:** [mail.tm](https://mail.tm/) / [mail.gw](https://mail.gw/)
+- **Email API (Upstream):** [mail.tm](https://mail.tm/) / [mail.gw](https://mail.gw/)
+
+> **A Note on the Backend & Go:** The backend (including our Go APIs, WebSocket proxy, and rate-limiting system) is currently kept in a separate, private repository while being cleaned up for an open-source release. In the mean time, this frontend repository connects directly to our proxy endpoints and upstream providers to keep the site fully functional.
 
 ## 🚀 Getting Started
 

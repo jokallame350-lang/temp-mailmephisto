@@ -11,7 +11,6 @@ interface EmailViewerProps {
   lang: Language;
 }
 
-// OTP kodunu e-posta içeriğinden çıkar
 const extractOTPFromContent = (subject: string, text?: string): string | null => {
   const combined = `${subject || ''} ${text || ''}`;
   const patterns = [
@@ -27,6 +26,37 @@ const extractOTPFromContent = (subject: string, text?: string): string | null =>
   for (const pattern of patterns) {
     const match = combined.match(pattern);
     if (match) return match[1];
+  }
+  return null;
+};
+
+// Basit AI/Heuristic Eylem Linki Çıkarıcı
+const extractActionLinks = (htmlText?: string): { url: string, label: string } | null => {
+  if (!htmlText) return null;
+  // Çok basit bir HTML parse yapalım (tarayıcı ortamındayız DOMParser çalışır)
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlText, 'text/html');
+    const links = doc.querySelectorAll('a');
+
+    const targetWords = ['verify', 'confirm', 'activate', 'reset', 'unsubscribe', 'onayla', 'doğrula', 'etkinleştir', 'sıfırla', 'login', 'sign in', 'giriş', 'şifre', 'click here', 'tıkla', 'unsubscribe', 'ayrıl'];
+
+    for (let i = 0; i < links.length; i++) {
+      const link = links[i];
+      const textContext = (link.textContent || '').toLowerCase().trim();
+      const href = link.getAttribute('href'); // Tarayıcının resolve etmemesi için getAttribute kullanıyoruz
+
+      if (!textContext || !href || (!href.startsWith('http') && !href.startsWith('https'))) continue;
+
+      const isAction = targetWords.some(word => textContext.includes(word));
+
+      // Butona benzeyen (inline style vs olan) veya kritik kelime içeren ilk linki al
+      if (isAction || link.style.padding || link.style.backgroundColor) {
+        return { url: href, label: link.textContent?.trim() || 'Action Link' };
+      }
+    }
+  } catch (e) {
+    console.error('Action link parse failed', e);
   }
   return null;
 };
@@ -173,6 +203,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
   const fromAddress = typeof email.from === 'string' ? email.from : email.from.address;
   const fromName = typeof email.from === 'string' ? email.from : (email.from.name || email.from.address);
   const otpCode = extractOTPFromContent(email.subject, email.text || '');
+  const actionLink = useMemo(() => extractActionLinks(email.html ? email.html[0] : ''), [email?.id, email.html]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', {
@@ -262,6 +293,31 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
             {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             {codeCopied ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
           </button>
+        </div>
+      )}
+
+      {/* AI Aksiyon Linki Algılandıysa */}
+      {!otpCode && actionLink && (
+        <div className="action-glow mx-3 sm:mx-4 mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-indigo-500/[0.07] border border-indigo-500/20 rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:border-indigo-500/40 transition-colors" role="alert">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0 animate-pulse">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 rotate-180" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-0.5 flex items-center gap-1">
+                <span>⚡ AI Smart Action</span>
+              </p>
+              <p className="text-sm sm:text-base font-bold text-slate-200 capitalize truncate max-w-[200px] sm:max-w-xs">{actionLink.label}</p>
+            </div>
+          </div>
+          <a
+            href={actionLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 rounded-xl font-bold text-sm flex items-center justify-center transition-all active:scale-95 shrink-0"
+          >
+            {lang === 'tr' ? 'Aksiyonu Aç' : 'Open Link'}
+          </a>
         </div>
       )}
 

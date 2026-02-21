@@ -170,7 +170,7 @@ export const translations = {
     faq13Q: 'Does MephistoMail work on mobile phones?',
     faq13A: 'Yes! MephistoMail is fully responsive and optimized for mobile devices. It also supports PWA (Progressive Web App) installation — add it to your home screen for an app-like experience. Swipe-to-delete and pull-to-refresh gestures are supported on mobile.',
     faq14Q: 'What languages does MephistoMail support?',
-    faq14A: 'MephistoMail currently supports English and Turkish (Türkçe). The interface automatically detects your browser language. More languages are coming soon.',
+    faq14A: 'MephistoMail currently supports English, Turkish, Spanish, German, and French. The interface automatically detects your browser language.',
   },
   tr: {
     // Genel UI
@@ -341,7 +341,7 @@ export const translations = {
     faq13Q: 'MephistoMail cep telefonlarında çalışır mı?',
     faq13A: 'Evet! MephistoMail tamamen duyarlı ve mobil cihazlar için optimize edilmiştir. Ayrıca PWA (Progressive Web App) kurulumunu da destekler — ana ekranınıza ekleyerek uygulama benzeri bir deneyim yaşayın. Mobilde kaydırarak silme ve aşağı çekerek yenileme hareketleri desteklenir.',
     faq14Q: 'MephistoMail hangi dilleri destekliyor?',
-    faq14A: 'MephistoMail şu anda İngilizce ve Türkçe desteklemektedir. Arayüz tarayıcı dilinizi otomatik olarak algılar. Yakında daha fazla dil eklenecektir.',
+    faq14A: 'MephistoMail şu anda İngilizce, Türkçe, İspanyolca, Almanca ve Fransızca desteklemektedir. Arayüz tarayıcı dilinizi otomatik olarak algılar.',
   },
   es: {
     refresh: 'Actualizar', copy: 'Copiar', copied: 'Copiado', new: 'Nuevo', delete: 'Eliminar', change: 'Cambiar',

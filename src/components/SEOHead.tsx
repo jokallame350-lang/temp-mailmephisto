@@ -37,6 +37,9 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang }) => {
         // hreflang
         updateLink('alternate', siteUrl + '/', 'en', 'hreflang');
         updateLink('alternate', siteUrl + '/?lang=tr', 'tr', 'hreflang');
+        updateLink('alternate', siteUrl + '/?lang=es', 'es', 'hreflang');
+        updateLink('alternate', siteUrl + '/?lang=de', 'de', 'hreflang');
+        updateLink('alternate', siteUrl + '/?lang=fr', 'fr', 'hreflang');
         updateLink('alternate', siteUrl + '/', 'x-default', 'hreflang');
 
         // OG tags

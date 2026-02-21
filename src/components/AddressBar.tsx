@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, Ghost, SendToBack } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -34,11 +34,14 @@ interface AddressBarProps {
   progress: number;
   lang: Language;
   onCreateCustom?: () => void;
+  onIdentity?: () => void;
+  onForwarding?: () => void;
+  onShareDrop?: () => void;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({
-  mailbox, isLoading, isRefreshing, onRefresh, onDelete,
-  progress, lang, onCreateCustom
+  mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete,
+  progress, lang, onCreateCustom, onIdentity, onForwarding, onShareDrop
 }) => {
   const t = translations[lang];
   const [copied, setCopied] = useState(false);
@@ -138,6 +141,47 @@ const AddressBar: React.FC<AddressBarProps> = ({
         >
           <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
           <span>{t.refresh}</span>
+        </button>
+
+        {onIdentity && (
+          <button
+            onClick={onIdentity}
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-indigo-400 hover:bg-indigo-500/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+            title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}
+          >
+            <UserCheck className="w-4 h-4" />
+            <span className="hidden sm:inline">{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
+          </button>
+        )}
+
+        {onForwarding && (
+          <button
+            onClick={onForwarding}
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-rose-500 hover:bg-rose-500/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+            title={lang === 'tr' ? 'Hayalet Yönlendirme' : 'Ghost Forwarding'}
+          >
+            <Ghost className="w-4 h-4" />
+            <span className="hidden sm:inline">{lang === 'tr' ? 'Kalkan' : 'Forward'}</span>
+          </button>
+        )}
+
+        {onShareDrop && (
+          <button
+            onClick={onShareDrop}
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-fuchsia-500 hover:bg-fuchsia-500/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+            title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}
+          >
+            <SendToBack className="w-4 h-4" />
+            <span className="hidden sm:inline">Drop Link</span>
+          </button>
+        )}
+
+        <button
+          onClick={onChange}
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
+        >
+          <Plus className="w-4 h-4 text-slate-400" />
+          <span>{lang === 'tr' ? 'Yeni' : 'New'}</span>
         </button>
 
         <button

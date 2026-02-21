@@ -25,6 +25,9 @@ const LimitModal = lazy(() => import('./components/LimitModal'));
 const StatsAndFiltersModule = lazy(() => import('./components/StatsAndFilters').then(m => ({ default: m.StatsModal })));
 const NotifFilterModule = lazy(() => import('./components/StatsAndFilters').then(m => ({ default: m.NotifFilterModal })));
 const AliasManagerModal = lazy(() => import('./components/AliasManagerModal'));
+const IdentityModal = lazy(() => import('./components/IdentityModal'));
+const ForwardingModal = lazy(() => import('./components/ForwardingModal'));
+const ShareDropModal = lazy(() => import('./components/ShareDropModal'));
 
 // OTP kodunu subject'ten çıkar (toast için)
 const extractOTPCode = (subject: string): string | null => {
@@ -95,6 +98,9 @@ const App: React.FC = () => {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showNotifFilterModal, setShowNotifFilterModal] = useState(false);
   const [showAliasModal, setShowAliasModal] = useState(false);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [showForwardingModal, setShowForwardingModal] = useState(false);
+  const [showShareDropModal, setShowShareDropModal] = useState(false);
   const [showRewardedAd, setShowRewardedAd] = useState(false);
   const [limitModal, setLimitModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'daily' | 'capacity'; }>({ isOpen: false, title: '', message: '', type: 'daily' });
 
@@ -114,6 +120,7 @@ const App: React.FC = () => {
   // Dil değişikliğini kaydet
   useEffect(() => {
     localStorage.setItem('mephisto_lang', lang);
+    window.dispatchEvent(new Event('mephisto-lang-change'));
   }, [lang]);
 
   // Pull-to-refresh event listener
@@ -225,6 +232,9 @@ const App: React.FC = () => {
           {showStatsModal && <StatsAndFiltersModule isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} stats={stats} lang={lang} />}
           {showNotifFilterModal && <NotifFilterModule isOpen={showNotifFilterModal} onClose={() => setShowNotifFilterModal(false)} filters={notifFilters} setFilters={setNotifFilters} lang={lang} />}
           {showAliasModal && <AliasManagerModal isOpen={showAliasModal} onClose={() => setShowAliasModal(false)} accounts={accounts} onUpdateLabel={updateAccountLabel} onSetAutoDelete={setAutoDelete} onBulkCopy={bulkCopyAddresses} lang={lang} />}
+          {showIdentityModal && <IdentityModal isOpen={showIdentityModal} onClose={() => setShowIdentityModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
+          {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={() => setShowForwardingModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
+          {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
         </Suspense>
 
         {/* Rewarded Ad Modal — kredi bittiğinde gösterilir */}
@@ -324,6 +334,9 @@ const App: React.FC = () => {
                   }
                 }}
                 onCreateCustom={() => setShowCustomModal(true)}
+                onIdentity={() => setShowIdentityModal(true)}
+                onForwarding={() => setShowForwardingModal(true)}
+                onShareDrop={() => setShowShareDropModal(true)}
               />
             )}
           </div>

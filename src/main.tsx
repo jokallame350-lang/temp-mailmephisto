@@ -32,7 +32,7 @@ const ScrollToTop = () => {
 
 // Language hook
 const useLang = (): Language => {
-  const [lang] = useState<Language>(() => {
+  const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('mephisto_lang');
     if (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'fr') return saved;
     const bl = navigator.language.toLowerCase();
@@ -42,6 +42,22 @@ const useLang = (): Language => {
     if (bl.startsWith('fr')) return 'fr';
     return 'en';
   });
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const saved = localStorage.getItem('mephisto_lang') as Language;
+      if (saved && ['tr', 'en', 'es', 'de', 'fr'].includes(saved)) {
+        setLang(saved);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('mephisto-lang-change', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('mephisto-lang-change', handleStorage);
+    };
+  }, []);
+
   return lang;
 };
 
