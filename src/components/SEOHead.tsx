@@ -15,8 +15,8 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang }) => {
 
         // Title
         document.title = lang === 'tr'
-            ? 'MephistoMail - Gizliliğiniz İçin Nihai Kalkan | Geçici E-posta'
-            : 'MephistoMail - The Ultimate Shield For Your Privacy | Disposable Email';
+            ? 'MephistoMail - Gizliliğiniz İçin En Güvenli Geçici E-posta'
+            : 'MephistoMail - The Ultimate Privacy Focused Disposable Email';
 
         // Meta description
         updateMeta('description', lang === 'tr'
@@ -47,8 +47,8 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang }) => {
             ? 'MephistoMail - Gizliliğiniz İçin Kullan-At E-posta'
             : 'MephistoMail - Privacy First Disposable Email', 'property');
         updateMeta('og:description', lang === 'tr'
-            ? 'Gerçek e-postanızı vermeyi bırakın. Anonim kalın. Takip yok, kayıt yok.'
-            : 'Stop giving away your real email. Use Mephisto to stay anonymous. No logs, no tracking.', 'property');
+            ? 'Gerçek e-postanızı vermeyi bırakın. Anonim kalın. Sınırsız, ücretsiz ve anlık geçici e-postalar.'
+            : 'Stop giving away your real email. Use Mephisto to stay anonymous. Unlimited, free, and instant disposable emails.', 'property');
         updateMeta('og:locale', lang === 'tr' ? 'tr_TR' : 'en_US', 'property');
         updateMeta('og:locale:alternate', lang === 'tr' ? 'en_US' : 'tr_TR', 'property');
 

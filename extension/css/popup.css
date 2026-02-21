@@ -1,0 +1,370 @@
+:root {
+    --bg-dark: #0a0a0a;
+    --bg-surface: #171717;
+    --bg-input: #1f2937;
+    --border-color: #262626;
+    --border-hover: #404040;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-red: #ef4444;
+    --red-grad: linear-gradient(to right, #dc2626, #f87171);
+    --red-grad-hover: linear-gradient(to right, #b91c1c, #ef4444);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    width: 400px;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border-color);
+    gap: 8px;
+}
+
+.logo-icon {
+    width: 22px;
+    height: 22px;
+    color: var(--text-red);
+}
+
+.header h1 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.state-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Loading State */
+#stateLoading,
+#stateNoAccount {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 16px;
+}
+
+#stateLoading {
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 28px;
+    height: 28px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* No Account State */
+.hero-icon svg {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+}
+
+.desc {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+/* Active Account */
+.address-box {
+    display: flex;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+#emailAddress {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 15px;
+    padding: 8px 12px;
+    outline: none;
+    font-weight: 600;
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn.primary {
+    background: var(--red-grad);
+    color: white;
+}
+
+.btn.primary:hover {
+    background: var(--red-grad-hover);
+    transform: translateY(-1px);
+}
+
+.btn.danger {
+    background: transparent;
+    color: var(--text-red);
+    border: 1px solid var(--border-color);
+}
+
+.btn.danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    color: var(--text-primary);
+    background: var(--bg-input);
+}
+
+.btn-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Inbox List */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.inbox-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.badge {
+    background: var(--text-red);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.message-list {
+    list-style: none;
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    max-height: 240px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-surface);
+}
+
+.message-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+.empty-state {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-style: italic;
+}
+
+.msg-item {
+    padding: 14px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.msg-item:last-child {
+    border-bottom: none;
+}
+
+.msg-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.msg-from {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.msg-subject {
+    color: var(--text-secondary);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Message Detail View */
+#stateMessageDetail {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-dark);
+    width: 100%;
+    height: 100%;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+.detail-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.msg-detail-meta {
+    margin-bottom: 16px;
+    background: var(--bg-surface);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.meta-from {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.meta-subject {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.msg-detail-body {
+    flex: 1;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: white;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#detailLoading {
+    padding: 16px;
+    text-align: center;
+    color: #000;
+    font-weight: 600;
+}
+
+#detailFrame {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+    border: none;
+    background: #fff;
+}
+
+/* Footer Actions */
+.footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+}
+
+.link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.link:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}

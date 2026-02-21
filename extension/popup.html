@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MephistoMail</title>
+    <link rel="stylesheet" href="css/popup.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <h1>MephistoMail</h1>
+        </header>
+
+        <main id="contentArea">
+            <!-- Loading State -->
+            <div id="stateLoading" class="state-view hidden">
+                <svg class="spinner text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="2" x2="12" y2="6"></line>
+                    <line x1="12" y1="18" x2="12" y2="22"></line>
+                    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                    <line x1="2" y1="12" x2="6" y2="12"></line>
+                    <line x1="18" y1="12" x2="22" y2="12"></line>
+                    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                </svg>
+                <p>Connecting securely...</p>
+            </div>
+
+            <!-- No Account State -->
+            <div id="stateNoAccount" class="state-view">
+                <div class="hero-icon text-red-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                </div>
+                <p class="desc">Generate a RAM-only temporary email instantly.<br>OTP codes will be automatically
+                    injected.</p>
+                <button id="btnCreate" class="btn primary">Generate Email Address</button>
+            </div>
+
+            <!-- Active Account State -->
+            <div id="stateActive" class="state-view hidden">
+                <div class="address-box">
+                    <input type="text" id="emailAddress" readonly value="loading...">
+                    <button id="btnCopy" class="btn-icon" title="Copy Address">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="inbox-header">
+                    <span>Inbox <span id="msgCount" class="badge">0</span></span>
+                    <div class="header-actions">
+                        <button id="btnRefresh" class="btn-icon small" title="Refresh Inbox">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <ul id="messageList" class="message-list">
+                    <!-- Messages will be injected here -->
+                </ul>
+
+                <div class="footer-actions">
+                    <button id="btnDelete" class="btn danger">Destroy Inbox</button>
+                    <a href="https://mephistomail.site" target="_blank" class="link">Open Full Site &rarr;</a>
+                </div>
+            </div>
+
+            <!-- Email Detailed Read State -->
+            <div id="stateMessageDetail" class="state-view hidden">
+                <div class="detail-header">
+                    <button id="btnBackToInbox" class="btn-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                    </button>
+                    <span class="detail-title">Message</span>
+                </div>
+                <div class="msg-detail-meta">
+                    <div id="detailFrom" class="meta-from">Sender</div>
+                    <div id="detailSubject" class="meta-subject">Subject</div>
+                </div>
+                <div id="detailBody" class="msg-detail-body">
+                    <div id="detailLoading" class="hidden">Loading content...</div>
+                    <iframe id="detailFrame" class="hidden" sandbox="allow-same-origin"></iframe>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <script src="js/popup.js"></script>
+</body>
+
+</html>

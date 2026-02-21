@@ -340,14 +340,14 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
             {(lang === 'tr' ? [
               { name: 'Ahmet K.', role: 'Yazılım Geliştirici', text: 'Test otomasyonlarımda MephistoMail kullanıyorum. WebSocket ile anlık teslimat gerçekten çok hızlı, diğer servislerde 30 saniye beklerken burada 2 saniyede geliyor.', stars: 5 },
               { name: 'Elif D.', role: 'Freelancer', text: 'Her gün onlarca siteye kayıt oluyorum. MephistoMail sayesinde gerçek adresime spam gelmiyor. 100 eş zamanlı hesap özelliği harika!', stars: 5 },
-              { name: 'Mert Y.', role: 'Öğrenci', text: 'Ücretsiz deneme abonelikleri için mükemmel. Reklam izleyerek kredi kazanma sistemi adil ve rahatsız edici değil.', stars: 4 },
+              { name: 'Mert Y.', role: 'Öğrenci', text: 'Ücretsiz deneme abonelikleri için mükemmel. Kayıt olmadan anında sınırsız hesap açabiliyor olmak harika, tam aradığım şey.', stars: 5 },
               { name: 'Zeynep A.', role: 'UX Tasarımcı', text: 'Arayüzü diğer temp mail servislerine göre çok daha modern ve kullanışlı. Karanlık tema gözleri yormuyor.', stars: 5 },
               { name: 'Can B.', role: 'DevOps Mühendisi', text: 'CI/CD pipeline\'larımızda e-posta testleri için kullanıyoruz. RAM-only mimari gizlilik açısından güven veriyor.', stars: 5 },
               { name: 'Selin T.', role: 'Dijital Pazarlamacı', text: 'Rakip analizi yapırken çok işime yarıyor. QR kod ile mobil transfer özelliği çok pratik.', stars: 4 },
             ] : [
               { name: 'Alex M.', role: 'Software Engineer', text: 'I use MephistoMail for test automation. WebSocket delivery is incredibly fast — emails arrive in 2 seconds vs 30 seconds on other services.', stars: 5 },
               { name: 'Sarah L.', role: 'Freelancer', text: 'I sign up to dozens of sites daily. MephistoMail keeps spam away from my real inbox. The 100 simultaneous accounts feature is amazing!', stars: 5 },
-              { name: 'James R.', role: 'Student', text: 'Perfect for free trial subscriptions. The ad-for-credits system is fair and non-intrusive.', stars: 4 },
+              { name: 'James R.', role: 'Student', text: 'Perfect for free trial subscriptions. Being able to open unlimited accounts instantly without any registration is exactly what I needed.', stars: 5 },
               { name: 'Emma W.', role: 'UX Designer', text: 'The UI is so much better than other temp mail services. Modern, clean dark theme that doesn\'t strain the eyes.', stars: 5 },
               { name: 'David K.', role: 'DevOps Engineer', text: 'We use it for email testing in our CI/CD pipelines. The RAM-only architecture gives confidence in privacy.', stars: 5 },
               { name: 'Lisa C.', role: 'Digital Marketer', text: 'Great for competitor analysis signups. The QR code mobile transfer feature is super practical.', stars: 4 },
