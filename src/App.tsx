@@ -1,4 +1,4 @@
-import React, { useState, useCallback, lazy, Suspense, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import AddressBar from './components/AddressBar';
 import EmailList from './components/EmailList';
@@ -37,7 +37,6 @@ const App: React.FC = () => {
   const {
     accounts,
     activeAccount,
-    activeAccountId,
     isLoadingAccount,
     setActiveAccountId,
     createQuickAccount,
