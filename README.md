@@ -28,6 +28,7 @@ MephistoMail is a cutting-edge, **RAM-only** disposable email service built for 
 ## ✨ Key Features
 
 - 🚀 **Instant Delivery:** Real-time WebSocket connection for sub-second email reception.
+- 🧱 **Chrome Extension (Sideload):** An official, tracker-free Chrome extension to fetch and auto-copy OTPs seamlessly.
 - 🧠 **RAM-Only Architecture:** Emails are stored in volatile memory and purged instantly upon session termination. **Zero logs.**
 - 📱 **PWA Support:** Installable as a native-like app on iOS and Android. Works offline.
 - 🔄 **Smart Domain Rotation:** Automatically cycles through available domains to bypass blocklists.
@@ -35,6 +36,16 @@ MephistoMail is a cutting-edge, **RAM-only** disposable email service built for 
 - 🔐 **Client-Side Encryption:** Passwords and keys are generated locally in your browser.
 - 🌑 **Dark Mode UI:** Sleek, modern interface designed for focus and readability.
 - 🌍 **Multi-Language:** Built-in support for English, Turkish, Spanish, German, and French.
+
+## 🧩 Chrome Extension (Sideload Guide)
+
+To strictly prevent any Google Web Store tracking or analytics, our extension operates standalone. 
+
+1. Download the repository source code as a ZIP file.
+2. Extract the archive and locate the `extension` folder.
+3. Open your browser and navigate to `chrome://extensions`.
+4. Enable **Developer Mode** (top-right corner).
+5. Drag and drop the `extension` folder into the extensions page.
 
 ## 🛠️ Tech Stack & Architecture
 
