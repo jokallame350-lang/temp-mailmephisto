@@ -23,6 +23,7 @@ import AliasManagerModal from './components/AliasManagerModal';
 import IdentityModal from './components/IdentityModal';
 import ForwardingModal from './components/ForwardingModal';
 import ShareDropModal from './components/ShareDropModal';
+import ExtensionInstallModal from './components/ExtensionInstallModal';
 
 // OTP kodunu subject'ten çıkar (toast için)
 const extractOTPCode = (subject: string): string | null => {
@@ -90,6 +91,7 @@ const App: React.FC = () => {
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [showForwardingModal, setShowForwardingModal] = useState(false);
   const [showShareDropModal, setShowShareDropModal] = useState(false);
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [limitModal, setLimitModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'daily' | 'capacity'; }>({ isOpen: false, title: '', message: '', type: 'daily' });
 
   const [lang, setLang] = useState<Language>(() => {
@@ -209,6 +211,7 @@ const App: React.FC = () => {
           setLang={setLang}
           onOpenQR={() => setShowQRModal(true)}
           onOpenPass={() => setShowPassModal(true)}
+          onOpenExtension={() => setShowExtensionModal(true)}
         />
 
         {/* Modals */}
@@ -222,6 +225,7 @@ const App: React.FC = () => {
         {showIdentityModal && <IdentityModal isOpen={showIdentityModal} onClose={() => setShowIdentityModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
         {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={() => setShowForwardingModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
         {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
+        {showExtensionModal && <ExtensionInstallModal isOpen={showExtensionModal} onClose={() => setShowExtensionModal(false)} lang={lang} />}
 
         <main id="main-content" className="flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10" role="main">
 
@@ -287,7 +291,10 @@ const App: React.FC = () => {
 
             {/* Download Extension Promotion */}
             <div className="flex justify-center w-full mt-2 mb-2">
-              <a href="https://github.com/jokallame350-lang/temp-mailmephisto/tree/main/extension" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5 transition-all group shadow-lg">
+              <button
+                onClick={() => setShowExtensionModal(true)}
+                className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5 transition-all group shadow-lg"
+              >
                 <svg className="w-6 h-6 text-red-500 group-hover:scale-110 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                   <line x1="8" y1="21" x2="16" y2="21"></line>
@@ -307,7 +314,7 @@ const App: React.FC = () => {
                     <polyline points="12 5 19 12 12 19"></polyline>
                   </svg>
                 </div>
-              </a>
+              </button>
             </div>
 
             {accounts.length === 0 || isLoadingAccount ? (

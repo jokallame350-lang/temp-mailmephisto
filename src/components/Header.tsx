@@ -12,11 +12,12 @@ interface HeaderProps {
   setLang: (lang: Language) => void;
   onOpenQR?: () => void;
   onOpenPass?: () => void;
+  onOpenExtension?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   accounts, currentAccount, onSwitchAccount, onDeleteAccount,
-  lang, setLang, onOpenQR, onOpenPass
+  lang, setLang, onOpenQR, onOpenPass, onOpenExtension
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -87,15 +88,13 @@ const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
         <div className="flex items-center gap-0.5 sm:gap-1">
           {/* Extension Download */}
-          <a
-            href="https://github.com/jokallame350-lang/temp-mailmephisto/tree/main/extension"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={onOpenExtension}
             className="p-1.5 sm:p-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded-lg transition-all"
             title={lang === 'tr' ? 'Chrome Eklentisini İndir' : 'Download Chrome Extension'}
           >
             <Download className="w-4 h-4" />
-          </a>
+          </button>
 
           {/* PWA Install */}
           {pwaInstallable && (
