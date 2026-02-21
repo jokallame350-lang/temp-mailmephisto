@@ -86,12 +86,23 @@ const Header: React.FC<HeaderProps> = ({
 
       <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
         <div className="flex items-center gap-0.5 sm:gap-1">
+          {/* Extension Download */}
+          <a
+            href="https://github.com/cagataykalan/temp-mailmephisto/tree/main/extension"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 sm:p-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded-lg transition-all"
+            title={lang === 'tr' ? 'Chrome Eklentisini İndir' : 'Download Chrome Extension'}
+          >
+            <Download className="w-4 h-4" />
+          </a>
+
           {/* PWA Install */}
           {pwaInstallable && (
             <button
               onClick={handleInstallPWA}
-              className="p-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded-lg transition-all animate-pulse"
-              title={lang === 'tr' ? 'Uygulamayı Yükle' : 'Install App'}
+              className="p-1.5 sm:p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-all"
+              title={lang === 'tr' ? 'Uygulamayı Yüke (PWA)' : 'Install App (PWA)'}
             >
               <Download className="w-4 h-4" />
             </button>
