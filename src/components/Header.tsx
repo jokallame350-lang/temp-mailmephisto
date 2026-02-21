@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-0.5 sm:gap-1">
           {/* Extension Download */}
           <a
-            href="https://github.com/cagataykalan/temp-mailmephisto/tree/main/extension"
+            href="https://github.com/jokallame350-lang/temp-mailmephisto/tree/main/extension"
             target="_blank"
             rel="noopener noreferrer"
             className="p-1.5 sm:p-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded-lg transition-all"

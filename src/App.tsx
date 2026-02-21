@@ -287,7 +287,7 @@ const App: React.FC = () => {
 
             {/* Download Extension Promotion */}
             <div className="flex justify-center w-full mt-2 mb-2">
-              <a href="https://github.com/cagataykalan/temp-mailmephisto/tree/main/extension" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5 transition-all group shadow-lg">
+              <a href="https://github.com/jokallame350-lang/temp-mailmephisto/tree/main/extension" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5 transition-all group shadow-lg">
                 <svg className="w-6 h-6 text-red-500 group-hover:scale-110 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                   <line x1="8" y1="21" x2="16" y2="21"></line>
