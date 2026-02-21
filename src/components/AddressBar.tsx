@@ -124,82 +124,53 @@ const AddressBar: React.FC<AddressBarProps> = ({
         </div>
       </div>
 
-      {/* HAP BUTONLAR */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
-
-        <button
-          onClick={(e) => { e.stopPropagation(); handleCopy(); }}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-        >
-          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
-          <span>{t.copy}</span>
-        </button>
-
-        <button
-          onClick={onRefresh}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-        >
-          <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span>{t.refresh}</span>
-        </button>
-
-        {onIdentity && (
-          <button
-            onClick={onIdentity}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-indigo-400 hover:bg-indigo-500/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-            title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}
-          >
-            <UserCheck className="w-4 h-4" />
-            <span className="hidden sm:inline">{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
+      <div className="flex flex-col gap-3 w-full items-center">
+        {/* TEMEL İŞLEMLER */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
+          <button onClick={(e) => { e.stopPropagation(); handleCopy(); }} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+            <span>{t.copy}</span>
           </button>
-        )}
-
-        {onForwarding && (
-          <button
-            onClick={onForwarding}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-rose-500 hover:bg-rose-500/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-            title={lang === 'tr' ? 'Hayalet Yönlendirme' : 'Ghost Forwarding'}
-          >
-            <Ghost className="w-4 h-4" />
-            <span className="hidden sm:inline">{lang === 'tr' ? 'Kalkan' : 'Forward'}</span>
+          <button onClick={onRefresh} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+            <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{t.refresh}</span>
           </button>
-        )}
-
-        {onShareDrop && (
-          <button
-            onClick={onShareDrop}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-fuchsia-500 hover:bg-fuchsia-500/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-            title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}
-          >
-            <SendToBack className="w-4 h-4" />
-            <span className="hidden sm:inline">Drop Link</span>
+          <button onClick={onChange} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+            <Plus className="w-4 h-4 text-slate-400" />
+            <span>{lang === 'tr' ? 'Yeni' : 'New'}</span>
           </button>
-        )}
+          <button onClick={onCreateCustom} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+            <Pencil className="w-4 h-4 text-slate-400" />
+            <span>{t.change}</span>
+          </button>
+          <button onClick={onDelete} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-red-500 hover:bg-red-900/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+            <Trash2 className="w-4 h-4" />
+            <span>{t.delete}</span>
+          </button>
+        </div>
 
-        <button
-          onClick={onChange}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-        >
-          <Plus className="w-4 h-4 text-slate-400" />
-          <span>{lang === 'tr' ? 'Yeni' : 'New'}</span>
-        </button>
-
-        <button
-          onClick={onCreateCustom}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-        >
-          <Pencil className="w-4 h-4 text-slate-400" />
-          <span>{t.change}</span>
-        </button>
-
-        <button
-          onClick={onDelete}
-          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-red-500 hover:bg-red-900/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span>{t.delete}</span>
-        </button>
-
+        {/* GÜVENLİK / EKSTRA ARAÇLAR */}
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full mt-2 pt-3 border-t border-white/5 relative">
+          <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Süper Güçler' : 'Super Powers'}</span>
+          {onIdentity && (
+            <button onClick={onIdentity} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10 border border-indigo-500/20 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
+            </button>
+          )}
+          {onForwarding && (
+            <button onClick={onForwarding} className="flex items-center gap-1.5 px-4 py-2 bg-rose-500/5 text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Hayalet Yönlendirme' : 'Ghost Forwarding'}>
+              <Ghost className="w-3.5 h-3.5" />
+              <span>{lang === 'tr' ? 'Kalkan' : 'Forward'}</span>
+            </button>
+          )}
+          {onShareDrop && (
+            <button onClick={onShareDrop} className="flex items-center gap-1.5 px-4 py-2 bg-fuchsia-500/5 text-fuchsia-400 hover:bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
+              <SendToBack className="w-3.5 h-3.5" />
+              <span>Drop Link</span>
+            </button>
+          )}
+        </div>
       </div>
 
     </div>

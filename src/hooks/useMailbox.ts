@@ -1,20 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Mailbox } from '../types';
 import { generateMailbox, createCustomMailbox, fetchDomains, storeCredentials, onTokenRefresh } from '../services/mailService';
-import { getCredits } from '../components/RewardedAdModal';
-
 const STORAGE_KEY = 'nexus_accounts_v5';
 const MAX_ACTIVE_ACCOUNTS = 100;
-const CREDITS_KEY = 'mephisto_credits';
-const FREE_CREDITS = 3;
-
-// Kredi yönetimi — hook dışında çalışan yardımcı fonksiyonlar
-function consumeOneCredit(): boolean {
-    const current = getCredits();
-    if (current <= 0) return false;
-    localStorage.setItem(CREDITS_KEY, String(current - 1));
-    return true;
-}
 
 export function useMailbox() {
     const [accounts, setAccounts] = useState<Mailbox[]>([]);
@@ -28,11 +16,6 @@ export function useMailbox() {
     // İlk yüklemede localStorage'dan hesapları geri yükle
     useEffect(() => {
         fetchDomains().catch(err => console.warn('Domain fetch failed:', err));
-
-        // İlk kez gelen kullanıcıya kredi ver
-        if (localStorage.getItem(CREDITS_KEY) === null) {
-            localStorage.setItem(CREDITS_KEY, String(FREE_CREDITS));
-        }
 
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -121,13 +104,6 @@ export function useMailbox() {
             return { success: false, reason: accounts.length >= MAX_ACTIVE_ACCOUNTS ? 'capacity' : 'busy' };
         }
 
-        // Kredi kontrolü
-        if (!skipCreditCheck) {
-            if (!consumeOneCredit()) {
-                return { success: false, reason: 'no_credits' };
-            }
-        }
-
         isCreatingRef.current = true;
         setIsLoadingAccount(true);
 
@@ -145,10 +121,6 @@ export function useMailbox() {
             return { success: true };
         } catch (e) {
             console.error('Account creation failed:', e);
-            if (!skipCreditCheck) {
-                const current = getCredits();
-                localStorage.setItem(CREDITS_KEY, String(current + 1));
-            }
             return { success: false, reason: 'error' };
         } finally {
             setIsLoadingAccount(false);
@@ -157,10 +129,6 @@ export function useMailbox() {
     }, [accounts.length]);
 
     const handleCreateCustom = useCallback(async (username: string, domain: string, apiBase: string) => {
-        if (!consumeOneCredit()) {
-            return { success: false, reason: 'no_credits' };
-        }
-
         setIsLoadingAccount(true);
         try {
             const newMailbox: Mailbox = { ...await createCustomMailbox(username, domain, apiBase), createdAt: Date.now() };
@@ -175,8 +143,6 @@ export function useMailbox() {
             setActiveAccountId(newMailbox.id);
             return { success: true };
         } catch (e: any) {
-            const current = getCredits();
-            localStorage.setItem(CREDITS_KEY, String(current + 1));
             const isTaken = e?.message?.includes('alınmış') || e?.message?.includes('taken');
             return { success: false, reason: isTaken ? 'taken' : 'error' };
         } finally {
