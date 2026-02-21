@@ -158,12 +158,6 @@ const AddressBar: React.FC<AddressBarProps> = ({
               <span>{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
             </button>
           )}
-          {onForwarding && (
-            <button onClick={onForwarding} className="flex items-center gap-1.5 px-4 py-2 bg-rose-500/5 text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Hayalet Yönlendirme' : 'Ghost Forwarding'}>
-              <Ghost className="w-3.5 h-3.5" />
-              <span>{lang === 'tr' ? 'Kalkan' : 'Forward'}</span>
-            </button>
-          )}
           {onShareDrop && (
             <button onClick={onShareDrop} className="flex items-center gap-1.5 px-4 py-2 bg-fuchsia-500/5 text-fuchsia-400 hover:bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
               <SendToBack className="w-3.5 h-3.5" />
