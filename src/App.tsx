@@ -285,6 +285,31 @@ const App: React.FC = () => {
               </div>
             </div>
 
+            {/* Download Extension Promotion */}
+            <div className="flex justify-center w-full mt-2 mb-2">
+              <a href="https://github.com/cagataykalan/temp-mailmephisto/tree/main/extension" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/5 transition-all group shadow-lg">
+                <svg className="w-6 h-6 text-red-500 group-hover:scale-110 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <div className="flex flex-col text-left">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-slate-100 group-hover:text-white transition-colors">
+                    {lang === 'tr' ? 'MephistoMail Chrome Eklentisi Geldi' : 'Get Chrome Extension'}
+                  </span>
+                  <span className="text-[10px] text-red-400 font-medium">
+                    {lang === 'tr' ? 'Kayıt formlarında kodu tek tıkla yapıştırın!' : 'Click and copy OTPs instantly on any site!'}
+                  </span>
+                </div>
+                <div className="ml-2 pl-3 border-l border-red-500/20 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-red-500/70 group-hover:text-red-400 group-hover:translate-x-1 transition-all" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                  </svg>
+                </div>
+              </a>
+            </div>
+
             {accounts.length === 0 || isLoadingAccount ? (
               <div className="w-full max-w-2xl h-16 flex items-center justify-center border border-white/10 rounded-2xl bg-[#0f1115] shadow-lg animate-pulse gap-3" role="status" aria-live="polite">
                 <Loader2 className="w-5 h-5 text-red-500 animate-spin" aria-hidden="true" />

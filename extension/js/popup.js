@@ -44,7 +44,6 @@ const generateRandomString = (length = 10) => {
 
 const extractOTP = (text) => {
     if (!text) return null;
-    // Match 4-8 digit numbers or 6 alphanumeric uppercase
     const match = text.match(/\b\d{4,8}\b|\b[A-Z0-9]{6}\b/);
     return match ? match[0] : null;
 };
@@ -123,24 +122,6 @@ const fetchMessages = async () => {
         if (res.ok) {
             const data = await res.json();
             const activeMsgs = data['hydra:member'].filter(m => !m.isDeleted);
-
-            // Auto-OTP injection logic
-            if (!isFirstFetch) {
-                activeMsgs.forEach(msg => {
-                    if (!knownMessageIds.has(msg.id)) {
-                        // New message arrived while popup was open!
-                        knownMessageIds.add(msg.id);
-                        const otp = extractOTP(msg.subject) || extractOTP(msg.intro);
-                        if (otp) {
-                            injectOTPToTab(otp);
-                        }
-                    }
-                });
-            } else {
-                activeMsgs.forEach(msg => knownMessageIds.add(msg.id));
-                isFirstFetch = false;
-            }
-
             renderMessages(activeMsgs);
         }
     } catch (err) { }
@@ -162,7 +143,7 @@ const fetchMessageDetail = async (id) => {
 
             const doc = detailFrame.contentWindow.document;
             doc.open();
-            // Only inject text/html if safe, let's inject simple HTML
+            // Injecting basic text/html safely inside the iframe sandbox
             doc.write(msg.html ? msg.html[0] : `<pre style="white-space:pre-wrap; font-family:sans-serif; padding:12px;">${msg.text || ''}</pre>`);
             doc.close();
 
@@ -172,14 +153,6 @@ const fetchMessageDetail = async (id) => {
     } catch (err) {
         detailLoading.innerText = "Error loading message.";
     }
-};
-
-const injectOTPToTab = (otp) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0] && tabs[0].id) {
-            chrome.tabs.sendMessage(tabs[0].id, { action: "autoFillOTP", otp });
-        }
-    });
 };
 
 // Rendering
@@ -203,15 +176,43 @@ const renderMessages = (activeMsgs) => {
         const li = document.createElement("li");
         li.className = "msg-item";
 
-        // Extract OTP for badge
+        // Extract OTP for interactive copy button
         const otpMatch = extractOTP(msg.subject) || extractOTP(msg.intro);
-        const otpBadge = otpMatch ? `<span class="badge" style="background:var(--text-secondary); margin-left: 6px;">OTP: ${otpMatch}</span>` : '';
+
+        const copyButtonHTML = otpMatch
+            ? `<button class="btn-icon copy-otp-btn" data-otp="${otpMatch}" title="Copy OTP" style="padding:4px 8px; border:1px solid var(--border-color); border-radius:6px; font-size:12px; font-weight:600; background:var(--bg-dark); color:var(--text-primary); transition:all 0.2s;">Copy ${otpMatch}</button>`
+            : '';
 
         li.innerHTML = `
-      <div class="msg-from">${msg.from.name || msg.from.address}</div>
-      <div class="msg-subject">${msg.subject} ${otpBadge}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+         <div style="flex:1; min-width:0; overflow:hidden;">
+           <div class="msg-from">${msg.from.name || msg.from.address}</div>
+           <div class="msg-subject" style="max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${msg.subject}</div>
+         </div>
+         ${copyButtonHTML}
+      </div>
     `;
-        li.addEventListener('click', () => fetchMessageDetail(msg.id));
+
+        // Click handler for viewing message or clicking the copy OTP button
+        li.addEventListener('click', (e) => {
+            // Don't open mail detail if clicked on copy OTP
+            const copyBtn = e.target.closest('.copy-otp-btn');
+            if (copyBtn) {
+                navigator.clipboard.writeText(copyBtn.dataset.otp);
+                const prevHtml = copyBtn.innerHTML;
+                copyBtn.innerHTML = `<svg style="width:14px;height:14px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied`;
+                copyBtn.style.color = "#22c55e";
+                setTimeout(() => {
+                    copyBtn.innerHTML = prevHtml;
+                    copyBtn.style.color = "var(--text-primary)";
+                }, 1500);
+                return; // exit
+            }
+
+            // otherwise, view the email details
+            fetchMessageDetail(msg.id);
+        });
+
         messageList.appendChild(li);
     });
 };
