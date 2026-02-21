@@ -9,8 +9,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SEOHead from './components/SEOHead';
 import SkipNavigation from './components/SkipNavigation';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
-import AdBanner from './components/AdBanner';
-import RewardedAdModal, { getCredits } from './components/RewardedAdModal';
 import { useMailbox } from './hooks/useMailbox';
 import { useEmails } from './hooks/useEmails';
 import { Activity, Terminal, Loader2, Sparkles, BarChart3, Bell, Tag, ShieldCheck, UserX, Globe, ArrowDown } from 'lucide-react';
@@ -101,7 +99,6 @@ const App: React.FC = () => {
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [showForwardingModal, setShowForwardingModal] = useState(false);
   const [showShareDropModal, setShowShareDropModal] = useState(false);
-  const [showRewardedAd, setShowRewardedAd] = useState(false);
   const [limitModal, setLimitModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'daily' | 'capacity'; }>({ isOpen: false, title: '', message: '', type: 'daily' });
 
   const [lang, setLang] = useState<Language>(() => {
@@ -237,16 +234,6 @@ const App: React.FC = () => {
           {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
         </Suspense>
 
-        {/* Rewarded Ad Modal — kredi bittiğinde gösterilir */}
-        <RewardedAdModal
-          isOpen={showRewardedAd}
-          onClose={() => setShowRewardedAd(false)}
-          onCreditsEarned={() => {
-            setShowRewardedAd(false);
-          }}
-          lang={lang}
-        />
-
         <main id="main-content" className="flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10" role="main">
 
           {/* HERO BAŞLIK */}
@@ -325,11 +312,6 @@ const App: React.FC = () => {
                 onChange={handleNewAccount}
                 onDelete={() => {
                   if (activeAccount) {
-                    // Son hesapsa ve kredi yoksa — reklam göster
-                    if (accounts.length <= 1 && getCredits() <= 0) {
-                      setShowRewardedAd(true);
-                      return;
-                    }
                     deleteAccount(activeAccount.id);
                   }
                 }}
@@ -392,11 +374,6 @@ const App: React.FC = () => {
           </div>
 
           <SEOContent lang={lang} />
-
-          {/* Reklam Alanı */}
-          <div className="w-full max-w-4xl mx-auto">
-            <AdBanner slot="footer" lang={lang} />
-          </div>
         </main>
 
         <Footer lang={lang} />
