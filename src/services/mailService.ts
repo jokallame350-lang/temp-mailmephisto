@@ -83,7 +83,15 @@ const safeFetch = async (
     throw new Error(`Rate limited. Retry after ${Math.ceil(getRateLimitRemainingMs(provider) / 1000)}s`);
   }
 
-  const res = await fetch(url, options);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 saniye zaman aşımı
+
+  let res: Response;
+  try {
+    res = await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   // Token expired — auto-refresh
   if (res.status === 401 && !_retried && mailboxId && !isGuerrilla(provider)) {
@@ -277,7 +285,24 @@ const deleteGuerrillaMessage = async (mailbox: Mailbox, messageId: string): Prom
 /**
  * Tüm provider'lardan domain listesini toplar.
  */
+let cachedDomains: { domains: string[]; domainProviderMap: Record<string, string>; apiBase: string } | null = null;
+let isFetchingDomains = false;
+
 export const fetchDomains = async (): Promise<{ domains: string[]; domainProviderMap: Record<string, string>; apiBase: string }> => {
+  if (cachedDomains) return cachedDomains;
+  if (isFetchingDomains) {
+    // Eğer halihazırda fetch in progress ise biraz bekle
+    return new Promise((resolve) => {
+      const interval = setInterval(() => {
+        if (cachedDomains) {
+          clearInterval(interval);
+          resolve(cachedDomains);
+        }
+      }, 500);
+    });
+  }
+
+  isFetchingDomains = true;
   const allDomains: string[] = [];
   const domainProviderMap: Record<string, string> = {};
 
@@ -320,7 +345,9 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
     domainProviderMap['dollicons.com'] = 'mail_tm';
   }
 
-  return { domains: allDomains, domainProviderMap, apiBase: 'multi' };
+  cachedDomains = { domains: allDomains, domainProviderMap, apiBase: 'multi' };
+  isFetchingDomains = false;
+  return cachedDomains;
 };
 
 /**
