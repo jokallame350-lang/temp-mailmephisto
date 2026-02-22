@@ -108,9 +108,9 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
   }, [isPulling, pullY]);
 
   const RefreshIndicator = () => (
-    <div className="flex items-center justify-center gap-2 py-3 bg-red-500/5 border-b border-white/5 animate-pulse">
-      <Loader2 className="w-3 h-3 text-red-500 animate-spin" />
-      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-red-500/80">
+    <div className="flex items-center justify-center gap-2 py-3 bg-orange-500/5 border-b border-white/5 animate-pulse">
+      <Loader2 className="w-3 h-3 text-orange-500 animate-spin" />
+      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500/80">
         {t.scanningNetwork}
       </span>
     </div>
@@ -120,8 +120,8 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
   if (loading && emails.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-50" role="status" aria-live="polite">
-        <div className="w-10 h-10 border-2 border-red-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-red-500">{t.connecting}</span>
+        <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">{t.connecting}</span>
       </div>
     );
   }
@@ -133,26 +133,13 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
         <RefreshIndicator />
         <div className="flex-grow flex flex-col items-center justify-center text-center p-8" role="status" aria-live="polite">
           {/* Animasyonlu Empty Inbox İllüstrasyonu */}
-          <div className="relative w-36 h-36 mb-6">
-            {/* Dış halka */}
-            <div className="absolute inset-0 border-2 border-dashed border-red-500/10 rounded-full animate-spin" style={{ animationDuration: '30s' }} aria-hidden="true" />
-            {/* Orta halka */}
-            <div className="absolute inset-3 border border-dashed border-orange-500/10 rounded-full animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} aria-hidden="true" />
+          <div className="relative w-28 h-28 mb-6">
             {/* Ana ikon */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="relative">
-                <div className="w-20 h-20 bg-gradient-to-br from-red-500/10 to-orange-500/5 rounded-[28px] flex items-center justify-center border border-red-500/10 shadow-lg shadow-red-500/5">
-                  <Mail className="w-10 h-10 text-red-500/30 animate-pulse" />
-                </div>
-                {/* Pulse ring */}
-                <div className="absolute -inset-2 border border-red-500/5 rounded-[32px] animate-ping" style={{ animationDuration: '3s' }} aria-hidden="true" />
+              <div className="w-20 h-20 bg-orange-500/5 rounded-2xl flex items-center justify-center border border-orange-500/10">
+                <Mail className="w-10 h-10 text-orange-500/30" />
               </div>
             </div>
-            {/* Yörünge noktaları */}
-            <div className="absolute top-1 right-2 w-3 h-3 bg-red-500/40 rounded-full animate-ping" aria-hidden="true" />
-            <div className="absolute bottom-3 left-1 w-2 h-2 bg-orange-500/30 rounded-full animate-pulse" style={{ animationDelay: '1s' }} aria-hidden="true" />
-            <div className="absolute top-4 left-3 w-1.5 h-1.5 bg-red-400/20 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} aria-hidden="true" />
-            <div className="absolute bottom-1 right-4 w-2 h-2 bg-purple-500/20 rounded-full animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '3s' }} aria-hidden="true" />
           </div>
 
           <h3 className="text-sm font-black uppercase tracking-widest mb-2 text-white">
@@ -166,7 +153,7 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
 
             <div className="flex flex-col gap-2 pt-4">
               <div className="glass-card flex items-center gap-2 px-3 py-2 rounded-xl">
-                <ShieldCheck className="w-3 h-3 text-red-500" aria-hidden="true" />
+                <ShieldCheck className="w-3 h-3 text-orange-500" aria-hidden="true" />
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t.encryptedLabel}</span>
               </div>
               <div className="glass-card flex items-center gap-2 px-3 py-2 rounded-xl">
@@ -270,7 +257,7 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
                 onTouchMove={e => handleTouchMove(e, email.id)}
                 onTouchEnd={e => handleTouchEnd(e, email.id)}
                 className={`email-card-enter stagger-${Math.min(index + 1, 6)} group relative cursor-pointer transition-all duration-300 bg-[#0a0a0c] ${selectedId === email.id
-                  ? 'bg-red-500/[0.07] border-l-2 border-red-600'
+                  ? 'bg-orange-500/[0.07] border-l-2 border-orange-600'
                   : 'hover:bg-white/[0.03] border-l-2 border-transparent'
                   }`}
                 style={isSwipingThis ? { transform: `translateX(${swipeX}px)`, transition: 'none' } : { transform: 'translateX(0)', transition: 'transform 0.3s' }}
@@ -278,7 +265,7 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
                 {/* İç Kart */}
                 <div className="p-3 sm:p-4 md:p-5">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] font-black text-red-500 uppercase tracking-widest truncate max-w-[120px] sm:max-w-[150px]">
+                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest truncate max-w-[120px] sm:max-w-[150px]">
                       {fromName}
                     </span>
                     <div className="flex items-center gap-2 text-slate-500">
@@ -312,7 +299,7 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <ChevronRight className={`w-4 h-4 transition-transform ${selectedId === email.id ? 'translate-x-1 text-red-500' : 'opacity-0 group-hover:opacity-100 text-slate-700'}`} aria-hidden="true" />
+                      <ChevronRight className={`w-4 h-4 transition-transform ${selectedId === email.id ? 'translate-x-1 text-orange-500' : 'opacity-0 group-hover:opacity-100 text-slate-700'}`} aria-hidden="true" />
                       <button
                         onClick={(e) => onDelete(email.id, e)}
                         className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-500/10 sm:opacity-0 sm:group-hover:opacity-100"

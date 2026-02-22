@@ -516,6 +516,20 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
 
   const msg = await res.json();
 
+  // Build header fields from available API data
+  const headerFields: Record<string, string> = {};
+  headerFields['From'] = msg.from?.address || 'unknown';
+  if (msg.to?.length) headerFields['To'] = msg.to.map((t: any) => t.address).join(', ');
+  if (msg.cc?.length) headerFields['Cc'] = msg.cc.map((c: any) => c.address).join(', ');
+  if (msg.bcc?.length) headerFields['Bcc'] = msg.bcc.map((b: any) => b.address).join(', ');
+  headerFields['Subject'] = msg.subject || '';
+  headerFields['Date'] = msg.createdAt || '';
+  if (msg.msgid) headerFields['Message-ID'] = msg.msgid;
+  if (msg.size) headerFields['Size'] = `${msg.size} bytes`;
+  if (msg.flagged !== undefined) headerFields['Flagged'] = msg.flagged ? 'Yes' : 'No';
+  if (msg.retention !== undefined) headerFields['Retention'] = msg.retention ? 'Yes' : 'No';
+  if (msg.downloadUrl) headerFields['Download-URL'] = msg.downloadUrl;
+
   return {
     id: msg.id,
     from: {
@@ -537,6 +551,7 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
       size: att.size || 0,
       downloadUrl: att.downloadUrl || '',
     })),
+    headerFields,
   };
 };
 

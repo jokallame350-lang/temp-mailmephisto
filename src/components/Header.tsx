@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download } from 'lucide-react';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 interface HeaderProps {
@@ -13,11 +13,15 @@ interface HeaderProps {
   onOpenQR?: () => void;
   onOpenPass?: () => void;
   onOpenExtension?: () => void;
+  onOpenStats?: () => void;
+  onOpenFilters?: () => void;
+  onOpenLabels?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   accounts, currentAccount, onSwitchAccount, onDeleteAccount,
-  lang, setLang, onOpenQR, onOpenPass, onOpenExtension
+  lang, setLang, onOpenQR, onOpenPass, onOpenExtension,
+  onOpenStats, onOpenFilters, onOpenLabels
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -90,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Extension Download */}
           <button
             onClick={onOpenExtension}
-            className="p-1.5 sm:p-2 text-green-400 hover:text-green-300 hover:bg-green-500/10 rounded-lg transition-all"
+            className="p-1.5 sm:p-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-all"
             title={lang === 'tr' ? 'Chrome Eklentisini İndir' : 'Download Chrome Extension'}
           >
             <Download className="w-4 h-4" />
@@ -100,7 +104,7 @@ const Header: React.FC<HeaderProps> = ({
           {pwaInstallable && (
             <button
               onClick={handleInstallPWA}
-              className="p-1.5 sm:p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-all"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-all"
               title={lang === 'tr' ? 'Uygulamayı Yüke (PWA)' : 'Install App (PWA)'}
             >
               <Download className="w-4 h-4" />
@@ -132,7 +136,7 @@ const Header: React.FC<HeaderProps> = ({
                       setLang(l.code);
                       setLangOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${lang === l.code ? 'text-red-400 bg-red-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                   >
                     {l.label}
                   </button>
@@ -191,6 +195,18 @@ const Header: React.FC<HeaderProps> = ({
                 )) : (
                   <div className="p-4 text-center text-slate-500 text-xs">{t.noAccount}</div>
                 )}
+              </div>
+              {/* Quick Tools */}
+              <div className="border-t border-white/5 p-2 space-y-0.5">
+                <button onClick={() => { onOpenStats?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                  <BarChart3 className="w-3.5 h-3.5" /> {lang === 'tr' ? 'İstatistikler' : 'Stats'}
+                </button>
+                <button onClick={() => { onOpenFilters?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                  <Bell className="w-3.5 h-3.5" /> {lang === 'tr' ? 'Bildirim Filtreleri' : 'Notification Filters'}
+                </button>
+                <button onClick={() => { onOpenLabels?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                  <Tag className="w-3.5 h-3.5" /> {lang === 'tr' ? 'Etiketler' : 'Labels'}
+                </button>
               </div>
             </div>
           )}

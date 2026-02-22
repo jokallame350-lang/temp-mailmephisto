@@ -58,7 +58,29 @@ Built with modern web technologies for performance and maintainability:
 - **State Management:** React Hooks
 - **Email API (Upstream):** [mail.tm](https://mail.tm/) / [mail.gw](https://mail.gw/)
 
-> **A Note on the Backend & Go:** The backend (including our Go APIs, WebSocket proxy, and rate-limiting system) is currently kept in a separate, private repository while being cleaned up for an open-source release. In the mean time, this frontend repository connects directly to our proxy endpoints and upstream providers to keep the site fully functional.
+## 🔍 Backend Transparency
+
+> **"If the frontend is open source but the backend isn't, how do we trust it?"** — Great question. Here's the full picture.
+
+**Architecture:**
+
+```
+[Browser] ←→ [WebSocket Proxy (Go)] ←→ [mail.tm / mail.gw APIs]
+   ↑                  ↑
+   RAM-only          Zero logs, no DB
+   state             stateless relay
+```
+
+- **Frontend (this repo):** Fully open source. All email state lives in your browser's RAM. Close the tab → everything is gone. No localStorage, no IndexedDB, no cookies for email data.
+- **Backend proxy (Go):** A thin, stateless WebSocket relay that connects your browser to upstream email providers (mail.tm, mail.gw). It does **not** store, log, or inspect any email content.
+
+**Why is the backend private?**
+The Go backend is currently being refactored for a clean public release. It contains rate-limiting logic, provider failover, and abuse prevention that we want to document properly before publishing. We expect to open-source it soon.
+
+**What you can verify right now:**
+1. Open DevTools → Network tab. Every API call goes to `api.mail.tm` or `api.mail.gw` — standard, well-known disposable email APIs.
+2. The frontend stores zero persistent data. Inspect `localStorage` and `sessionStorage` — you'll find only UI preferences (language, theme), never email content.
+3. The complete frontend source is here for audit.
 
 ## 🚀 Getting Started
 

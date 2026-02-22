@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { EmailDetail } from '../types';
-import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File, List } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { translations, Language } from '../translations';
 
@@ -104,10 +104,11 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
     }
   }, [email]);
   const [viewSource, setViewSource] = useState(false);
+  const [showHeaders, setShowHeaders] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  useEffect(() => { setViewSource(false); setCodeCopied(false); }, [email?.id]);
+  useEffect(() => { setViewSource(false); setShowHeaders(false); setCodeCopied(false); }, [email?.id]);
 
   // Sandbox HTML - DOMPurify ile temizle, sonra iframe'de göster
   const sanitizedHTML = useMemo(() => {
@@ -243,10 +244,13 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> {t.back}
         </button>
         <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
-          <button onClick={() => setViewSource(!viewSource)} className={`p-2 rounded-lg transition-colors ${viewSource ? 'bg-red-500/20 text-red-500' : 'hover:bg-white/5 text-slate-400'}`} title={t.sourceCode} aria-label={viewSource ? 'View rendered' : t.sourceCode} aria-pressed={viewSource}>
+          <button onClick={() => { setShowHeaders(!showHeaders); if (!showHeaders) setViewSource(false); }} className={`p-2 rounded-lg transition-colors ${showHeaders ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'} aria-label={showHeaders ? 'Hide headers' : 'Show headers'} aria-pressed={showHeaders}>
+            <List className="w-4 h-4" />
+          </button>
+          <button onClick={() => { setViewSource(!viewSource); if (!viewSource) setShowHeaders(false); }} className={`p-2 rounded-lg transition-colors ${viewSource ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={t.sourceCode} aria-label={viewSource ? 'View rendered' : t.sourceCode} aria-pressed={viewSource}>
             {viewSource ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
           </button>
-          <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-blue-400 transition-colors" title={t.forward} aria-label={t.forward}>
+          <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors" title={t.forward} aria-label={t.forward}>
             <Forward className="w-4 h-4" />
           </button>
           <button onClick={handleDownload} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={t.download} aria-label={t.download}>
@@ -260,7 +264,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
         <h1 className="text-base sm:text-lg md:text-2xl font-bold text-white leading-tight">{email.subject || t.noSubject}</h1>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-[11px] sm:text-xs text-slate-400">
           <div className="flex items-center gap-2 bg-white/5 px-2.5 sm:px-3 py-1.5 rounded-full border border-white/5 max-w-full overflow-hidden">
-            <User className="w-3 h-3 text-red-500 flex-shrink-0" aria-hidden="true" />
+            <User className="w-3 h-3 text-orange-500 flex-shrink-0" aria-hidden="true" />
             <span className="text-slate-200 font-medium truncate">{fromName}</span>
             <span className="text-slate-500 hidden sm:inline truncate">&lt;{fromAddress}&gt;</span>
           </div>
@@ -298,14 +302,14 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
 
       {/* AI Aksiyon Linki Algılandıysa */}
       {!otpCode && actionLink && (
-        <div className="action-glow mx-3 sm:mx-4 mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-indigo-500/[0.07] border border-indigo-500/20 rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:border-indigo-500/40 transition-colors" role="alert">
+        <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-orange-500/[0.05] border border-orange-500/20 rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:border-orange-500/40 transition-colors" role="alert">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0 animate-pulse">
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400 rotate-180" aria-hidden="true" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400 rotate-180" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-0.5 flex items-center gap-1">
-                <span>⚡ AI Smart Action</span>
+              <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-orange-400 mb-0.5">
+                {lang === 'tr' ? 'Eylem Linki Bulundu' : 'Action Link Found'}
               </p>
               <p className="text-sm sm:text-base font-bold text-slate-200 capitalize truncate max-w-[200px] sm:max-w-xs">{actionLink.label}</p>
             </div>
@@ -314,9 +318,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
             href={actionLink.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/20 rounded-xl font-bold text-sm flex items-center justify-center transition-all active:scale-95 shrink-0"
+            className="w-full sm:w-auto px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold text-sm flex items-center justify-center transition-all active:scale-95 shrink-0"
           >
-            {lang === 'tr' ? 'Aksiyonu Aç' : 'Open Link'}
+            {lang === 'tr' ? 'Linki Aç' : 'Open Link'}
           </a>
         </div>
       )}
@@ -357,9 +361,30 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
         </div>
       )}
 
-      {/* İçerik - Sandbox iframe veya kaynak kodu */}
+      {/* İçerik - Sandbox iframe veya kaynak kodu veya headers */}
       <div className="flex-grow overflow-y-auto custom-scrollbar relative bg-transparent">
-        {viewSource ? (
+        {showHeaders ? (
+          <div className="absolute inset-0 bg-[#050505] p-4 md:p-6 overflow-auto">
+            <div className="flex items-center gap-2 mb-4">
+              <List className="w-4 h-4 text-orange-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">
+                {lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'}
+              </span>
+            </div>
+            {email.headerFields && Object.keys(email.headerFields).length > 0 ? (
+              <div className="space-y-1">
+                {Object.entries(email.headerFields).map(([key, value]) => (
+                  <div key={key} className="flex gap-3 py-1.5 border-b border-white/5 last:border-0">
+                    <span className="text-[11px] font-mono font-bold text-orange-400/80 min-w-[100px] shrink-0">{key}:</span>
+                    <span className="text-[11px] font-mono text-slate-400 break-all">{value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">{lang === 'tr' ? 'Bu e-posta için başlık bilgisi mevcut değil.' : 'No header information available for this email.'}</p>
+            )}
+          </div>
+        ) : viewSource ? (
           <div className="absolute inset-0 bg-[#050505] p-4 md:p-6 text-xs font-mono text-green-500/80 overflow-auto">
             <pre className="whitespace-pre-wrap break-all">{`From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html ? email.html[0] : email.text}`}</pre>
           </div>

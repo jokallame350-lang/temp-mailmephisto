@@ -79,18 +79,18 @@ const AddressBar: React.FC<AddressBarProps> = ({
         className="w-full relative group cursor-pointer active:scale-[0.99] transition-all duration-200"
         title={t.tipCopy}
       >
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500/20 to-orange-400/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
 
         <div className="relative bg-[#0f1115] border border-white/10 rounded-xl sm:rounded-2xl p-1 shadow-xl flex items-center overflow-hidden h-14 sm:h-16 transition-colors duration-300">
           {/* İlerleme Çubuğu */}
-          <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-100 ease-linear z-10" style={{ width: `${progress}%` }}></div>
+          <div className="absolute bottom-0 left-0 h-[2px] bg-orange-500 transition-all duration-100 ease-linear z-10" style={{ width: `${progress}%` }}></div>
 
           {/* Sol İkon */}
           <div className="pl-2 sm:pl-4 pr-1 sm:pr-3 flex items-center justify-center flex-shrink-0">
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
             ) : (
-              copied ? <Check className="w-5 h-5 text-green-500" /> : <Globe className="w-5 h-5 text-red-500" />
+              copied ? <Check className="w-5 h-5 text-green-500" /> : <Globe className="w-5 h-5 text-orange-500" />
             )}
           </div>
 
@@ -149,17 +149,17 @@ const AddressBar: React.FC<AddressBarProps> = ({
           </button>
         </div>
 
-        {/* GÜVENLİK / EKSTRA ARAÇLAR */}
+        {/* EKSTRA ARAÇLAR */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full mt-2 pt-3 border-t border-white/5 relative">
-          <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Süper Güçler' : 'Super Powers'}</span>
+          <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Araçlar' : 'Tools'}</span>
           {onIdentity && (
-            <button onClick={onIdentity} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/10 border border-indigo-500/20 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
+            <button onClick={onIdentity} className="flex items-center gap-1.5 px-4 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
               <UserCheck className="w-3.5 h-3.5" />
               <span>{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
             </button>
           )}
           {onShareDrop && (
-            <button onClick={onShareDrop} className="flex items-center gap-1.5 px-4 py-2 bg-fuchsia-500/5 text-fuchsia-400 hover:bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
+            <button onClick={onShareDrop} className="flex items-center gap-1.5 px-4 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
               <SendToBack className="w-3.5 h-3.5" />
               <span>Drop Link</span>
             </button>

@@ -20,9 +20,8 @@
     background-color: #050505;
     color: #e2e8f0;
     background-image:
-      radial-gradient(at 0% 0%, hsla(356, 85%, 26%, 0.3) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(24, 94%, 30%, 0.2) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(260, 50%, 15%, 0.2) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(24, 85%, 25%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(24, 85%, 25%, 0.1) 0px, transparent 50%);
     background-attachment: fixed;
     font-family: 'Sora', system-ui, -apple-system, sans-serif;
   }

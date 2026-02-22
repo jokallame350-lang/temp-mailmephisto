@@ -30,6 +30,7 @@ export interface EmailDetail extends EmailSummary {
   html?: string[];
   hasAttachments: boolean;
   attachments: EmailAttachment[];
+  headerFields?: Record<string, string>; // Raw email headers (Message-ID, To, Cc, etc.)
 }
 
 export interface EmailAttachment {
