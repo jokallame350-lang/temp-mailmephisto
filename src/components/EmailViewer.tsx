@@ -113,17 +113,31 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
   // Sandbox HTML - DOMPurify ile temizle, sonra iframe'de göster
   const sanitizedHTML = useMemo(() => {
     if (!email) return '';
-    const raw = email.html ? email.html[0] : (email.text || '');
+    let raw = '';
+    try {
+      if (email.html && email.html.length > 0) {
+        raw = typeof email.html[0] === 'string' ? email.html[0] : JSON.stringify(email.html[0]);
+      } else {
+        raw = email.text || '';
+      }
+    } catch (e) {
+      raw = email.text || '';
+    }
 
     // DOMPurify: style tag ve inline style'lara izin ver (orijinal tasarım korunsun)
     // Sadece script ve tehlikeli event handler'ları engelle
-    return DOMPurify.sanitize(raw, {
-      USE_PROFILES: { html: true },
-      FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
-      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit'],
-      ALLOW_DATA_ATTR: false,
-      ADD_ATTR: ['target'],
-    });
+    try {
+      return DOMPurify.sanitize(raw, {
+        USE_PROFILES: { html: true },
+        FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
+        FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit'],
+        ALLOW_DATA_ATTR: false,
+        ADD_ATTR: ['target'],
+      });
+    } catch (e) {
+      console.error('DOMPurify sanitize error:', e);
+      return raw.replace(/<[^>]*>/g, ''); // fallback: strip HTML tags
+    }
   }, [email]);
 
   // iframe sandbox içeriği
@@ -204,7 +218,12 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
   const fromAddress = typeof email.from === 'string' ? email.from : email.from.address;
   const fromName = typeof email.from === 'string' ? email.from : (email.from.name || email.from.address);
   const otpCode = extractOTPFromContent(email.subject, email.text || '');
-  const actionLink = useMemo(() => extractActionLinks(email.html ? email.html[0] : ''), [email?.id, email.html]);
+  const actionLink = useMemo(() => {
+    try {
+      const htmlContent = email.html ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
+      return extractActionLinks(htmlContent);
+    } catch { return null; }
+  }, [email?.id, email.html]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', {
@@ -213,7 +232,8 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
   };
 
   const handleDownload = () => {
-    const emlContent = `From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html ? email.html[0] : email.text || ''}`;
+    const htmlBody = email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
+    const emlContent = `From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${htmlBody || email.text || ''}`;
     const blob = new Blob([emlContent], { type: 'message/rfc822' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -376,7 +396,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
                 {Object.entries(email.headerFields).map(([key, value]) => (
                   <div key={key} className="flex gap-3 py-1.5 border-b border-white/5 last:border-0">
                     <span className="text-[11px] font-mono font-bold text-orange-400/80 min-w-[100px] shrink-0">{key}:</span>
-                    <span className="text-[11px] font-mono text-slate-400 break-all">{value}</span>
+                    <span className="text-[11px] font-mono text-slate-400 break-all">{typeof value === 'string' ? value : JSON.stringify(value)}</span>
                   </div>
                 ))}
               </div>
@@ -386,7 +406,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
           </div>
         ) : viewSource ? (
           <div className="absolute inset-0 bg-[#050505] p-4 md:p-6 text-xs font-mono text-green-500/80 overflow-auto">
-            <pre className="whitespace-pre-wrap break-all">{`From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html ? email.html[0] : email.text}`}</pre>
+            <pre className="whitespace-pre-wrap break-all">{`From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0] : JSON.stringify(email.html[0])) : email.text || ''}`}</pre>
           </div>
         ) : (
           <div className="w-full min-h-full p-2">

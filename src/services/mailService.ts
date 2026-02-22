@@ -256,7 +256,7 @@ const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): P
       createdAt: msg.mail_date || '',
       aiCategory: determineCategory(msg.mail_subject || '', msg.mail_from || '', msg.mail_excerpt || ''),
       text: msg.mail_body ? msg.mail_body.replace(/<[^>]*>/g, '') : '',
-      html: msg.mail_body ? [msg.mail_body] : [],
+      html: msg.mail_body ? [String(msg.mail_body)] : [],
       hasAttachments: false,
       attachments: [],
     };
@@ -542,7 +542,7 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
     createdAt: msg.createdAt,
     aiCategory: determineCategory(msg.subject || '', msg.from?.address || '', msg.intro || ''),
     text: msg.text,
-    html: msg.html ? [msg.html] : [],
+    html: msg.html ? (Array.isArray(msg.html) ? msg.html.map(String) : [String(msg.html)]) : [],
     hasAttachments: msg.hasAttachments || false,
     attachments: (msg.attachments || []).map((att: any) => ({
       id: att.id || '',
