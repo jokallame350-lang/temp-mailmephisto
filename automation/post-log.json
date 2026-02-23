@@ -1,0 +1,112 @@
+{
+  "posts": [
+    {
+      "id": "x-1-1771774606805",
+      "platform": "x",
+      "postId": "1",
+      "text": "Why pay for email aliases? Get disposable emails FREE with MephistoMail:\n\n✅ No s...",
+      "category": "competitive",
+      "url": "https://x.com/benmxrt",
+      "postedAt": "2026-02-22T15:36:46.805Z",
+      "engagement": {
+        "likes": 0,
+        "retweets": 0,
+        "replies": 0,
+        "clicks": 0
+      },
+      "notes": ""
+    },
+    {
+      "id": "x-1-1771775202360",
+      "platform": "x",
+      "postId": "1",
+      "text": "One-click disposable email. No forms. No verification.\n\nMephistoMail generates a...",
+      "category": "feature",
+      "url": "https://x.com/benmxrt",
+      "postedAt": "2026-02-22T15:46:42.360Z",
+      "engagement": {
+        "likes": 0,
+        "retweets": 0,
+        "replies": 0,
+        "clicks": 0
+      },
+      "notes": ""
+    },
+    {
+      "id": "x-16-1771775400541",
+      "platform": "x",
+      "postId": "16",
+      "text": "🚀 Did you know? Most \"free\" email services read your emails for ads.\n\nmephistom...",
+      "category": "awareness",
+      "url": "https://x.com/benmxrt",
+      "postedAt": "2026-02-22T15:50:00.541Z",
+      "engagement": {
+        "likes": 0,
+        "retweets": 0,
+        "replies": 0,
+        "clicks": 0
+      },
+      "notes": ""
+    },
+    {
+      "id": "x-17-1771776519536",
+      "platform": "x",
+      "postId": "17",
+      "text": "Every newsletter signup exposes your real email to data brokers.\n\n✅ No signup re...",
+      "category": "privacy",
+      "url": "https://x.com/benmxrt",
+      "postedAt": "2026-02-22T16:08:39.536Z",
+      "engagement": {
+        "likes": 0,
+        "retweets": 0,
+        "replies": 0,
+        "clicks": 0
+      },
+      "notes": ""
+    },
+    {
+      "id": "x-18-1771776727963",
+      "platform": "x",
+      "postId": "18",
+      "text": "The average person receives 121 emails/day. How many are spam from leaked signup...",
+      "category": "awareness",
+      "url": "https://x.com/benmxrt",
+      "postedAt": "2026-02-22T16:12:07.963Z",
+      "engagement": {
+        "likes": 0,
+        "retweets": 0,
+        "replies": 0,
+        "clicks": 0
+      },
+      "notes": ""
+    },
+    {
+      "id": "x-19-1771777037084",
+      "platform": "x",
+      "postId": "19",
+      "text": "End-to-end ephemeral. From server RAM directly to your screen.\n\nMephistoMail giv...",
+      "category": "tech",
+      "url": "https://x.com/benmxrt",
+      "postedAt": "2026-02-22T16:17:17.084Z",
+      "engagement": {
+        "likes": 0,
+        "retweets": 0,
+        "replies": 0,
+        "clicks": 0
+      },
+      "notes": ""
+    }
+  ],
+  "stats": {
+    "totalPosts": 0,
+    "platforms": {
+      "x": 0,
+      "reddit": 0,
+      "hackernews": 0,
+      "producthunt": 0,
+      "indiehackers": 0
+    },
+    "lastPostDate": null,
+    "bestPerformingCategory": null
+  }
+}

@@ -8,6 +8,16 @@ MephistoMail is a cutting-edge, **RAM-only** disposable email service built for 
 
 🌐 **Live Demo:** [mephistomail.site](https://mephistomail.site)
 
+---
+
+## 🚀 Other Projects by Mephisto
+
+| Project | Description | Links |
+|---------|-------------|-------|
+| **MephistoVault** | Zero-trace, E2E encrypted P2P file transfer — no servers, no logs, self-destructing | [🌐 Site](https://mephistoshares.online) · [📦 GitHub](https://github.com/jokallame350-lang/mephistovaultt) |
+
+---
+
 ## 📸 Interface Gallery
 
 ### 1. The Dashboard — Zero Distractions
