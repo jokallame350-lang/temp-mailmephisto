@@ -27,3 +27,15 @@ dist-ssr
 .playwright-mcp/
 
 .vercel
+
+# Agent/Skills
+skills/
+.agent/
+.gemini/
+
+# Automation (private)
+automation/
+.browser-data/
+.used-tweets.json
+competitor_analysis_x.md
+reddit_story_post.md
