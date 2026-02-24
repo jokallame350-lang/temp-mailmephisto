@@ -195,6 +195,14 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
     return () => resizeObserver.disconnect();
   }, [sanitizedHTML, viewSource]);
 
+  const actionLink = useMemo(() => {
+    if (!email) return null;
+    try {
+      const htmlContent = email.html ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
+      return extractActionLinks(htmlContent);
+    } catch { return null; }
+  }, [email?.id, email?.html]);
+
   if (loading) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center space-y-4" role="status" aria-live="polite">
@@ -218,12 +226,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
   const fromAddress = typeof email.from === 'string' ? email.from : email.from.address;
   const fromName = typeof email.from === 'string' ? email.from : (email.from.name || email.from.address);
   const otpCode = extractOTPFromContent(email.subject, email.text || '');
-  const actionLink = useMemo(() => {
-    try {
-      const htmlContent = email.html ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
-      return extractActionLinks(htmlContent);
-    } catch { return null; }
-  }, [email?.id, email.html]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', {
