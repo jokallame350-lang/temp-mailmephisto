@@ -578,3 +578,52 @@ export const deleteMessage = async (mailbox: Mailbox, messageId: string): Promis
     return false;
   }
 };
+
+/**
+ * Real-Time SSE (Server-Sent Events) Subscription
+ * Mercure Hub support for Hydra providers (mail.tm, mail.gw).
+ * Subscribes to real-time events for incoming emails and triggers instant callback.
+ */
+export const subscribeToMailboxEvents = (
+  mailbox: Mailbox,
+  onEvent: () => void
+): (() => void) => {
+  if (!mailbox || !mailbox.token || isGuerrilla(mailbox.apiBase)) {
+    return () => {};
+  }
+
+  try {
+    const hubBase = mailbox.apiBase === 'mail_gw'
+      ? 'https://mercure.mail.gw/.well-known/mercure'
+      : 'https://mercure.mail.tm/.well-known/mercure';
+
+    const url = new URL(hubBase);
+    url.searchParams.append('topic', `/accounts/${mailbox.id}`);
+
+    const eventSource = new EventSource(url.toString());
+
+    eventSource.onmessage = (event) => {
+      try {
+        if (event.data) {
+          onEvent();
+        }
+      } catch (err) {
+        console.warn('SSE message parse error', err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      // Quietly handle reconnect / disconnects
+      console.debug('SSE EventSource error/reconnect', err);
+    };
+
+    return () => {
+      try {
+        eventSource.close();
+      } catch {}
+    };
+  } catch (err) {
+    console.warn('SSE initialization failed', err);
+    return () => {};
+  }
+};

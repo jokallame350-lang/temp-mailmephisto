@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
-import { getMessages, getMessageDetail, deleteMessage } from '../services/mailService';
+import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
 
 const REFRESH_INTERVAL = 7000;
 const REFRESH_INTERVAL_HIDDEN = 30000; // Sekme arka plandayken daha yavaş
@@ -160,6 +160,17 @@ export function useEmails(
         await fetchEmails();
         setIsLoadingEmails(false);
     }, [fetchEmails]);
+
+    // Real-time SSE dinleyici (mail.tm ve mail.gw Mercure SSE hub)
+    useEffect(() => {
+        if (!activeAccount) return;
+        const unsubscribe = subscribeToMailboxEvents(activeAccount, () => {
+            fetchEmails();
+        });
+        return () => {
+            unsubscribe();
+        };
+    }, [activeAccount, fetchEmails]);
 
     // Otomatik e-posta çekme döngüsü (sekme görünürlüğüne göre adaptif)
     useEffect(() => {
