@@ -16,6 +16,7 @@ const HYDRA_PROVIDERS: Record<string, string> = {
 };
 
 const GUERRILLA_API = 'https://api.guerrillamail.com/ajax.php';
+const SECMAIL_API = 'https://www.1secmail.com/api/v1/';
 
 // ─── Credential Store (for token refresh) ────────────────────────────
 const credentialStore: Record<string, { address: string; password: string }> = {};
@@ -144,6 +145,106 @@ const determineCategory = (subject: string, from: string, intro: string): AICate
 };
 
 const isGuerrilla = (provider: string): boolean => provider === 'guerrilla';
+const isSecMail = (provider: string): boolean => provider === 'secmail';
+
+// ─── SecMail Helpers ──────────────────────────────────────────────────
+const getSecMailDomains = async (): Promise<string[]> => {
+  try {
+    const res = await safeFetch(`${SECMAIL_API}?action=getDomainList`, undefined, 'secmail');
+    if (!res.ok) return ['1secmail.com', '1secmail.org', '1secmail.net', 'esiia.com', 'wwwnew.eu', 'dusk.wiki', 'icznn.com'];
+    const domains = await res.json();
+    return Array.isArray(domains) && domains.length > 0
+      ? domains
+      : ['1secmail.com', '1secmail.org', '1secmail.net', 'esiia.com', 'wwwnew.eu', 'dusk.wiki', 'icznn.com'];
+  } catch {
+    return ['1secmail.com', '1secmail.org', '1secmail.net', 'esiia.com', 'wwwnew.eu', 'dusk.wiki', 'icznn.com'];
+  }
+};
+
+const createSecMailbox = async (emailUser?: string, domainName?: string): Promise<Mailbox> => {
+  const domains = domainName ? [domainName] : await getSecMailDomains();
+  const selectedDomain = domainName && domains.includes(domainName) ? domainName : (domains[0] || '1secmail.com');
+  const user = emailUser || Math.random().toString(36).substring(2, 12);
+  const address = `${user}@${selectedDomain}`;
+  return {
+    id: address,
+    address,
+    apiBase: 'secmail',
+    token: user,
+    password: selectedDomain,
+  };
+};
+
+const getSecMailMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
+  const user = mailbox.token;
+  const domain = mailbox.password || mailbox.address.split('@')[1];
+  if (!user || !domain) return [];
+
+  try {
+    const res = await safeFetch(
+      `${SECMAIL_API}?action=getMessages&login=${encodeURIComponent(user)}&domain=${encodeURIComponent(domain)}`,
+      undefined, 'secmail'
+    );
+    if (!res.ok) return [];
+    const list = await res.json();
+    if (!Array.isArray(list)) return [];
+
+    return list.map((msg: any) => ({
+      id: String(msg.id),
+      from: {
+        address: msg.from || 'unknown',
+        name: msg.from?.split('@')[0] || 'unknown',
+      },
+      subject: msg.subject || '',
+      intro: msg.date || '',
+      seen: false,
+      createdAt: msg.date || new Date().toISOString(),
+      aiCategory: determineCategory(msg.subject || '', msg.from || '', ''),
+    }));
+  } catch {
+    return [];
+  }
+};
+
+const getSecMailMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
+  const user = mailbox.token;
+  const domain = mailbox.password || mailbox.address.split('@')[1];
+  if (!user || !domain) return null;
+
+  try {
+    const res = await safeFetch(
+      `${SECMAIL_API}?action=readMessage&login=${encodeURIComponent(user)}&domain=${encodeURIComponent(domain)}&id=${messageId}`,
+      undefined, 'secmail'
+    );
+    if (!res.ok) return null;
+    const msg = await res.json();
+
+    return {
+      id: String(msg.id),
+      from: {
+        address: msg.from || 'unknown',
+        name: msg.from?.split('@')[0] || 'unknown',
+      },
+      subject: msg.subject || '',
+      intro: msg.date || '',
+      seen: true,
+      createdAt: msg.date || '',
+      aiCategory: determineCategory(msg.subject || '', msg.from || '', msg.textBody || ''),
+      text: msg.textBody || '',
+      html: msg.htmlBody ? [String(msg.htmlBody)] : [],
+      hasAttachments: Array.isArray(msg.attachments) && msg.attachments.length > 0,
+      attachments: (msg.attachments || []).map((att: any) => ({
+        id: att.filename || 'attachment',
+        filename: att.filename || 'attachment',
+        contentType: att.contentType || 'application/octet-stream',
+        size: att.size || 0,
+        downloadUrl: `${SECMAIL_API}?action=downloadFile&login=${encodeURIComponent(user)}&domain=${encodeURIComponent(domain)}&id=${messageId}&file=${encodeURIComponent(att.filename)}`,
+      })),
+    };
+  } catch {
+    return null;
+  }
+};
 
 // ─── Guerrilla Mail Helpers ──────────────────────────────────────────
 
@@ -306,7 +407,7 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
   const allDomains: string[] = [];
   const domainProviderMap: Record<string, string> = {};
 
-  // Hydra providers + Guerrilla Mail paralel sorgula
+  // Hydra providers + Guerrilla Mail + SecMail paralel sorgula
   const results = await Promise.allSettled([
     // Hydra providers (mail.tm, mail.gw)
     ...Object.keys(HYDRA_PROVIDERS).map(async (providerKey) => {
@@ -325,6 +426,11 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
     (async () => {
       const domains = await getGuerrillaDomains();
       return { providerKey: 'guerrilla', domains };
+    })(),
+    // SecMail
+    (async () => {
+      const domains = await getSecMailDomains();
+      return { providerKey: 'secmail', domains };
     })(),
   ]);
 
@@ -366,6 +472,11 @@ export const generateMailbox = async (): Promise<Mailbox> => {
   // Guerrilla Mail — farklı akış
   if (isGuerrilla(provider)) {
     return createGuerrillaMailbox();
+  }
+
+  // SecMail — farklı akış
+  if (isSecMail(provider)) {
+    return createSecMailbox(undefined, domain);
   }
 
   // Hydra providers (mail.tm / mail.gw)
@@ -416,6 +527,11 @@ export const createCustomMailbox = async (username: string, domain: string, prov
   // Guerrilla Mail — set_email_user kullanır
   if (isGuerrilla(provider)) {
     return createGuerrillaMailbox(username);
+  }
+
+  // SecMail — 1secmail API
+  if (isSecMail(provider)) {
+    return createSecMailbox(username, domain);
   }
 
   // Hydra providers
@@ -469,6 +585,11 @@ export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => 
     return getGuerrillaMessages(mailbox);
   }
 
+  // SecMail
+  if (isSecMail(mailbox.apiBase)) {
+    return getSecMailMessages(mailbox);
+  }
+
   // Hydra providers
   const apiBase = getApiBase(mailbox.apiBase);
   const res = await safeFetch(`${apiBase}/messages?page=1`, {
@@ -504,6 +625,11 @@ export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Pro
   // Guerrilla Mail
   if (isGuerrilla(mailbox.apiBase)) {
     return getGuerrillaMessageDetail(mailbox, messageId);
+  }
+
+  // SecMail
+  if (isSecMail(mailbox.apiBase)) {
+    return getSecMailMessageDetail(mailbox, messageId);
   }
 
   // Hydra providers
