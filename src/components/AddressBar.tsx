@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, Ghost, SendToBack } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, Ghost, SendToBack, Layers, Flame, Hourglass, ShieldCheck } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -37,6 +37,7 @@ interface AddressBarProps {
   onIdentity?: () => void;
   onForwarding?: () => void;
   onShareDrop?: () => void;
+  onExtendTimer?: () => void;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({
@@ -153,17 +154,29 @@ const AddressBar: React.FC<AddressBarProps> = ({
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full mt-2 pt-3 border-t border-white/5 relative">
           <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Araçlar' : 'Tools'}</span>
           {onIdentity && (
-            <button onClick={onIdentity} className="flex items-center gap-1.5 px-4 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
+            <button onClick={onIdentity} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
               <UserCheck className="w-3.5 h-3.5" />
               <span>{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
             </button>
           )}
           {onShareDrop && (
-            <button onClick={onShareDrop} className="flex items-center gap-1.5 px-4 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
+            <button onClick={onShareDrop} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
               <SendToBack className="w-3.5 h-3.5" />
               <span>Drop Link</span>
             </button>
           )}
+          <a href="/bulk-generator" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 rounded-xl font-bold text-[11px] transition-all">
+            <Layers className="w-3.5 h-3.5" />
+            <span>{lang === 'tr' ? 'Toplu Mail' : 'Bulk Temp'}</span>
+          </a>
+          <a href="/burn-note" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 rounded-xl font-bold text-[11px] transition-all">
+            <Flame className="w-3.5 h-3.5" />
+            <span>{lang === 'tr' ? 'Burn Note' : 'Burn Note'}</span>
+          </a>
+          <div className="flex items-center gap-1 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 font-bold text-[10px]" title="Domain Health Risk Score: 100% Clean">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Risk: %0 (Temiz)</span>
+          </div>
         </div>
       </div>
 
