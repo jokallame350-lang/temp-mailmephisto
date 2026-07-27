@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
 import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
 
-const REFRESH_INTERVAL = 7000;
-const REFRESH_INTERVAL_HIDDEN = 30000; // Sekme arka plandayken daha yavaş
+const REFRESH_INTERVAL = 2500; // 2.5 saniyede bir ultra-hızlı senkronize kontrol
+const REFRESH_INTERVAL_HIDDEN = 20000; // Sekme arka plandayken 20 sn
 const STATS_KEY = 'mephisto_stats';
 const FILTER_KEY = 'mephisto_notif_filters';
 
@@ -47,7 +47,6 @@ export function useEmails(
     const previousEmailCountRef = useRef(0);
 
     // Aktif hesap değiştiğinde sıfırla
-    // Keep deletedIdsRef in sync
     useEffect(() => {
         deletedIdsRef.current = deletedIds;
     }, [deletedIds]);
@@ -60,6 +59,7 @@ export function useEmails(
         deletedIdsRef.current = new Set();
         setFetchError(null);
         previousEmailCountRef.current = 0;
+        setProgress(0);
     }, [activeAccount?.id]);
 
     // Stats persist
@@ -74,7 +74,6 @@ export function useEmails(
 
     const playNotificationSound = useCallback(() => {
         try {
-            // Web Audio API ile yerel bildirim sesi (CDN gerektirmez)
             const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
             const oscillator = ctx.createOscillator();
             const gain = ctx.createGain();
@@ -134,17 +133,14 @@ export function useEmails(
                     });
                 }
                 previousEmailCountRef.current = filtered.length;
-                // Sort by createdAt date (descending) — NOT by id which can be UUID
                 setEmails(filtered.sort((a, b) => {
                     const dateA = new Date(a.createdAt).getTime();
                     const dateB = new Date(b.createdAt).getTime();
                     if (!isNaN(dateB) && !isNaN(dateA)) return dateB - dateA;
-                    // Fallback: string comparison
                     return String(b.id).localeCompare(String(a.id));
                 }));
                 setFetchError(null);
             }
-            setProgress(0);
         } catch (err: any) {
             console.warn('Email fetch failed:', err);
             const msg = err?.message || '';
@@ -152,44 +148,73 @@ export function useEmails(
                 setFetchError(msg);
             }
         }
-        // deletedIds is accessed via ref, so it doesn't need to be a dependency
     }, [activeAccount, playNotificationSound, shouldNotify, onNewEmail]);
 
     const handleManualRefresh = useCallback(async () => {
         setIsLoadingEmails(true);
+        setProgress(25);
         await fetchEmails();
-        setIsLoadingEmails(false);
+        setProgress(100);
+        setTimeout(() => {
+            setIsLoadingEmails(false);
+            setProgress(0);
+        }, 300);
     }, [fetchEmails]);
 
     // Real-time SSE dinleyici (mail.tm ve mail.gw Mercure SSE hub)
     useEffect(() => {
         if (!activeAccount) return;
         const unsubscribe = subscribeToMailboxEvents(activeAccount, () => {
+            setProgress(100);
             fetchEmails();
+            setTimeout(() => setProgress(0), 300);
         });
         return () => {
             unsubscribe();
         };
     }, [activeAccount, fetchEmails]);
 
-    // Otomatik e-posta çekme döngüsü (sekme görünürlüğüne göre adaptif)
+    // Otomatik e-posta çekme döngüsü ve %100 Senkronize İlerleme Çubuğu (Adaptive Loop)
     useEffect(() => {
         fetchEmails();
-        let progressInterval = setInterval(() => setProgress(prev => prev >= 100 ? 0 : prev + 1.5), 100);
-        let dataInterval = setInterval(fetchEmails, REFRESH_INTERVAL);
+        let step = 0;
+        let progressInterval = setInterval(() => {
+            step += 1;
+            setProgress(prev => {
+                const next = prev + 4;
+                return next >= 100 ? 0 : next;
+            });
+        }, 100);
+
+        let dataInterval = setInterval(() => {
+            setProgress(90);
+            fetchEmails().then(() => {
+                setProgress(100);
+                setTimeout(() => setProgress(0), 200);
+            });
+        }, REFRESH_INTERVAL);
 
         const handleVisibilityChange = () => {
             clearInterval(dataInterval);
             clearInterval(progressInterval);
             if (document.hidden) {
-                // Arka planda yavaş polling
                 dataInterval = setInterval(fetchEmails, REFRESH_INTERVAL_HIDDEN);
-                progressInterval = setInterval(() => setProgress(prev => prev >= 100 ? 0 : prev + 0.35), 100);
+                progressInterval = setInterval(() => setProgress(prev => (prev >= 100 ? 0 : prev + 1)), 200);
             } else {
-                // Ön planda hızlı polling + anında kontrol
                 fetchEmails();
-                dataInterval = setInterval(fetchEmails, REFRESH_INTERVAL);
-                progressInterval = setInterval(() => setProgress(prev => prev >= 100 ? 0 : prev + 1.5), 100);
+                progressInterval = setInterval(() => {
+                    setProgress(prev => {
+                        const next = prev + 4;
+                        return next >= 100 ? 0 : next;
+                    });
+                }, 100);
+                dataInterval = setInterval(() => {
+                    setProgress(90);
+                    fetchEmails().then(() => {
+                        setProgress(100);
+                        setTimeout(() => setProgress(0), 200);
+                    });
+                }, REFRESH_INTERVAL);
             }
         };
 
