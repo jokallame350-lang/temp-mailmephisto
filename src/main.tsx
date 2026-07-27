@@ -13,6 +13,8 @@ const TenMinuteMailPage = lazy(() => import('./pages/TenMinuteMailPage'));
 const HelpPage = lazy(() => import('./pages/HelpPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
 const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage'));
+const ServiceMailPage = lazy(() => import('./pages/ServiceMailPage'));
+const DisposableCheckerPage = lazy(() => import('./pages/DisposableCheckerPage'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -78,6 +80,8 @@ const AppRouter = () => {
           <Route path="/help" element={<HelpPage lang={lang} />} />
           <Route path="/contact" element={<ContactPage lang={lang} />} />
           <Route path="/api-docs" element={<ApiDocsPage lang={lang} />} />
+          <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
           {/* Catch-all: redirect to home */}
           <Route path="*" element={<App />} />
         </Routes>
