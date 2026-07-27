@@ -199,6 +199,17 @@ const createGuerrillaMailbox = async (emailUser?: string): Promise<Mailbox> => {
   };
 };
 
+const parseGuerrillaDate = (msg: any): string => {
+  if (msg.mail_timestamp && Number(msg.mail_timestamp) > 0) {
+    return new Date(Number(msg.mail_timestamp) * 1000).toISOString();
+  }
+  if (msg.mail_date) {
+    const d = new Date(msg.mail_date);
+    if (!isNaN(d.getTime())) return d.toISOString();
+  }
+  return new Date().toISOString();
+};
+
 /** Guerrilla Mail mesajlarını çeker */
 const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   const sid = mailbox.token;
@@ -223,7 +234,7 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       subject: msg.mail_subject || '',
       intro: msg.mail_excerpt || 'No preview available',
       seen: msg.mail_read === 1,
-      createdAt: msg.mail_date || '',
+      createdAt: parseGuerrillaDate(msg),
       aiCategory: determineCategory(msg.mail_subject || '', msg.mail_from || '', msg.mail_excerpt || ''),
     }));
   } catch {
