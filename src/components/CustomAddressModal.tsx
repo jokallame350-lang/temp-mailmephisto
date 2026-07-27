@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Globe, Loader2 } from 'lucide-react';
+import { X, Globe, Loader2, Dices } from 'lucide-react';
 import { translations, Language } from '../translations';
 import { fetchDomains } from '../services/mailService';
 
@@ -17,6 +17,15 @@ const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose
   const [domains, setDomains] = useState<string[]>([]);
   const [domainProviderMap, setDomainProviderMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleRandomize = () => {
+    const prefixes = ['cyber', 'shadow', 'phantom', 'ninja', 'alpha', 'matrix', 'vector', 'zero', 'signal', 'nexus'];
+    const suffixes = ['runner', 'ghost', 'pilot', 'agent', 'pulse', 'spark', 'core', 'link', 'vault', 'wave'];
+    const rPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const rSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+    const num = Math.floor(100 + Math.random() * 900);
+    setUsername(`${rPrefix}.${rSuffix}${num}`);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -43,7 +52,16 @@ const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose
           <button onClick={onClose}><X className="w-5 h-5 text-slate-500 hover:text-white transition-colors" /></button>
         </div>
         <div className="p-6 space-y-4">
-          <p className="text-xs text-slate-400">{t.customDesc}</p>
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-slate-400">{t.customDesc}</p>
+            <button
+              onClick={handleRandomize}
+              className="text-[10px] text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded border border-orange-500/20 active:scale-95 transition-all"
+            >
+              <Dices className="w-3 h-3" />
+              {lang === 'tr' ? 'Rastgele Adres' : 'Random Handle'}
+            </button>
+          </div>
           <div className="flex gap-2">
             <input
               type="text"

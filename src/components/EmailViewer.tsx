@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { EmailDetail } from '../types';
-import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File, List } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File, List, Smartphone, Printer, FileType } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { translations, Language } from '../translations';
 
@@ -232,6 +232,31 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     });
   };
 
+  const [previewDevice, setPreviewDevice] = useState<'responsive' | 'mobile'>('responsive');
+
+  const handleDownloadTXT = () => {
+    if (!email) return;
+    const content = `From: ${fromAddress}\nDate: ${email.createdAt}\nSubject: ${email.subject || ''}\n\n${email.text || ''}`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${email.subject?.replace(/[^a-z0-9]/gi, '_').substring(0, 20) || 'email'}.txt`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const handleDownloadPDF = () => {
+    if (!iframeRef.current || !iframeRef.current.contentWindow) {
+      window.print();
+      return;
+    }
+    try {
+      iframeRef.current.contentWindow.print();
+    } catch {
+      window.print();
+    }
+  };
+
   const handleDownload = () => {
     const htmlBody = email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
     const emlContent = `From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${htmlBody || email.text || ''}`;
@@ -265,6 +290,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> {t.back}
         </button>
         <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
+          <button onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')} className={`p-2 rounded-lg transition-colors ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}>
+            <Smartphone className="w-4 h-4" />
+          </button>
           <button onClick={() => { setShowHeaders(!showHeaders); if (!showHeaders) setViewSource(false); }} className={`p-2 rounded-lg transition-colors ${showHeaders ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'} aria-label={showHeaders ? 'Hide headers' : 'Show headers'} aria-pressed={showHeaders}>
             <List className="w-4 h-4" />
           </button>
@@ -273,6 +301,12 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           </button>
           <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors" title={t.forward} aria-label={t.forward}>
             <Forward className="w-4 h-4" />
+          </button>
+          <button onClick={handleDownloadTXT} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={lang === 'tr' ? 'TXT İndir' : 'Download TXT'}>
+            <FileType className="w-4 h-4" />
+          </button>
+          <button onClick={handleDownloadPDF} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'}>
+            <Printer className="w-4 h-4" />
           </button>
           <button onClick={handleDownload} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={t.download} aria-label={t.download}>
             <Download className="w-4 h-4" />
@@ -410,7 +444,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             <pre className="whitespace-pre-wrap break-all">{`From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0] : JSON.stringify(email.html[0])) : email.text || ''}`}</pre>
           </div>
         ) : (
-          <div className="w-full min-h-full p-2">
+          <div className={`w-full min-h-full p-2 transition-all ${previewDevice === 'mobile' ? 'max-w-[375px] mx-auto border-8 border-[#1a1d24] rounded-[36px] bg-black shadow-2xl my-4 overflow-hidden' : ''}`}>
             <iframe
               ref={iframeRef}
               sandbox="allow-same-origin"

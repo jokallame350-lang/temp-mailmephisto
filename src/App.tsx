@@ -48,6 +48,13 @@ const App: React.FC = () => {
     MAX_ACTIVE_ACCOUNTS,
   } = useMailbox();
 
+  const [theme, setTheme] = useState<string>(() => localStorage.getItem('mephisto_theme') || 'dark');
+
+  useEffect(() => {
+    localStorage.setItem('mephisto_theme', theme);
+    document.body.className = theme === 'cyberpunk' ? 'theme-cyberpunk' : theme === 'light' ? 'theme-light' : '';
+  }, [theme]);
+
   // Toast bildirimleri (useEmails'den önce tanımlanmalı, callback olarak geçilecek)
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
@@ -207,6 +214,8 @@ const App: React.FC = () => {
           onDeleteAccount={deleteAccount}
           lang={lang}
           setLang={setLang}
+          theme={theme}
+          setTheme={setTheme}
           onOpenQR={() => setShowQRModal(true)}
           onOpenPass={() => setShowPassModal(true)}
           onOpenExtension={() => setShowExtensionModal(true)}

@@ -283,6 +283,19 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
                     {email.subject || t.noSubject}
                   </h3>
 
+                  {otpCode && (
+                    <div className="mt-2 flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-lg p-1.5">
+                      <span className="font-mono text-xs font-black text-green-400 tracking-wider">⚡ {otpCode}</span>
+                      <button
+                        onClick={e => handleCopyCode(otpCode, e)}
+                        className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-black text-[10px] font-bold rounded-md flex items-center gap-1 transition-all active:scale-95"
+                      >
+                        {copiedCode === otpCode ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedCode === otpCode ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center gap-2">
                       {email.aiCategory === 'Verification' && <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 text-[9px] border border-green-500/20 flex items-center gap-1" aria-label="Verification code"><CheckCircle2 className="w-3 h-3" aria-hidden="true" /> Code</span>}

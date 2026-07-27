@@ -80,6 +80,22 @@
     <priority>0.9</priority>
   </url>
 
+  <!-- Bulk Generator Tool -->
+  <url>
+    <loc>https://mephistomail.site/bulk-generator</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Burn Note Tool -->
+  <url>
+    <loc>https://mephistomail.site/burn-note</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Blog -->
   <url>
     <loc>https://mephistomail.site/blog</loc>

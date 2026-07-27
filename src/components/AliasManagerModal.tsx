@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mailbox } from '../types';
-import { Tag, X, Clock, Palette, Trash2, Copy, Check } from 'lucide-react';
+import { Tag, X, Clock, Palette, Trash2, Copy, Check, FileSpreadsheet, FileCode } from 'lucide-react';
 import { Language, translations } from '../translations';
 
 interface AliasManagerModalProps {
@@ -45,6 +45,27 @@ const AliasManagerModal: React.FC<AliasManagerModalProps> = ({
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleExportCSV = () => {
+        const headers = "Address,API,Created\n";
+        const rows = accounts.map(a => `"${a.address}","${a.apiBase}","${a.createdAt ? new Date(a.createdAt).toISOString() : ''}"`).join("\n");
+        const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `mephisto_accounts_${Date.now()}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+
+    const handleExportJSON = () => {
+        const data = accounts.map(a => ({ address: a.address, provider: a.apiBase, createdAt: a.createdAt }));
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `mephisto_accounts_${Date.now()}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    };
+
     const getTimeLeft = (account: Mailbox) => {
         if (!account.autoDeleteMinutes || !account.createdAt) return null;
         const elapsed = Date.now() - account.createdAt;
@@ -74,12 +95,26 @@ const AliasManagerModal: React.FC<AliasManagerModalProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                         <button
+                            onClick={handleExportCSV}
+                            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 transition-all"
+                            title={lang === 'tr' ? 'CSV İndir' : 'Export CSV'}
+                        >
+                            <FileSpreadsheet className="w-4 h-4 text-green-400" />
+                        </button>
+                        <button
+                            onClick={handleExportJSON}
+                            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 transition-all"
+                            title={lang === 'tr' ? 'JSON İndir' : 'Export JSON'}
+                        >
+                            <FileCode className="w-4 h-4 text-blue-400" />
+                        </button>
+                        <button
                             onClick={handleBulkCopy}
                             className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-slate-300 transition-all"
                             aria-label="Copy all addresses"
                         >
                             {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                            {copied ? 'OK!' : (lang === 'tr' ? 'Toplu Kopyala' : 'Bulk Copy')}
+                            {copied ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
                         </button>
                         <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors" aria-label="Close alias manager">
                             <X className="w-5 h-5" />

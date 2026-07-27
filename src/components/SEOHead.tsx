@@ -3,25 +3,28 @@ import { Language } from '../translations';
 
 interface SEOHeadProps {
     lang: Language;
+    title?: string;
+    description?: string;
+    canonicalUrl?: string;
 }
 
 /**
  * SEO Head component - runtime'da document.head meta etiketlerini günceller.
  * Schema.org markup, hreflang, canonical URL, ve dil bazlı meta taglar.
  */
-const SEOHead: React.FC<SEOHeadProps> = ({ lang }) => {
+const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUrl }) => {
     React.useEffect(() => {
         const siteUrl = 'https://mephistomail.site';
 
         // Title
-        document.title = lang === 'tr'
+        document.title = title || (lang === 'tr'
             ? 'MephistoMail - Gizliliğiniz İçin En Güvenli Geçici E-posta'
-            : 'MephistoMail - The Ultimate Privacy Focused Disposable Email';
+            : 'MephistoMail - The Ultimate Privacy Focused Disposable Email');
 
         // Meta description
-        updateMeta('description', lang === 'tr'
+        updateMeta('description', description || (lang === 'tr'
             ? 'Hızlı, anonim ve geçici e-posta adresleri. Takip yok, kayıt yok. Birincil gelen kutunuzu spam\'den koruyun. Anında kullan-at e-posta oluşturun.'
-            : 'Quick, anonymous, and volatile temporary emails. No tracking, no logs. Protect your primary inbox from spam. Generate disposable email instantly.');
+            : 'Quick, anonymous, and volatile temporary emails. No tracking, no logs. Protect your primary inbox from spam. Generate disposable email instantly.'));
 
         // Keywords
         updateMeta('keywords', lang === 'tr'
@@ -32,7 +35,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang }) => {
         updateMeta('google-site-verification', 'ilHoKSVNnesPjnRlavAgpYELKUaVhvyk7YiyS2a02NE');
 
         // Canonical
-        updateLink('canonical', siteUrl + '/');
+        updateLink('canonical', canonicalUrl || (siteUrl + '/'));
 
         // hreflang
         updateLink('alternate', siteUrl + '/', 'en', 'hreflang');

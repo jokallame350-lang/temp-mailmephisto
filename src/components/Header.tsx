@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag } from 'lucide-react';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 interface HeaderProps {
@@ -10,6 +10,8 @@ interface HeaderProps {
   onDeleteAccount: (id: string) => void;
   lang: Language;
   setLang: (lang: Language) => void;
+  theme?: string;
+  setTheme?: (theme: string) => void;
   onOpenQR?: () => void;
   onOpenPass?: () => void;
   onOpenExtension?: () => void;
@@ -20,7 +22,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   accounts, currentAccount, onSwitchAccount, onDeleteAccount,
-  lang, setLang, onOpenQR, onOpenPass, onOpenExtension,
+  lang, setLang, theme, setTheme, onOpenQR, onOpenPass, onOpenExtension,
   onOpenStats, onOpenFilters, onOpenLabels
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -129,6 +131,10 @@ const Header: React.FC<HeaderProps> = ({
                   { code: 'es' as const, label: '🇪🇸 Español' },
                   { code: 'de' as const, label: '🇩🇪 Deutsch' },
                   { code: 'fr' as const, label: '🇫🇷 Français' },
+                  { code: 'it' as const, label: '🇮🇹 Italiano' },
+                  { code: 'pt' as const, label: '🇵🇹 Português' },
+                  { code: 'ru' as const, label: '🇷🇺 Русский' },
+                  { code: 'ar' as const, label: '🇸🇦 العربية' },
                 ]).map(l => (
                   <button
                     key={l.code}
@@ -144,6 +150,20 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             )}
           </div>
+
+          {/* Tema Değiştirici */}
+          {setTheme && (
+            <button
+              onClick={() => {
+                const nextTheme = theme === 'cyberpunk' ? 'light' : theme === 'light' ? 'dark' : 'cyberpunk';
+                setTheme(nextTheme);
+              }}
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-400 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1"
+              title={lang === 'tr' ? 'Tema Değiştir (Dark / Cyberpunk / Light)' : 'Switch Theme (Dark / Cyberpunk / Light)'}
+            >
+              <Palette className="w-4 h-4 text-orange-500" />
+            </button>
+          )}
         </div>
 
         {/* QR Kod ve Şifre Araçları — hidden on very small screens */}

@@ -26,6 +26,20 @@
     font-family: 'Sora', system-ui, -apple-system, sans-serif;
   }
 
+  body.theme-cyberpunk {
+    background-color: #060913;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(280, 85%, 35%, 0.25) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(190, 90%, 35%, 0.25) 0px, transparent 50%);
+  }
+
+  body.theme-light {
+    background-color: #0f172a;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(210, 80%, 25%, 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(220, 80%, 20%, 0.3) 0px, transparent 50%);
+  }
+
   /* Focus indicators (WCAG 2.1 AA) */
   :focus-visible {
     outline: 2px solid rgba(239, 68, 68, 0.7);

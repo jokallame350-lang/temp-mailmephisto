@@ -15,6 +15,8 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage'));
 const ServiceMailPage = lazy(() => import('./pages/ServiceMailPage'));
 const DisposableCheckerPage = lazy(() => import('./pages/DisposableCheckerPage'));
+const BulkGeneratorPage = lazy(() => import('./pages/BulkGeneratorPage'));
+const BurnNotePage = lazy(() => import('./pages/BurnNotePage'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -36,19 +38,23 @@ const ScrollToTop = () => {
 const useLang = (): Language => {
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('mephisto_lang');
-    if (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'fr') return saved;
+    if (['tr', 'en', 'es', 'de', 'fr', 'it', 'pt', 'ru', 'ar'].includes(saved || '')) return saved as Language;
     const bl = navigator.language.toLowerCase();
     if (bl.startsWith('tr')) return 'tr';
     if (bl.startsWith('es')) return 'es';
     if (bl.startsWith('de')) return 'de';
     if (bl.startsWith('fr')) return 'fr';
+    if (bl.startsWith('it')) return 'it';
+    if (bl.startsWith('pt')) return 'pt';
+    if (bl.startsWith('ru')) return 'ru';
+    if (bl.startsWith('ar')) return 'ar';
     return 'en';
   });
 
   useEffect(() => {
     const handleStorage = () => {
       const saved = localStorage.getItem('mephisto_lang') as Language;
-      if (saved && ['tr', 'en', 'es', 'de', 'fr'].includes(saved)) {
+      if (saved && ['tr', 'en', 'es', 'de', 'fr', 'it', 'pt', 'ru', 'ar'].includes(saved)) {
         setLang(saved);
       }
     };
@@ -82,6 +88,8 @@ const AppRouter = () => {
           <Route path="/api-docs" element={<ApiDocsPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
+          <Route path="/bulk-generator" element={<BulkGeneratorPage lang={lang} />} />
+          <Route path="/burn-note" element={<BurnNotePage lang={lang} />} />
           {/* Catch-all: redirect to home */}
           <Route path="*" element={<App />} />
         </Routes>
