@@ -327,7 +327,7 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} lang={lang} />
+                  <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} lang={lang} token={activeAccount?.token} />
                 )}
               </div>
             </div>

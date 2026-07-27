@@ -9,6 +9,7 @@ interface EmailViewerProps {
   loading: boolean;
   onBack: () => void;
   lang: Language;
+  token?: string;
 }
 
 const extractOTPFromContent = (subject: string, text?: string): string | null => {
@@ -33,7 +34,6 @@ const extractOTPFromContent = (subject: string, text?: string): string | null =>
 // Basit AI/Heuristic Eylem Linki Çıkarıcı
 const extractActionLinks = (htmlText?: string): { url: string, label: string } | null => {
   if (!htmlText) return null;
-  // Çok basit bir HTML parse yapalım (tarayıcı ortamındayız DOMParser çalışır)
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlText, 'text/html');
@@ -44,13 +44,12 @@ const extractActionLinks = (htmlText?: string): { url: string, label: string } |
     for (let i = 0; i < links.length; i++) {
       const link = links[i];
       const textContext = (link.textContent || '').toLowerCase().trim();
-      const href = link.getAttribute('href'); // Tarayıcının resolve etmemesi için getAttribute kullanıyoruz
+      const href = link.getAttribute('href');
 
       if (!textContext || !href || (!href.startsWith('http') && !href.startsWith('https'))) continue;
 
       const isAction = targetWords.some(word => textContext.includes(word));
 
-      // Butona benzeyen (inline style vs olan) veya kritik kelime içeren ilk linki al
       if (isAction || link.style.padding || link.style.backgroundColor) {
         return { url: href, label: link.textContent?.trim() || 'Action Link' };
       }
@@ -75,18 +74,19 @@ const formatSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang }) => {
+const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang, token }) => {
   const t = translations[lang];
 
   // Ek dosya indirme
   const handleDownloadAttachment = useCallback(async (att: EmailDetail['attachments'][0]) => {
     if (!email) return;
     try {
-      // downloadUrl varsa doğrudan kullan, yoksa mail.tm API endpoint'i oluştur
       const url = att.downloadUrl || `https://api.mail.tm/messages/${email.id}/attachment/${att.id}`;
-      const res = await fetch(url, {
-        headers: { 'Accept': '*/*' },
-      });
+      const headers: Record<string, string> = { 'Accept': '*/*' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(url, { headers });
       if (!res.ok) throw new Error('Download failed');
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -99,10 +99,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang 
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.warn('Attachment download failed:', err);
-      // Fallback: yeni sekmede aç
       if (att.downloadUrl) window.open(att.downloadUrl, '_blank');
     }
-  }, [email]);
+  }, [email, token]);
   const [viewSource, setViewSource] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);

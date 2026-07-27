@@ -33,8 +33,14 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // API istekleri her zaman network'ten
-    if (url.hostname === 'api.mail.tm') {
+    // API ve Real-time SSE istekleri her zaman doğrudan Network (Asla önbellekleme)
+    if (
+        url.hostname.includes('api.mail.tm') ||
+        url.hostname.includes('api.guerrillamail.com') ||
+        url.hostname.includes('mercure') ||
+        url.pathname.includes('/api/') ||
+        request.method !== 'GET'
+    ) {
         event.respondWith(fetch(request));
         return;
     }

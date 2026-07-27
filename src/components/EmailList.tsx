@@ -62,6 +62,9 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
 
     // Yatay swipe kontrolü
     if (Math.abs(dx) > Math.abs(dy) && dx < 0) {
+      if (Math.abs(dx) > 10 && e.cancelable) {
+        e.preventDefault();
+      }
       setSwipingId(id);
       setSwipeX(Math.max(dx, -120));
     }

@@ -12,7 +12,6 @@ import { Mailbox, EmailSummary, EmailDetail, AICategory } from '../types';
 // ─── Provider Registry ───────────────────────────────────────────────
 const HYDRA_PROVIDERS: Record<string, string> = {
   mail_tm: 'https://api.mail.tm',
-  mail_gw: 'https://api.mail.gw',
 };
 
 const GUERRILLA_API = 'https://api.guerrillamail.com/ajax.php';
@@ -218,16 +217,32 @@ const parseGuerrillaDate = (msg: any): string => {
 
 /** Guerrilla Mail mesajlarını çeker */
 const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
-  const sid = mailbox.token;
+  let sid = mailbox.token;
   if (!sid) return [];
 
   try {
-    const res = await safeFetch(
+    let res = await safeFetch(
       `${GUERRILLA_API}?f=check_email&seq=0&sid_token=${sid}`,
       undefined, 'guerrilla'
     );
     if (!res.ok) return [];
-    const data = await res.json();
+    let data = await res.json();
+
+    // Eğer sid_token zaman aşıma uğradıysa otomatik oturum yenile
+    if (data.error_codes || !Array.isArray(data.list)) {
+      const renewRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
+      if (renewRes.ok) {
+        const renewData = await renewRes.json();
+        if (renewData.sid_token) {
+          sid = renewData.sid_token;
+          mailbox.token = sid;
+          if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
+          res = await safeFetch(`${GUERRILLA_API}?f=check_email&seq=0&sid_token=${sid}`, undefined, 'guerrilla');
+          if (res.ok) data = await res.json();
+        }
+      }
+    }
+
     const list = data.list;
     if (!Array.isArray(list)) return [];
 
