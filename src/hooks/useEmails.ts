@@ -99,7 +99,7 @@ export function useEmails(
         if (!activeAccount) return;
         try {
             const fetched = await getMessages(activeAccount);
-            if (fetched) {
+            if (fetched && Array.isArray(fetched)) {
                 const currentDeletedIds = deletedIdsRef.current;
                 const filtered = fetched.filter(e => !currentDeletedIds.has(e.id));
 
@@ -132,13 +132,26 @@ export function useEmails(
                         return updated;
                     });
                 }
-                previousEmailCountRef.current = filtered.length;
-                setEmails(filtered.sort((a, b) => {
-                    const dateA = new Date(a.createdAt).getTime();
-                    const dateB = new Date(b.createdAt).getTime();
-                    if (!isNaN(dateB) && !isNaN(dateA)) return dateB - dateA;
-                    return String(b.id).localeCompare(String(a.id));
-                }));
+                previousEmailCountRef.current = Math.max(previousEmailCountRef.current, filtered.length);
+
+                // E-postaların geçici API takılmalarında ekrandan kaybolmaması için Merge algoritması:
+                setEmails(prev => {
+                    const map = new Map<string, EmailSummary>();
+                    // Önceki silinmemiş e-postaları koru
+                    prev.forEach(item => {
+                        if (!currentDeletedIds.has(item.id)) map.set(item.id, item);
+                    });
+                    // Sunucudan gelen taze e-postaları ekle/güncelle
+                    filtered.forEach(item => map.set(item.id, item));
+
+                    const merged = Array.from(map.values());
+                    return merged.sort((a, b) => {
+                        const dateA = new Date(a.createdAt).getTime();
+                        const dateB = new Date(b.createdAt).getTime();
+                        if (!isNaN(dateB) && !isNaN(dateA)) return dateB - dateA;
+                        return String(b.id).localeCompare(String(a.id));
+                    });
+                });
                 setFetchError(null);
             }
         } catch (err: any) {

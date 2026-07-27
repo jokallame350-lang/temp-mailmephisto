@@ -169,14 +169,15 @@ const getGuerrillaDomains = async (): Promise<string[]> => {
 };
 
 /** Guerrilla Mail ile hesap oluşturur */
-const createGuerrillaMailbox = async (emailUser?: string): Promise<Mailbox> => {
+const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): Promise<Mailbox> => {
   // İlk adım: yeni email adresi al
   const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
   if (!res.ok) throw new Error(`Guerrilla Mail hesabı oluşturulamadı (HTTP ${res.status})`);
   const data = await res.json();
   const sid = data.sid_token;
 
-  let address = data.email_addr;
+  let user = data.email_addr.split('@')[0];
+  let dom = domainName || data.email_addr.split('@')[1] || 'guerrillamailblock.com';
 
   // Eğer custom username istendiyse, set_email_user ile değiştir
   if (emailUser) {
@@ -186,9 +187,14 @@ const createGuerrillaMailbox = async (emailUser?: string): Promise<Mailbox> => {
     );
     if (setRes.ok) {
       const setData = await setRes.json();
-      address = setData.email_addr || address;
+      user = setData.email_user || emailUser;
+      if (!domainName && setData.email_addr) {
+        dom = setData.email_addr.split('@')[1] || dom;
+      }
     }
   }
+
+  const address = `${user}@${dom}`;
 
   return {
     id: sid,
@@ -426,19 +432,34 @@ export const generateMailbox = async (): Promise<Mailbox> => {
 export const createCustomMailbox = async (username: string, domain: string, provider: string): Promise<Mailbox> => {
   // Guerrilla Mail — set_email_user kullanır
   if (isGuerrilla(provider)) {
-    return createGuerrillaMailbox(username);
+    return createGuerrillaMailbox(username, domain);
   }
 
-  // Hydra providers
-  const apiBase = getApiBase(provider);
-  const address = `${username}@${domain}`;
+  // Hydra providers (mail_tm, mail_gw)
+  let activeProvider = provider;
+  let apiBase = getApiBase(activeProvider);
+  let address = `${username}@${domain}`;
   const password = generatePassword();
 
-  const accRes = await safeFetch(`${apiBase}/accounts`, {
+  let accRes = await safeFetch(`${apiBase}/accounts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, password })
-  }, provider);
+  }, activeProvider);
+
+  // Eğer sağlayıcı sunucusu çöktüyse (502 Bad Gateway vb.) otomatik mail_tm'e geçiş yap
+  if (!accRes.ok && accRes.status !== 422 && activeProvider !== 'mail_tm') {
+    activeProvider = 'mail_tm';
+    apiBase = getApiBase('mail_tm');
+    const { domains: tmDomains } = await fetchDomains();
+    const fallbackDomain = tmDomains.find(d => !d.includes('guerrilla')) || 'dollicons.com';
+    address = `${username}@${fallbackDomain}`;
+    accRes = await safeFetch(`${apiBase}/accounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, password })
+    }, 'mail_tm');
+  }
 
   if (accRes.status === 422) {
     throw new Error('Bu kullanıcı adı zaten alınmış.');
@@ -452,7 +473,7 @@ export const createCustomMailbox = async (username: string, domain: string, prov
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, password })
-  }, provider);
+  }, activeProvider);
 
   if (!tokenRes.ok) {
     throw new Error(`Token alınamadı (HTTP ${tokenRes.status})`);
@@ -463,7 +484,7 @@ export const createCustomMailbox = async (username: string, domain: string, prov
   return {
     id: tokenData.id || address,
     address,
-    apiBase: provider,
+    apiBase: activeProvider,
     token: tokenData.token,
     password,
   };
