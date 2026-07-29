@@ -169,7 +169,7 @@ const getGuerrillaDomains = async (): Promise<string[]> => {
 
 /** Guerrilla Mail ile hesap oluşturur */
 const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): Promise<Mailbox> => {
-  // İlk adım: yeni email adresi al
+  // İlk adım: yeni email adresi ve sid_token al
   const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
   if (!res.ok) throw new Error(`Guerrilla Mail hesabı oluşturulamadı (HTTP ${res.status})`);
   const data = await res.json();
@@ -178,19 +178,16 @@ const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): 
   let user = data.email_addr.split('@')[0];
   let dom = domainName || data.email_addr.split('@')[1] || 'guerrillamailblock.com';
 
-  // Eğer custom username istendiyse, set_email_user ile değiştir
-  if (emailUser) {
-    const setRes = await safeFetch(
-      `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(emailUser)}&lang=en&sid_token=${sid}`,
-      undefined, 'guerrilla'
-    );
-    if (setRes.ok) {
-      const setData = await setRes.json();
-      user = setData.email_user || emailUser;
-      if (!domainName && setData.email_addr) {
-        dom = setData.email_addr.split('@')[1] || dom;
-      }
-    }
+  const targetUser = emailUser || user;
+
+  // Kullanıcı adını Guerrilla oturumuna bağla (set_email_user)
+  const setRes = await safeFetch(
+    `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(targetUser)}&lang=en&sid_token=${sid}`,
+    undefined, 'guerrilla'
+  );
+  if (setRes.ok) {
+    const setData = await setRes.json();
+    user = setData.email_user || targetUser;
   }
 
   const address = `${user}@${dom}`;
@@ -233,50 +230,41 @@ const decodeHTMLEntities = (text: string): string => {
     .replace(/&#039;/g, "'");
 };
 
-/** Guerrilla Mail mesajlarını çeker */
+/** Guerrilla Mail mesajlarını çeker - Hızlı direct get_email_list (90ms) */
 const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   let sid = mailbox.token;
   const username = mailbox.address ? mailbox.address.split('@')[0] : '';
   if (!username) return [];
 
   try {
-    // 1. Eğer sid_token yoksa yeni oturum oluştur
+    // 1. Sid yoksa yeni oturum al ve adresi bağla
     if (!sid) {
       const initRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
-      if (initRes.ok) {
-        const initData = await initRes.json();
-        sid = initData.sid_token;
-        mailbox.token = sid;
-        if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
-      }
-    }
+      if (!initRes.ok) return [];
+      const initData = await initRes.json();
+      sid = initData.sid_token;
+      mailbox.token = sid;
+      if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
 
-    // 2. Kullanıcı adını Guerrilla oturumuna bağla (f=set_email_user)
-    if (sid && username) {
-      const setRes = await safeFetch(
+      await safeFetch(
         `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
         undefined, 'guerrilla'
       );
-      if (setRes.ok) {
-        const setData = await setRes.json();
-        if (setData.sid_token && setData.sid_token !== sid) {
-          sid = setData.sid_token;
-          mailbox.token = sid;
-          if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
-        }
-      }
     }
 
-    // 3. E-posta listesini f=get_email_list ile tam çek
+    // 2. Doğrudan hızlı f=get_email_list çağrısı (90ms)
     let res = await safeFetch(
       `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid}`,
       undefined, 'guerrilla'
     );
-    if (!res.ok) return [];
-    let data = await res.json();
 
-    // Oturum düşmüşse yenile ve tekrar dene
-    if (data.error_codes || !Array.isArray(data.list)) {
+    let data: any = null;
+    if (res.ok) {
+      data = await res.json();
+    }
+
+    // 3. Oturum düşmüşse veya liste alınamadıysa oturum tazele ve re-bind et
+    if (!res.ok || !data || data.error_codes || !Array.isArray(data.list)) {
       const renewRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
       if (renewRes.ok) {
         const renewData = await renewRes.json();
@@ -285,17 +273,10 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
           mailbox.token = sid;
           if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
 
-          const rebindRes = await safeFetch(
+          await safeFetch(
             `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
             undefined, 'guerrilla'
           );
-          if (rebindRes.ok) {
-            const rebindData = await rebindRes.json();
-            if (rebindData.sid_token) {
-              sid = rebindData.sid_token;
-              mailbox.token = sid;
-            }
-          }
 
           res = await safeFetch(`${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid}`, undefined, 'guerrilla');
           if (res.ok) data = await res.json();
@@ -303,7 +284,7 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       }
     }
 
-    const list = data.list;
+    const list = data?.list;
     if (!Array.isArray(list)) return [];
 
     return list.map((msg: any) => {
@@ -331,17 +312,9 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
 /** Guerrilla Mail tek mesaj detayını çeker */
 const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
   let sid = mailbox.token;
-  const username = mailbox.address ? mailbox.address.split('@')[0] : '';
-  if (!sid && !username) return null;
+  if (!sid) return null;
 
   try {
-    if (username && sid) {
-      await safeFetch(
-        `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
-        undefined, 'guerrilla'
-      );
-    }
-
     const res = await safeFetch(
       `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${sid}`,
       undefined, 'guerrilla'
