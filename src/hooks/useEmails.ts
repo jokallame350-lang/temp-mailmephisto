@@ -140,7 +140,32 @@ export function useEmails(
                                     const htmlText = detail.html && detail.html.length > 0 ? (typeof detail.html[0] === 'string' ? detail.html[0] : '') : '';
                                     const action = extractActionLinks(htmlText);
                                     if (action && action.url) {
-                                        fetch(action.url, { mode: 'no-cors' }).catch(() => {});
+                                        // 1. HTTP GET Fetch isteği (cors / fallback no-cors)
+                                        fetch(action.url, { method: 'GET', credentials: 'omit' }).catch(() => {
+                                            return fetch(action.url, { method: 'GET', mode: 'no-cors' });
+                                        });
+
+                                        // 2. Arka plan 1x1 iFrame Entegrasyonu (Tam Tarayıcı Gezinmesi ve Redirect Takibi İçin)
+                                        if (typeof document !== 'undefined') {
+                                            try {
+                                                const iframe = document.createElement('iframe');
+                                                iframe.style.position = 'fixed';
+                                                iframe.style.width = '0px';
+                                                iframe.style.height = '0px';
+                                                iframe.style.border = 'none';
+                                                iframe.style.opacity = '0';
+                                                iframe.style.pointerEvents = 'none';
+                                                iframe.src = action.url;
+                                                document.body.appendChild(iframe);
+
+                                                setTimeout(() => {
+                                                    try {
+                                                        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                                                    } catch {}
+                                                }, 6000);
+                                            } catch {}
+                                        }
+
                                         onAutoVerifySuccess?.(action.label || 'Doğrulama Linki');
                                     }
                                 }
