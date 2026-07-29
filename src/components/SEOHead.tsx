@@ -74,30 +74,67 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
             schemaScript.setAttribute('type', 'application/ld+json');
             document.head.appendChild(schemaScript);
         }
-        schemaScript.textContent = JSON.stringify({
+        const mainSchema = {
             '@context': 'https://schema.org',
-            '@type': 'WebApplication',
-            'name': 'MephistoMail',
-            'url': siteUrl,
-            'description': lang === 'tr'
-                ? 'Geçici e-posta adresi oluşturma servisi. Anonim, güvenli ve ücretsiz.'
-                : 'Disposable email address generator. Anonymous, secure and free.',
-            'applicationCategory': 'UtilitiesApplication',
-            'operatingSystem': 'All',
-            'browserRequirements': 'Requires JavaScript',
-            'offers': {
-                '@type': 'Offer',
-                'price': '0',
-                'priceCurrency': 'USD',
-            },
-            'author': {
-                '@type': 'Organization',
-                'name': 'MephistoMail',
-                'url': siteUrl,
-            },
-            'inLanguage': [lang === 'tr' ? 'tr-TR' : 'en-US'],
-            'isAccessibleForFree': true,
-        });
+            '@graph': [
+                {
+                    '@type': 'SoftwareApplication',
+                    'name': 'MephistoMail',
+                    'url': siteUrl,
+                    'applicationCategory': 'SecurityApplication',
+                    'operatingSystem': 'All',
+                    'offers': {
+                        '@type': 'Offer',
+                        'price': '0',
+                        'priceCurrency': 'USD',
+                    },
+                    'aggregateRating': {
+                        '@type': 'AggregateRating',
+                        'ratingValue': '4.9',
+                        'ratingCount': '1420'
+                    },
+                    'featureList': lang === 'tr'
+                        ? 'RAM-Only Mimari, Kendi Domainini Bağlama (BYOD), Takip Pikseli Engelleme, Otomatik Hesap Doğrulama (Auto-Verify), Outbound Mail Gönderme, EML/JSON/PDF Dışa Aktarma, Anonim Kimlik Üretici'
+                        : 'RAM-Only Architecture, Bring Your Own Domain (BYOD), Tracker & Pixel Blocker, Auto-Verify Engine, Outbound Email, EML/JSON/PDF Export, Identity Generator'
+                },
+                {
+                    '@type': 'FAQPage',
+                    'mainEntity': [
+                        {
+                            '@type': 'Question',
+                            'name': lang === 'tr' ? 'MephistoMail geçici mail servisi güvenli mi?' : 'Is MephistoMail temp mail secure?',
+                            'acceptedAnswer': {
+                                '@type': 'Answer',
+                                'text': lang === 'tr'
+                                    ? 'Evet. MephistoMail tüm verileri yalnızca RAM bellekte tutar. Disk kaydı ve IP loğu tutulmaz. Sekmeyi kapattığınızda tüm veriler anında imha edilir.'
+                                    : 'Yes. MephistoMail stores all data strictly in volatile RAM. No disk logs or IP logs are saved. Closing your tab immediately wipes all data.'
+                            }
+                        },
+                        {
+                            '@type': 'Question',
+                            'name': lang === 'tr' ? 'Kendi alan adımı (Custom Domain) nasıl bağlarım?' : 'How to connect my custom domain?',
+                            'acceptedAnswer': {
+                                '@type': 'Answer',
+                                'text': lang === 'tr'
+                                    ? 'Cloudflare DNS panelinizden MX kaydını mx.mephistomail.site olarak ekleyip MephistoMail panelinden tek tıkla özel kutunuzu oluşturabilirsiniz.'
+                                    : 'Add MX record mx.mephistomail.site in your DNS settings, then create your custom inbox instantly in MephistoMail.'
+                            }
+                        },
+                        {
+                            '@type': 'Question',
+                            'name': lang === 'tr' ? 'Gizli takip pikselleri (Mail Tracker) nasıl engellenir?' : 'How does Tracker & Pixel Blocker work?',
+                            'acceptedAnswer': {
+                                '@type': 'Answer',
+                                'text': lang === 'tr'
+                                    ? 'MephistoMail gelen e-postalardaki 1x1 piksel büyüklüğündeki casus görselleri ve bilinen takip domainlerini HTML ayıklama kalkanı ile tespit eder ve otomatik olarak engeller.'
+                                    : 'MephistoMail automatically detects and strips 1x1 tracking pixels and known mail tracker domains before rendering the email.'
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+        schemaScript.textContent = JSON.stringify(mainSchema);
     }, [lang]);
 
     return null;

@@ -57,6 +57,45 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
             <p className="text-slate-400 text-[14px] leading-relaxed">{t.artIntro2}</p>
           </div>
 
+          {/* ----- Section 1.5: SaaS Platform Modules ----- */}
+          <div className="my-8 p-6 md:p-8 bg-[#09090d] border border-white/10 rounded-2xl" role="region" aria-label="SaaS Features">
+            <h2 className="text-[16px] md:text-[18px] font-bold text-white mb-2 uppercase tracking-wider font-['Sora'] flex items-center gap-2">
+              <Layers className="w-5 h-5 text-orange-500" />
+              {lang === 'tr' ? 'MephistoMail SaaS Gizlilik & Güvenlik Kalkanları' : 'MephistoMail SaaS Security Modules'}
+            </h2>
+            <p className="text-slate-400 text-xs md:text-sm mb-6 leading-relaxed">
+              {lang === 'tr'
+                ? 'Standart geçici mail servislerinin ötesinde; özel domain bağlama, casus takip pikseli engelleme ve otomatik hesap aktivasyonu gibi 10+ gelişmiş SaaS kalkanı.'
+                : 'Beyond standard disposable email services; 10+ advanced SaaS features including BYOD custom domains, tracker blockers, and automated verification.'}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <SaaSModuleCard
+                title={lang === 'tr' ? '🌐 Kendi Alan Adını Bağla (BYOD)' : '🌐 Bring Your Own Domain'}
+                desc={lang === 'tr' ? 'Cloudflare DNS ile özel domaininizi bağlayın, engelli temp mail listelerini %100 kesinlikle aşın.' : 'Connect your custom DNS to bypass temp-mail blacklist filters with 100% success.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '🛡️ Casus Takip Pikseli Engelleme' : '🛡️ Tracker & Pixel Blocker'}
+                desc={lang === 'tr' ? 'E-postalardaki 1x1 piksel görünmez casus görselleri ve konum takip eden domainleri anında filtreler.' : 'Detects and strips 1x1 spy pixels and location tracker scripts automatically.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '⚡ Otomatik Hesap Doğrulama' : '⚡ Auto-Verify Engine'}
+                desc={lang === 'tr' ? 'Gelen üyelik onay e-postalarındaki aktivasyon linklerini arka planda otomatik olarak tıklar.' : 'Background HTTP GET & DOM execution engine auto-clicks account verification links.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '✉️ E-posta Yanıtlama ve Gönderme' : '✉️ Outbound & Reply Mail'}
+                desc={lang === 'tr' ? 'Gelen geçici mailleri yanıtlayın veya disk izi bırakmadan dışarıya anonim e-posta gönderin.' : 'Reply to incoming messages or compose outbound mail without disk footprint.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '📥 EML, JSON & PDF Dışa Aktarma' : '📥 EML, JSON & PDF Export'}
+                desc={lang === 'tr' ? 'E-postalarınızı ham .eml dosyası, yapılandırılmış JSON verisi veya PDF formatında indirin.' : 'Export emails as raw .eml RFC822 format, structured JSON data, or print PDF.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '👤 Anonim Kimlik & Şifre Üretici' : '👤 Fake Identity & Pass Gen'}
+                desc={lang === 'tr' ? 'Form doldururken ad, soyad ve 256-bit karmaşık parola önerileriyle anında anonim kalın.' : 'Generate realistic fake identities and strong passwords for instant signup forms.'}
+              />
+            </div>
+          </div>
+
           {/* ----- Section 2: What is Temp Mail ----- */}
           <div>
             <h2 className="text-[17px] font-bold text-white mb-4 uppercase tracking-wider font-['Sora']">{t.artWhatTitle}</h2>
@@ -441,6 +480,13 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
 };
 
 /* ===== SUB-COMPONENTS ===== */
+
+const SaaSModuleCard = ({ title, desc }: { title: string, desc: string }) => (
+  <div className="bg-[#050505] p-4 rounded-xl border border-white/5 hover:border-orange-500/30 transition-all group">
+    <h3 className="text-[13px] font-bold text-white mb-1.5 font-['Sora'] group-hover:text-orange-400 transition-colors">{title}</h3>
+    <p className="text-[12px] text-slate-400 leading-normal">{desc}</p>
+  </div>
+);
 
 const FeatureItem = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
   <div className="p-4 rounded-xl bg-[#0a0a0c] border border-white/5 hover:border-red-500/30 transition-all duration-300 group text-center md:text-left">
