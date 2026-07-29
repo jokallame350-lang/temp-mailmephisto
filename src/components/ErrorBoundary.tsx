@@ -41,7 +41,6 @@ class ErrorBoundary extends Component<Props, State> {
                             <p className="text-sm text-slate-500 font-medium">
                                 {this.state.error?.message || 'An unexpected error occurred.'}
                             </p>
-                            <pre className="text-[10px] text-red-400 font-mono text-left bg-black p-3 rounded mt-2 overflow-auto max-h-40">{this.state.error?.stack}</pre>
                         </div>
                         <button
                             onClick={this.handleRetry}
