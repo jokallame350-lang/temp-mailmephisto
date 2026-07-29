@@ -215,20 +215,57 @@ const parseGuerrillaDate = (msg: any): string => {
   return new Date().toISOString();
 };
 
+const decodeHTMLEntities = (text: string): string => {
+  if (!text) return '';
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      return doc.documentElement.textContent || text;
+    } catch {
+      return text;
+    }
+  }
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+};
+
 /** Guerrilla Mail mesajlarını çeker */
 const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   let sid = mailbox.token;
-  if (!sid) return [];
+  const username = mailbox.address ? mailbox.address.split('@')[0] : '';
 
   try {
+    // 1. Eğer sid_token yoksa yeni oturum oluştur
+    if (!sid) {
+      const initRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
+      if (!initRes.ok) return [];
+      const initData = await initRes.json();
+      sid = initData.sid_token;
+      mailbox.token = sid;
+      if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
+    }
+
+    // 2. Kullanıcı adını Guerrilla oturumuna bağla (f=set_email_user)
+    if (username) {
+      await safeFetch(
+        `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
+        undefined, 'guerrilla'
+      );
+    }
+
+    // 3. E-posta listesini f=get_email_list ile tam çek
     let res = await safeFetch(
-      `${GUERRILLA_API}?f=check_email&seq=0&sid_token=${sid}`,
+      `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid}`,
       undefined, 'guerrilla'
     );
     if (!res.ok) return [];
     let data = await res.json();
 
-    // Eğer sid_token zaman aşıma uğradıysa otomatik oturum yenile
+    // Oturum düşmüşse yenile ve tekrar dene
     if (data.error_codes || !Array.isArray(data.list)) {
       const renewRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
       if (renewRes.ok) {
@@ -237,7 +274,13 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
           sid = renewData.sid_token;
           mailbox.token = sid;
           if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
-          res = await safeFetch(`${GUERRILLA_API}?f=check_email&seq=0&sid_token=${sid}`, undefined, 'guerrilla');
+          if (username) {
+            await safeFetch(
+              `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
+              undefined, 'guerrilla'
+            );
+          }
+          res = await safeFetch(`${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid}`, undefined, 'guerrilla');
           if (res.ok) data = await res.json();
         }
       }
@@ -246,18 +289,22 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
     const list = data.list;
     if (!Array.isArray(list)) return [];
 
-    return list.map((msg: any) => ({
-      id: String(msg.mail_id),
-      from: {
-        address: msg.mail_from || 'unknown',
-        name: msg.mail_from?.split('@')[0] || 'unknown',
-      },
-      subject: msg.mail_subject || '',
-      intro: msg.mail_excerpt || 'No preview available',
-      seen: msg.mail_read === 1,
-      createdAt: parseGuerrillaDate(msg),
-      aiCategory: determineCategory(msg.mail_subject || '', msg.mail_from || '', msg.mail_excerpt || ''),
-    }));
+    return list.map((msg: any) => {
+      const decodedSubject = decodeHTMLEntities(msg.mail_subject || '');
+      const decodedExcerpt = decodeHTMLEntities(msg.mail_excerpt || '');
+      return {
+        id: String(msg.mail_id),
+        from: {
+          address: msg.mail_from || 'unknown',
+          name: msg.mail_from?.split('@')[0] || 'unknown',
+        },
+        subject: decodedSubject,
+        intro: decodedExcerpt || 'Görüntülenecek önizleme yok',
+        seen: msg.mail_read === 1,
+        createdAt: parseGuerrillaDate(msg),
+        aiCategory: determineCategory(decodedSubject, msg.mail_from || '', decodedExcerpt),
+      };
+    });
   } catch {
     return [];
   }
@@ -276,17 +323,20 @@ const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): P
     if (!res.ok) return null;
     const msg = await res.json();
 
+    const decodedSubject = decodeHTMLEntities(msg.mail_subject || '');
+    const decodedExcerpt = decodeHTMLEntities(msg.mail_excerpt || '');
+
     return {
       id: String(msg.mail_id),
       from: {
         address: msg.mail_from || 'unknown',
         name: msg.mail_from?.split('@')[0] || 'unknown',
       },
-      subject: msg.mail_subject || '',
-      intro: msg.mail_excerpt || '',
+      subject: decodedSubject,
+      intro: decodedExcerpt || '',
       seen: true,
       createdAt: msg.mail_date || '',
-      aiCategory: determineCategory(msg.mail_subject || '', msg.mail_from || '', msg.mail_excerpt || ''),
+      aiCategory: determineCategory(decodedSubject, msg.mail_from || '', decodedExcerpt),
       text: msg.mail_body ? msg.mail_body.replace(/<[^>]*>/g, '') : '',
       html: msg.mail_body ? [String(msg.mail_body)] : [],
       hasAttachments: false,
