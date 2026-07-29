@@ -708,9 +708,14 @@ export const subscribeToMailboxEvents = (
       }
     };
 
-    eventSource.onerror = (err) => {
-      // Quietly handle reconnect / disconnects
-      console.debug('SSE EventSource error/reconnect', err);
+    let errorCount = 0;
+    eventSource.onerror = () => {
+      errorCount++;
+      if (errorCount >= 2) {
+        try {
+          eventSource.close();
+        } catch {}
+      }
     };
 
     return () => {
