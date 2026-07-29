@@ -228,14 +228,26 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
 
   if (!email) return null;
 
-  const fromAddress = typeof email.from === 'string' ? email.from : email.from.address;
-  const fromName = typeof email.from === 'string' ? email.from : (email.from.name || email.from.address);
+  const fromAddress = typeof email.from === 'string'
+    ? email.from
+    : (email.from && typeof email.from === 'object' ? String(email.from.address || 'unknown') : 'unknown');
+
+  const fromName = typeof email.from === 'string'
+    ? email.from
+    : (email.from && typeof email.from === 'object' ? String(email.from.name || email.from.address || 'unknown') : 'unknown');
+
   const otpCode = extractOTPFromContent(email.subject, email.text || '');
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', {
-      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString || '';
+      return d.toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', {
+        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return dateString || '';
+    }
   };
 
   const [previewDevice, setPreviewDevice] = useState<'responsive' | 'mobile'>('responsive');

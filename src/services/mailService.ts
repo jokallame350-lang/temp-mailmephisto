@@ -324,19 +324,20 @@ const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): P
 
     const decodedSubject = decodeHTMLEntities(msg.mail_subject || '');
     const decodedExcerpt = decodeHTMLEntities(msg.mail_excerpt || '');
+    const fromAddr = typeof msg.mail_from === 'string' ? msg.mail_from : 'unknown';
 
     return {
       id: String(msg.mail_id),
       from: {
-        address: msg.mail_from || 'unknown',
-        name: msg.mail_from?.split('@')[0] || 'unknown',
+        address: fromAddr,
+        name: fromAddr.split('@')[0] || 'unknown',
       },
       subject: decodedSubject,
       intro: decodedExcerpt || '',
       seen: true,
-      createdAt: msg.mail_date || '',
-      aiCategory: determineCategory(decodedSubject, msg.mail_from || '', decodedExcerpt),
-      text: msg.mail_body ? msg.mail_body.replace(/<[^>]*>/g, '') : '',
+      createdAt: parseGuerrillaDate(msg),
+      aiCategory: determineCategory(decodedSubject, fromAddr, decodedExcerpt),
+      text: msg.mail_body ? String(msg.mail_body).replace(/<[^>]*>/g, '') : '',
       html: msg.mail_body ? [String(msg.mail_body)] : [],
       hasAttachments: false,
       attachments: [],
