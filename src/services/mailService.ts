@@ -237,24 +237,34 @@ const decodeHTMLEntities = (text: string): string => {
 const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   let sid = mailbox.token;
   const username = mailbox.address ? mailbox.address.split('@')[0] : '';
+  if (!username) return [];
 
   try {
     // 1. Eğer sid_token yoksa yeni oturum oluştur
     if (!sid) {
       const initRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
-      if (!initRes.ok) return [];
-      const initData = await initRes.json();
-      sid = initData.sid_token;
-      mailbox.token = sid;
-      if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
+      if (initRes.ok) {
+        const initData = await initRes.json();
+        sid = initData.sid_token;
+        mailbox.token = sid;
+        if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
+      }
     }
 
     // 2. Kullanıcı adını Guerrilla oturumuna bağla (f=set_email_user)
-    if (username) {
-      await safeFetch(
+    if (sid && username) {
+      const setRes = await safeFetch(
         `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
         undefined, 'guerrilla'
       );
+      if (setRes.ok) {
+        const setData = await setRes.json();
+        if (setData.sid_token && setData.sid_token !== sid) {
+          sid = setData.sid_token;
+          mailbox.token = sid;
+          if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
+        }
+      }
     }
 
     // 3. E-posta listesini f=get_email_list ile tam çek
@@ -274,12 +284,19 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
           sid = renewData.sid_token;
           mailbox.token = sid;
           if (tokenRefreshListener) tokenRefreshListener(mailbox.id, sid);
-          if (username) {
-            await safeFetch(
-              `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
-              undefined, 'guerrilla'
-            );
+
+          const rebindRes = await safeFetch(
+            `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
+            undefined, 'guerrilla'
+          );
+          if (rebindRes.ok) {
+            const rebindData = await rebindRes.json();
+            if (rebindData.sid_token) {
+              sid = rebindData.sid_token;
+              mailbox.token = sid;
+            }
           }
+
           res = await safeFetch(`${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid}`, undefined, 'guerrilla');
           if (res.ok) data = await res.json();
         }
@@ -305,17 +322,26 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
         aiCategory: determineCategory(decodedSubject, msg.mail_from || '', decodedExcerpt),
       };
     });
-  } catch {
+  } catch (err) {
+    console.error('getGuerrillaMessages error:', err);
     return [];
   }
 };
 
 /** Guerrilla Mail tek mesaj detayını çeker */
 const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
-  const sid = mailbox.token;
-  if (!sid) return null;
+  let sid = mailbox.token;
+  const username = mailbox.address ? mailbox.address.split('@')[0] : '';
+  if (!sid && !username) return null;
 
   try {
+    if (username && sid) {
+      await safeFetch(
+        `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(username)}&lang=en&sid_token=${sid}`,
+        undefined, 'guerrilla'
+      );
+    }
+
     const res = await safeFetch(
       `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${sid}`,
       undefined, 'guerrilla'
