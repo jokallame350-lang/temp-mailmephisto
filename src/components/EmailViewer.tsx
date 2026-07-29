@@ -79,6 +79,11 @@ const formatSize = (bytes: number): string => {
 
 const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang, token, onReply }) => {
   const t = translations[lang];
+  const [viewSource, setViewSource] = useState(false);
+  const [showHeaders, setShowHeaders] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [previewDevice, setPreviewDevice] = useState<'responsive' | 'mobile'>('responsive');
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Ek dosya indirme
   const handleDownloadAttachment = useCallback(async (att: EmailDetail['attachments'][0]) => {
@@ -105,10 +110,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       if (att.downloadUrl) window.open(att.downloadUrl, '_blank');
     }
   }, [email, token]);
-  const [viewSource, setViewSource] = useState(false);
-  const [showHeaders, setShowHeaders] = useState(false);
-  const [codeCopied, setCodeCopied] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => { setViewSource(false); setShowHeaders(false); setCodeCopied(false); }, [email?.id]);
 
@@ -249,8 +250,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       return dateString || '';
     }
   };
-
-  const [previewDevice, setPreviewDevice] = useState<'responsive' | 'mobile'>('responsive');
 
   const handleDownloadTXT = () => {
     if (!email) return;
