@@ -73,7 +73,7 @@ const App: React.FC = () => {
   }, []);
 
   const [autoVerifyEnabled, setAutoVerifyEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('mephisto_auto_verify') === 'true';
+    return localStorage.getItem('mephisto_auto_verify') !== 'false';
   });
 
   const toggleAutoVerify = useCallback(() => {

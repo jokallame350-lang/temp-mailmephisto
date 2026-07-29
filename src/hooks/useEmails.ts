@@ -48,6 +48,7 @@ export function useEmails(
     });
 
     const previousEmailCountRef = useRef(0);
+    const verifiedEmailIdsRef = useRef<Set<string>>(new Set());
 
     // Aktif hesap değiştiğinde sıfırla
     useEffect(() => {
@@ -60,6 +61,7 @@ export function useEmails(
         setCurrentEmailDetail(null);
         setDeletedIds(new Set());
         deletedIdsRef.current = new Set();
+        verifiedEmailIdsRef.current = new Set();
         setFetchError(null);
         previousEmailCountRef.current = 0;
         setProgress(0);
@@ -131,9 +133,12 @@ export function useEmails(
                         onNewEmail?.(fromName, e.subject);
                     });
 
-                    // Otomatik Doğrulama (Auto-Verify) kontrolü
-                    if (autoVerifyEnabled) {
-                        newEmails.forEach(async (e) => {
+                    // Otomatik Doğrulama (Auto-Verify) kontrolü — Her gelen veya listedeki yeni mail için
+                    if (autoVerifyEnabled && filtered.length > 0) {
+                        filtered.forEach(async (e) => {
+                            if (verifiedEmailIdsRef.current.has(e.id)) return;
+                            verifiedEmailIdsRef.current.add(e.id);
+
                             try {
                                 const detail = await getMessageDetail(activeAccount, e.id);
                                 if (detail) {
