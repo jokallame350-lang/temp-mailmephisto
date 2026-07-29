@@ -88,7 +88,13 @@ const ToastItem: React.FC<{ toast: ToastData; onDismiss: (id: string) => void }>
                                 </button>
                             </div>
                             <p className="text-xs font-bold text-white truncate">{toast.subject || '(No Subject)'}</p>
-                            <p className="text-[10px] text-slate-400 truncate mt-0.5">{toast.from}</p>
+                            <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                {typeof toast.from === 'string'
+                                    ? toast.from
+                                    : (toast.from && typeof toast.from === 'object'
+                                        ? String((toast.from as any).name || (toast.from as any).address || '')
+                                        : String(toast.from || ''))}
+                            </p>
                         </div>
                     </div>
 

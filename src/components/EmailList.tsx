@@ -235,7 +235,11 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
         aria-label={lang === 'tr' ? 'E-posta listesi' : 'Email list'}
       >
         {emails.map((email, index) => {
-          const fromName = typeof email.from === 'string' ? email.from : (email.from.name || email.from.address);
+          const fromName = typeof email.from === 'string'
+            ? email.from
+            : (email.from && typeof email.from === 'object'
+                ? String(email.from.name || email.from.address || 'unknown')
+                : String(email.from || 'unknown'));
           const otpCode = extractOTP(email.subject);
           const isSwipingThis = swipingId === email.id;
 

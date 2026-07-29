@@ -120,7 +120,14 @@ export function useEmails(
 
                     // Toast bildirimi tetikle
                     newEmails.forEach(e => {
-                        const fromName = typeof e.from === 'string' ? e.from : (e.from.name || e.from.address);
+                        let fromName = '';
+                        if (typeof e.from === 'string') {
+                            fromName = e.from;
+                        } else if (e.from && typeof e.from === 'object') {
+                            fromName = String(e.from.name || e.from.address || 'unknown');
+                        } else {
+                            fromName = String(e.from || 'unknown');
+                        }
                         onNewEmail?.(fromName, e.subject);
                     });
 
