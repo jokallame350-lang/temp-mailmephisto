@@ -26,7 +26,7 @@ import ShareDropModal from './components/ShareDropModal';
 import ExtensionInstallModal from './components/ExtensionInstallModal';
 import CustomDomainModal from './components/CustomDomainModal';
 import ComposeModal from './components/ComposeModal';
-import { ComposeMailData } from './types';
+import { Mailbox, ComposeMailData } from './types';
 
 // OTP kodunu subject'ten çıkar (toast için)
 const extractOTPCode = (subject: string): string | null => {
