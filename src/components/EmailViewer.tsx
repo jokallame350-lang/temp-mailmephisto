@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { EmailDetail } from '../types';
-import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File, List, Smartphone, Printer, FileType } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File, List, Smartphone, Printer, FileType, Reply, ShieldCheck, FileJson } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { translations, Language } from '../translations';
+import { sanitizeAndBlockTrackers } from '../utils/trackerBlocker';
+import { downloadAsEML, downloadAsJSON, printEmailContent } from '../utils/exportMail';
 
 interface EmailViewerProps {
   email: EmailDetail | null;
@@ -10,6 +12,7 @@ interface EmailViewerProps {
   onBack: () => void;
   lang: Language;
   token?: string;
+  onReply?: (initialData: { to: string; subject: string; body: string }) => void;
 }
 
 const extractOTPFromContent = (subject: string, text?: string): string | null => {
@@ -74,7 +77,7 @@ const formatSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang, token }) => {
+const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang, token, onReply }) => {
   const t = translations[lang];
 
   // Ek dosya indirme
@@ -109,9 +112,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
 
   useEffect(() => { setViewSource(false); setShowHeaders(false); setCodeCopied(false); }, [email?.id]);
 
-  // Sandbox HTML - DOMPurify ile temizle, sonra iframe'de göster
-  const sanitizedHTML = useMemo(() => {
-    if (!email) return '';
+  // Sandbox HTML - Tracker Blocker & DOMPurify ile temizle
+  const trackerResult = useMemo(() => {
+    if (!email) return { cleanHtml: '', trackerCount: 0, trackerDomains: [] };
     let raw = '';
     try {
       if (email.html && email.html.length > 0) {
@@ -123,21 +126,24 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       raw = email.text || '';
     }
 
-    // DOMPurify: style tag ve inline style'lara izin ver (orijinal tasarım korunsun)
-    // Sadece script ve tehlikeli event handler'ları engelle
+    const { cleanHtml, trackerCount, trackerDomains } = sanitizeAndBlockTrackers(raw);
+
     try {
-      return DOMPurify.sanitize(raw, {
+      const sanitized = DOMPurify.sanitize(cleanHtml, {
         USE_PROFILES: { html: true },
         FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
         FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit'],
         ALLOW_DATA_ATTR: false,
         ADD_ATTR: ['target'],
       });
+      return { cleanHtml: sanitized, trackerCount, trackerDomains };
     } catch (e) {
       console.error('DOMPurify sanitize error:', e);
-      return raw.replace(/<[^>]*>/g, ''); // fallback: strip HTML tags
+      return { cleanHtml: cleanHtml.replace(/<[^>]*>/g, ''), trackerCount, trackerDomains };
     }
   }, [email]);
+
+  const sanitizedHTML = trackerResult.cleanHtml;
 
   // iframe sandbox içeriği
   useEffect(() => {
@@ -290,6 +296,16 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> {t.back}
         </button>
         <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
+          {onReply && (
+            <button
+              onClick={() => onReply({ to: fromAddress, subject: email.subject || '', body: email.text || email.intro || '' })}
+              className="px-2.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+              title={lang === 'tr' ? 'Cevap Ver' : 'Reply'}
+            >
+              <Reply className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{lang === 'tr' ? 'Yanıtla' : 'Reply'}</span>
+            </button>
+          )}
           <button onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')} className={`p-2 rounded-lg transition-colors ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}>
             <Smartphone className="w-4 h-4" />
           </button>
@@ -302,17 +318,32 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors" title={t.forward} aria-label={t.forward}>
             <Forward className="w-4 h-4" />
           </button>
-          <button onClick={handleDownloadTXT} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={lang === 'tr' ? 'TXT İndir' : 'Download TXT'}>
+          <button onClick={() => downloadAsEML(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-purple-400 transition-colors" title={lang === 'tr' ? 'EML İndir (.eml)' : 'Download EML'}>
             <FileType className="w-4 h-4" />
           </button>
-          <button onClick={handleDownloadPDF} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'}>
-            <Printer className="w-4 h-4" />
+          <button onClick={() => downloadAsJSON(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors" title={lang === 'tr' ? 'JSON İndir (.json)' : 'Download JSON'}>
+            <FileJson className="w-4 h-4" />
           </button>
-          <button onClick={handleDownload} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={t.download} aria-label={t.download}>
-            <Download className="w-4 h-4" />
+          <button onClick={() => printEmailContent(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'}>
+            <Printer className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {/* Tracker Blocker Bildirim Rozeti */}
+      {trackerResult.trackerCount > 0 && (
+        <div className="mx-3 sm:mx-6 mt-3 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between text-xs text-emerald-300 animate-fade-in">
+          <div className="flex items-center space-x-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>
+              🛡️ <strong>{trackerResult.trackerCount} adet</strong> gizli takip pikseli (Mail Tracker) engellendi.
+            </span>
+          </div>
+          <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-200 uppercase tracking-wider">
+            RAM Shield Active
+          </span>
+        </div>
+      )}
 
       {/* Konu + Gönderici */}
       <div className="p-3 sm:p-4 md:p-6 border-b border-white/5 space-y-3 sm:space-y-4 bg-transparent">

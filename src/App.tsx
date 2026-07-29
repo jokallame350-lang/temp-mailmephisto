@@ -24,6 +24,9 @@ import IdentityModal from './components/IdentityModal';
 import ForwardingModal from './components/ForwardingModal';
 import ShareDropModal from './components/ShareDropModal';
 import ExtensionInstallModal from './components/ExtensionInstallModal';
+import CustomDomainModal from './components/CustomDomainModal';
+import ComposeModal from './components/ComposeModal';
+import { ComposeMailData } from './types';
 
 // OTP kodunu subject'ten çıkar (toast için)
 const extractOTPCode = (subject: string): string | null => {
@@ -45,6 +48,7 @@ const App: React.FC = () => {
     updateAccountLabel,
     setAutoDelete,
     bulkCopyAddresses,
+    addCustomAccount,
     MAX_ACTIVE_ACCOUNTS,
   } = useMailbox();
 
@@ -68,6 +72,33 @@ const App: React.FC = () => {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
+  const [autoVerifyEnabled, setAutoVerifyEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('mephisto_auto_verify') === 'true';
+  });
+
+  const toggleAutoVerify = useCallback(() => {
+    setAutoVerifyEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem('mephisto_auto_verify', String(next));
+      const toastMsg: ToastData = {
+        id: Date.now().toString(),
+        from: next ? '⚡ Otomatik Doğrulama Aktif' : 'Otomatik Doğrulama Kapalı',
+        subject: next ? 'Gelen üyelik onay linkleri arka planda otomatik tıklanacak.' : 'Otomatik tıklama modu kapatıldı.',
+      };
+      setToasts(p => [toastMsg, ...p].slice(0, 5));
+      return next;
+    });
+  }, []);
+
+  const handleAutoVerifySuccess = useCallback((urlLabel: string) => {
+    const toastMsg: ToastData = {
+      id: Date.now().toString(),
+      from: '⚡ Otomatik Doğrulandı!',
+      subject: `"${urlLabel}" aktivasyon bağlantısı başarıyla tetiklendi.`,
+    };
+    setToasts(p => [toastMsg, ...p].slice(0, 5));
+  }, []);
+
   const {
     emails,
     selectedEmailId,
@@ -85,10 +116,13 @@ const App: React.FC = () => {
     handleDeleteEmail,
     handleDeleteAllEmails,
     incrementAccountStat,
-  } = useEmails(activeAccount, addToast);
+  } = useEmails(activeAccount, addToast, autoVerifyEnabled, handleAutoVerifySuccess);
 
   // Modallar
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [showCustomDomainModal, setShowCustomDomainModal] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
+  const [composeInitialData, setComposeInitialData] = useState<ComposeMailData | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showPassModal, setShowPassModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
@@ -180,6 +214,22 @@ const App: React.FC = () => {
     setLang(prev => langOrder[(langOrder.indexOf(prev) + 1) % langOrder.length]);
   }, []);
 
+  const handleAddCustomDomain = useCallback((domain: string, username: string) => {
+    const fullAddress = `${username}@${domain}`;
+    const newBox: Mailbox = {
+      id: `custom_${Date.now()}`,
+      address: fullAddress,
+      apiBase: 'mail_tm',
+      isCustomDomain: true,
+      customDomainName: domain,
+      createdAt: Date.now(),
+      label: 'Custom Domain',
+      labelColor: '#a855f7',
+    };
+    addCustomAccount(newBox);
+    addToast('🌐 Kendi Domainin Bağlandı!', `${fullAddress} adresi başarıyla oluşturuldu.`);
+  }, [addCustomAccount, addToast]);
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col font-['Sora'] bg-[#050505] text-slate-200 overflow-x-hidden relative">
@@ -236,6 +286,25 @@ const App: React.FC = () => {
         {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={() => setShowForwardingModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
         {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
         {showExtensionModal && <ExtensionInstallModal isOpen={showExtensionModal} onClose={() => setShowExtensionModal(false)} lang={lang} />}
+        {showCustomDomainModal && (
+          <CustomDomainModal
+            isOpen={showCustomDomainModal}
+            onClose={() => setShowCustomDomainModal(false)}
+            onAddCustomDomain={handleAddCustomDomain}
+            lang={lang}
+          />
+        )}
+        {showComposeModal && (
+          <ComposeModal
+            isOpen={showComposeModal}
+            onClose={() => setShowComposeModal(false)}
+            senderAddress={activeAccount?.address || 'mephisto@temp.mail'}
+            mailboxId={activeAccount?.id || ''}
+            initialData={composeInitialData}
+            lang={lang}
+            onSuccessToast={(msg) => addToast('✓ E-posta Gönderildi', msg)}
+          />
+        )}
 
         <main id="main-content" className="flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10" role="main">
 
@@ -288,6 +357,10 @@ const App: React.FC = () => {
                 onIdentity={() => setShowIdentityModal(true)}
                 onForwarding={() => setShowForwardingModal(true)}
                 onShareDrop={() => setShowShareDropModal(true)}
+                onOpenCustomDomain={() => setShowCustomDomainModal(true)}
+                onOpenCompose={() => { setComposeInitialData(null); setShowComposeModal(true); }}
+                autoVerifyEnabled={autoVerifyEnabled}
+                onToggleAutoVerify={toggleAutoVerify}
               />
             )}
           </div>
@@ -336,7 +409,17 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <EmailViewer email={currentEmailDetail} loading={isLoadingDetail} onBack={() => setSelectedEmailId(null)} lang={lang} token={activeAccount?.token} />
+                  <EmailViewer
+                    email={currentEmailDetail}
+                    loading={isLoadingDetail}
+                    onBack={() => setSelectedEmailId(null)}
+                    lang={lang}
+                    token={activeAccount?.token}
+                    onReply={(initialData) => {
+                      setComposeInitialData(initialData);
+                      setShowComposeModal(true);
+                    }}
+                  />
                 )}
               </div>
             </div>

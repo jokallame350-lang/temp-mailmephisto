@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
 import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
+import { extractActionLinks } from '../utils/actionLinks';
 
 const REFRESH_INTERVAL = 2500; // 2.5 saniyede bir ultra-hızlı senkronize kontrol
 const REFRESH_INTERVAL_HIDDEN = 20000; // Sekme arka plandayken 20 sn
@@ -23,7 +24,9 @@ const defaultFilters: NotificationFilter = {
 
 export function useEmails(
     activeAccount: Mailbox | null,
-    onNewEmail?: (from: string, subject: string) => void
+    onNewEmail?: (from: string, subject: string) => void,
+    autoVerifyEnabled?: boolean,
+    onAutoVerifySuccess?: (urlLabel: string) => void
 ) {
     const [emails, setEmails] = useState<EmailSummary[]>([]);
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
@@ -120,6 +123,23 @@ export function useEmails(
                         const fromName = typeof e.from === 'string' ? e.from : (e.from.name || e.from.address);
                         onNewEmail?.(fromName, e.subject);
                     });
+
+                    // Otomatik Doğrulama (Auto-Verify) kontrolü
+                    if (autoVerifyEnabled) {
+                        newEmails.forEach(async (e) => {
+                            try {
+                                const detail = await getMessageDetail(activeAccount, e.id);
+                                if (detail) {
+                                    const htmlText = detail.html && detail.html.length > 0 ? (typeof detail.html[0] === 'string' ? detail.html[0] : '') : '';
+                                    const action = extractActionLinks(htmlText);
+                                    if (action && action.url) {
+                                        fetch(action.url, { mode: 'no-cors' }).catch(() => {});
+                                        onAutoVerifySuccess?.(action.label || 'Doğrulama Linki');
+                                    }
+                                }
+                            } catch { /* sessizce geç */ }
+                        });
+                    }
 
                     // Stats güncelle
                     setStats(prev => {

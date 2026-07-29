@@ -180,6 +180,11 @@ export function useMailbox() {
         return addresses;
     }, [accounts]);
 
+    const addCustomAccount = useCallback((mailbox: Mailbox) => {
+        setAccounts(prev => [mailbox, ...prev]);
+        setActiveAccountId(mailbox.id);
+    }, []);
+
     return {
         accounts,
         activeAccount,
@@ -192,6 +197,7 @@ export function useMailbox() {
         updateAccountLabel,
         setAutoDelete,
         bulkCopyAddresses,
+        addCustomAccount,
         MAX_ACTIVE_ACCOUNTS,
     };
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, Ghost, SendToBack, Layers, Flame, Hourglass, ShieldCheck } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, Ghost, SendToBack, Layers, Flame, Hourglass, ShieldCheck, Zap, Send } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -38,11 +38,16 @@ interface AddressBarProps {
   onForwarding?: () => void;
   onShareDrop?: () => void;
   onExtendTimer?: () => void;
+  onOpenCustomDomain?: () => void;
+  onOpenCompose?: () => void;
+  autoVerifyEnabled?: boolean;
+  onToggleAutoVerify?: () => void;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({
   mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete,
-  progress, lang, onCreateCustom, onIdentity, onForwarding, onShareDrop
+  progress, lang, onCreateCustom, onIdentity, onForwarding, onShareDrop,
+  onOpenCustomDomain, onOpenCompose, autoVerifyEnabled, onToggleAutoVerify
 }) => {
   const t = translations[lang];
   const [copied, setCopied] = useState(false);
@@ -152,7 +157,29 @@ const AddressBar: React.FC<AddressBarProps> = ({
 
         {/* EKSTRA ARAÇLAR */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full mt-2 pt-3 border-t border-white/5 relative">
-          <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Araçlar' : 'Tools'}</span>
+          <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Araçlar & Güvenlik' : 'Tools & Security'}</span>
+          
+          {onOpenCustomDomain && (
+            <button onClick={onOpenCustomDomain} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl font-bold text-[11px] transition-all shadow-sm" title={lang === 'tr' ? 'Kendi Alan Adını Bağla' : 'Bring Your Own Domain'}>
+              <Globe className="w-3.5 h-3.5 text-purple-400" />
+              <span>{lang === 'tr' ? 'Kendi Domainin' : 'Custom Domain'}</span>
+            </button>
+          )}
+
+          {onOpenCompose && (
+            <button onClick={onOpenCompose} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl font-bold text-[11px] transition-all shadow-sm" title={lang === 'tr' ? 'E-posta Gönder / Yanıtla' : 'Send / Reply Email'}>
+              <Send className="w-3.5 h-3.5 text-blue-400" />
+              <span>{lang === 'tr' ? 'Mail Gönder' : 'Compose Mail'}</span>
+            </button>
+          )}
+
+          {onToggleAutoVerify && (
+            <button onClick={onToggleAutoVerify} className={`flex items-center gap-1.5 px-3.5 py-1.5 border rounded-xl font-bold text-[11px] transition-all shadow-sm ${autoVerifyEnabled ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10' : 'bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/10'}`} title={lang === 'tr' ? 'Otomatik Doğrulama (Auto-Verify)' : 'Auto Verification Link Clicker'}>
+              <Zap className={`w-3.5 h-3.5 ${autoVerifyEnabled ? 'text-amber-400 animate-pulse' : 'text-slate-400'}`} />
+              <span>Auto-Verify {autoVerifyEnabled ? '[AÇIK]' : '[KAPALI]'}</span>
+            </button>
+          )}
+
           {onIdentity && (
             <button onClick={onIdentity} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
               <UserCheck className="w-3.5 h-3.5" />

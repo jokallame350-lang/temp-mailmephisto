@@ -10,6 +10,8 @@ export interface Mailbox {
   labelColor?: string;   // Alias label rengi
   createdAt?: number;    // Oluşturulma zamanı (timestamp)
   autoDeleteMinutes?: number; // Otomatik silme süresi
+  isCustomDomain?: boolean; // Özel alan adı (Custom Domain) bayrağı
+  customDomainName?: string; // İlgili alan adı
 }
 
 export interface EmailSummary {
@@ -31,6 +33,8 @@ export interface EmailDetail extends EmailSummary {
   hasAttachments: boolean;
   attachments: EmailAttachment[];
   headerFields?: Record<string, string>; // Raw email headers (Message-ID, To, Cc, etc.)
+  blockedTrackersCount?: number; // Engellenen gizli takip pikseli sayısı
+  blockedTrackerDomains?: string[]; // Engellenen takip domainleri
 }
 
 export interface EmailAttachment {
@@ -39,6 +43,13 @@ export interface EmailAttachment {
   contentType: string;
   size: number;
   downloadUrl?: string;
+}
+
+export interface ComposeMailData {
+  to?: string;
+  subject?: string;
+  body?: string;
+  inReplyToId?: string;
 }
 
 // İstatistik tipi
