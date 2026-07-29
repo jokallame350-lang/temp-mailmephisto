@@ -192,10 +192,18 @@ const App: React.FC = () => {
       setShowCustomModal(false);
       incrementAccountStat();
     } else {
-      const msg = result.reason === 'taken' ? t.usernameTaken : t.connError;
-      setLimitModal({ isOpen: true, title: t.connError, message: msg, type: 'daily' });
+      const isTaken = result.reason === 'taken';
+      const title = isTaken
+        ? (lang === 'tr' ? 'Kullanıcı Adı Kullanımda' : 'Username Taken')
+        : (lang === 'tr' ? 'Hesap Oluşturulamadı' : 'Creation Failed');
+      const msg = isTaken
+        ? (lang === 'tr'
+            ? `"${username}@${domain}" adresi zaten başkası tarafından alınmış. Lütfen farklı bir kullanıcı adı veya domain seçin.`
+            : `"${username}@${domain}" is already taken. Please choose a different username.`)
+        : t.connError;
+      setLimitModal({ isOpen: true, title, message: msg, type: 'daily' });
     }
-  }, [rawHandleCreateCustom, incrementAccountStat, t]);
+  }, [rawHandleCreateCustom, incrementAccountStat, lang, t]);
 
   // Quick account — kredi kontrolü useMailbox içinde
   const handleNewAccount = useCallback(async () => {

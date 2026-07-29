@@ -503,7 +503,8 @@ export const createCustomMailbox = async (username: string, domain: string, prov
   // Hydra providers (mail_tm, mail_gw)
   let activeProvider = provider;
   let apiBase = getApiBase(activeProvider);
-  let address = `${username}@${domain}`;
+  const cleanUser = username.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+  let address = `${cleanUser}@${domain}`;
   const password = generatePassword();
 
   let accRes = await safeFetch(`${apiBase}/accounts`, {
@@ -518,7 +519,7 @@ export const createCustomMailbox = async (username: string, domain: string, prov
     apiBase = getApiBase('mail_tm');
     const { domains: tmDomains } = await fetchDomains();
     const fallbackDomain = tmDomains.find(d => !d.includes('guerrilla')) || 'dollicons.com';
-    address = `${username}@${fallbackDomain}`;
+    address = `${cleanUser}@${fallbackDomain}`;
     accRes = await safeFetch(`${apiBase}/accounts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
