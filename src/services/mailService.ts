@@ -499,12 +499,66 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
  * Rastgele hesap oluşturur — tüm provider'lardan domain toplar, rastgele seçer.
  */
 export const generateMailbox = async (): Promise<Mailbox> => {
+  const { domains, domainProviderMap } = await fetchDomains();
+
+  const validDomains = domains.filter(d => d !== 'mephistomail.site');
+  const domainList = validDomains.length > 0 ? validDomains : ['guerrillamailblock.com', 'sharklasers.com', 'grr.la'];
+
+  const domain = domainList[Math.floor(Math.random() * domainList.length)];
+  const provider = domainProviderMap[domain] || 'guerrilla';
+
   const prefixes = ['matrix', 'vector', 'nexus', 'shadow', 'cyber', 'phantom', 'ninja', 'alpha', 'delta', 'vortex', 'hyper', 'pulse', 'signal', 'crypto'];
   const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
   const randomSuffix = Math.floor(100 + Math.random() * 900);
   const randomUser = `${randomPrefix}.${Math.random().toString(36).substring(2, 7)}${randomSuffix}`;
 
-  return createGuerrillaMailbox(randomUser, 'mephistomail.site');
+  if (isGuerrilla(provider)) {
+    return createGuerrillaMailbox(randomUser, domain);
+  }
+
+  // Hydra providers (mail_tm, mail_gw)
+  let activeProvider = provider;
+  let apiBase = getApiBase(activeProvider);
+  const cleanUser = randomUser.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '');
+  let address = `${cleanUser}@${domain}`;
+  const password = generatePassword();
+
+  let accRes = await safeFetch(`${apiBase}/accounts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address, password })
+  }, activeProvider);
+
+  if (!accRes.ok && accRes.status !== 422 && activeProvider !== 'mail_tm') {
+    activeProvider = 'mail_tm';
+    apiBase = getApiBase('mail_tm');
+    accRes = await safeFetch(`${apiBase}/accounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, password })
+    }, activeProvider);
+  }
+
+  const tokenRes = await safeFetch(`${apiBase}/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address, password })
+  }, activeProvider);
+
+  if (!tokenRes.ok) {
+    return createGuerrillaMailbox(randomUser, 'sharklasers.com');
+  }
+
+  const tokenData = await tokenRes.json();
+
+  return {
+    id: tokenData.id || address,
+    address,
+    apiBase: activeProvider,
+    token: tokenData.token,
+    password,
+    createdAt: Date.now(),
+  };
 };
 
 /**
