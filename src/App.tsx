@@ -35,7 +35,12 @@ const extractOTPCode = (subject: string): string | null => {
   return null;
 };
 
-const App: React.FC = () => {
+interface AppProps {
+  hideSEOContent?: boolean;
+  hideFooter?: boolean;
+}
+
+const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false }) => {
   // Custom hooklar
   const {
     accounts,
@@ -433,10 +438,10 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <SEOContent lang={lang} />
+          {!hideSEOContent && <SEOContent lang={lang} />}
         </main>
 
-        <Footer lang={lang} />
+        {!hideFooter && <Footer lang={lang} />}
       </div>
     </ErrorBoundary>
   );
