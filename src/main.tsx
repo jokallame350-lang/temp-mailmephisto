@@ -139,8 +139,8 @@ ReactDOM.createRoot(rootElement).render(
   </React.StrictMode>,
 )
 
-// Service Worker kaydı (PWA)
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// Service Worker kaydı (PWA & Push Notifications)
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('SW registration failed:', err);

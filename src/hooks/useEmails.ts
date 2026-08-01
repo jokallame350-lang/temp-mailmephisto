@@ -115,8 +115,34 @@ export function useEmails(
 
                     if (shouldPlay) {
                         playNotificationSound();
-                        if (Notification.permission === 'granted') {
-                            new Notification('Mephisto', { body: 'New message!', icon: '/logo.svg' });
+                        if (typeof Notification !== 'undefined') {
+                            if (Notification.permission === 'granted') {
+                                const firstEmail = newEmails[0];
+                                let fromStr = 'Yeni E-Posta';
+                                if (firstEmail) {
+                                    if (typeof firstEmail.from === 'string') fromStr = firstEmail.from;
+                                    else if (firstEmail.from && typeof firstEmail.from === 'object') fromStr = firstEmail.from.name || firstEmail.from.address || 'Yeni E-Posta';
+                                }
+                                const notifTitle = `📩 ${fromStr}`;
+                                const notifBody = firstEmail ? (firstEmail.subject || 'Yeni bir mesajınız var.') : 'Yeni bir mesajınız var.';
+
+                                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                                    navigator.serviceWorker.ready.then(reg => {
+                                        reg.showNotification(notifTitle, {
+                                            body: notifBody,
+                                            icon: '/icon.png',
+                                            badge: '/icon.png',
+                                            data: { url: '/' }
+                                        } as any);
+                                    }).catch(() => {
+                                        try { new Notification(notifTitle, { body: notifBody, icon: '/icon.png' }); } catch {}
+                                    });
+                                } else {
+                                    try { new Notification(notifTitle, { body: notifBody, icon: '/icon.png' }); } catch {}
+                                }
+                            } else if (Notification.permission !== 'denied') {
+                                Notification.requestPermission().catch(() => {});
+                            }
                         }
                     }
 
