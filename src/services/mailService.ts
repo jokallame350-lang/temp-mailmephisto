@@ -255,7 +255,8 @@ const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): 
 
 const parseGuerrillaDate = (msg: any): string => {
   if (msg.mail_timestamp && Number(msg.mail_timestamp) > 0) {
-    return new Date(Number(msg.mail_timestamp) * 1000).toISOString();
+    const d = new Date(Number(msg.mail_timestamp) * 1000);
+    if (!isNaN(d.getTime())) return d.toISOString();
   }
   if (msg.mail_date) {
     const d = new Date(msg.mail_date);
@@ -356,6 +357,8 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       }
     }
 
+    const mailboxCreatedAt = mailbox.createdAt || (Date.now() - 300000); // 5 dk tolerans
+
     const seenIds = new Set<string>();
     const filteredList = list.filter((msg: any) => {
       if (!msg.mail_id || seenIds.has(String(msg.mail_id))) return false;
@@ -365,6 +368,21 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
 
       if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
         return false;
+      }
+
+      // mephistomail.site adresi için: Bu geçici mail adresi oluşturulmadan ÖNCE gelen eski mailleri gizle!
+      if (mailbox.address.endsWith('@mephistomail.site')) {
+        let msgTimestamp = 0;
+        if (msg.mail_timestamp && Number(msg.mail_timestamp) > 0) {
+          msgTimestamp = Number(msg.mail_timestamp) * 1000;
+        } else if (msg.mail_date) {
+          msgTimestamp = new Date(msg.mail_date).getTime();
+        }
+
+        // Hesabın oluşturulma anından (15 sn tolerans) eski mailler yeni adrese düşmesin
+        if (msgTimestamp > 0 && msgTimestamp < (mailboxCreatedAt - 15000)) {
+          return false;
+        }
       }
 
       return true;
