@@ -144,6 +144,56 @@ const determineCategory = (subject: string, from: string, intro: string): AICate
   return 'Other';
 };
 
+const formatSenderName = (fromAddress: string): string => {
+  if (!fromAddress || fromAddress === 'unknown') return 'Bilinmeyen Gönderen';
+  const lower = fromAddress.toLowerCase();
+  
+  if (lower.includes('instagram')) return 'Instagram';
+  if (lower.includes('cloudflare')) return 'Cloudflare';
+  if (lower.includes('google')) return 'Google';
+  if (lower.includes('netflix')) return 'Netflix';
+  if (lower.includes('facebook')) return 'Facebook';
+  if (lower.includes('twitter') || lower.includes('x.com')) return 'X (Twitter)';
+  if (lower.includes('github')) return 'GitHub';
+  if (lower.includes('spotify')) return 'Spotify';
+  if (lower.includes('discord')) return 'Discord';
+  if (lower.includes('telegram')) return 'Telegram';
+  if (lower.includes('steam')) return 'Steam';
+  if (lower.includes('epicgames')) return 'Epic Games';
+  if (lower.includes('microsoft')) return 'Microsoft';
+  if (lower.includes('apple')) return 'Apple';
+
+  const parts = fromAddress.split('@');
+  const userPart = parts[0] || '';
+  const domainPart = parts[1] || '';
+
+  if (/^(no-reply|noreply|info|support|admin|service|notifications?|mailer-daemon)$/i.test(userPart) && domainPart) {
+    const domainClean = domainPart.split('.')[0];
+    return domainClean.charAt(0).toUpperCase() + domainClean.slice(1);
+  }
+
+  return userPart.charAt(0).toUpperCase() + userPart.slice(1);
+};
+
+const formatSmartSubject = (subject: string, excerpt: string, fromAddress: string): string => {
+  const cleanSubject = (subject || '').trim();
+  if (cleanSubject && cleanSubject !== '(Konu Yok)' && cleanSubject !== 'Konu Yok') {
+    return cleanSubject;
+  }
+
+  const combined = `${excerpt || ''} ${fromAddress || ''}`.toLowerCase();
+  if (combined.includes('instagram')) return 'Instagram Doğrulama Kodu';
+  if (combined.includes('cloudflare')) return 'Cloudflare E-Posta Yönlendirme Onayı';
+  if (combined.includes('code') || combined.includes('kod') || combined.includes('verify') || combined.includes('confirm')) return 'E-Posta Doğrulama Kodu';
+  if (combined.includes('security') || combined.includes('güvenlik')) return 'Güvenlik Bildirimi';
+
+  if (excerpt && excerpt.trim()) {
+    return excerpt.slice(0, 45) + (excerpt.length > 45 ? '...' : '');
+  }
+
+  return 'Gelen Mesaj';
+};
+
 const isGuerrilla = (provider: string): boolean => provider === 'guerrilla';
 
 // ─── Guerrilla Mail Helpers ──────────────────────────────────────────
@@ -319,19 +369,23 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
     });
 
     return filteredList.map((msg: any) => {
+      const fromAddr = msg.mail_from || 'unknown';
       const decodedSubject = decodeHTMLEntities(msg.mail_subject || '');
       const decodedExcerpt = decodeHTMLEntities(msg.mail_excerpt || '');
+      const finalSubject = formatSmartSubject(decodedSubject, decodedExcerpt, fromAddr);
+      const senderName = formatSenderName(fromAddr);
+
       return {
         id: String(msg.mail_id),
         from: {
-          address: msg.mail_from || 'unknown',
-          name: msg.mail_from?.split('@')[0] || 'unknown',
+          address: fromAddr,
+          name: senderName,
         },
-        subject: decodedSubject,
+        subject: finalSubject,
         intro: decodedExcerpt || 'Görüntülenecek önizleme yok',
         seen: msg.mail_read === 1,
         createdAt: parseGuerrillaDate(msg),
-        aiCategory: determineCategory(decodedSubject, msg.mail_from || '', decodedExcerpt),
+        aiCategory: determineCategory(finalSubject, fromAddr, decodedExcerpt),
       };
     });
   } catch {
