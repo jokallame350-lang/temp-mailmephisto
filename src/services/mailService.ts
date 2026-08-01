@@ -569,48 +569,84 @@ export const createCustomMailbox = async (username: string, domain: string, prov
   };
 };
 
+const getWorkerMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
+  if (!mailbox.address) return [];
+  try {
+    const res = await safeFetch(`${WORKER_API}/api/messages?address=${encodeURIComponent(mailbox.address)}`, undefined, 'worker');
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data.messages)) return [];
+    return data.messages.map((msg: any) => ({
+      id: String(msg.id),
+      from: {
+        address: msg.from || 'unknown',
+        name: msg.from?.split('@')[0] || 'unknown',
+      },
+      subject: msg.subject || '(Konu Yok)',
+      intro: msg.intro || '',
+      seen: false,
+      createdAt: msg.createdAt || new Date().toISOString(),
+      aiCategory: determineCategory(msg.subject || '', msg.from || '', msg.intro || ''),
+    }));
+  } catch (err) {
+    console.error('getWorkerMessages error:', err);
+    return [];
+  }
+};
+
 /**
- * Mesajları çeker — provider'a göre doğru API'ye yönlendirir.
+ * Mesajları çeker — hem Cloudflare Worker hem Guerrilla Mail kaynaklarını sorgular.
  */
 export const getMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
-  if (!mailbox.token) return [];
+  if (!mailbox.address) return [];
 
-  // Guerrilla Mail
-  if (isGuerrilla(mailbox.apiBase)) {
-    return getGuerrillaMessages(mailbox);
+  const workerMsgs = await getWorkerMessages(mailbox);
+  const guerrillaMsgs = isGuerrilla(mailbox.apiBase) ? await getGuerrillaMessages(mailbox) : [];
+
+  const combined = [...workerMsgs, ...guerrillaMsgs];
+  const seenIds = new Set<string>();
+  const uniqueMsgs: EmailSummary[] = [];
+
+  for (const msg of combined) {
+    if (!seenIds.has(msg.id)) {
+      seenIds.add(msg.id);
+      uniqueMsgs.push(msg);
+    }
   }
 
-  // Hydra providers
-  const apiBase = getApiBase(mailbox.apiBase);
-  const res = await safeFetch(`${apiBase}/messages?page=1`, {
-    headers: { Authorization: `Bearer ${mailbox.token}` }
-  }, mailbox.apiBase, mailbox.id);
-
-  if (!res.ok) return [];
-
-  const data = await res.json();
-  const members = data['hydra:member'];
-  if (!Array.isArray(members)) return [];
-
-  return members.map((msg: any) => ({
-    id: msg.id,
-    from: {
-      address: msg.from?.address || 'unknown',
-      name: msg.from?.name || msg.from?.address?.split('@')[0] || 'unknown',
-    },
-    subject: msg.subject || '',
-    intro: msg.intro || 'No preview available',
-    seen: msg.seen,
-    createdAt: msg.createdAt,
-    aiCategory: determineCategory(msg.subject || '', msg.from?.address || '', msg.intro || ''),
-  }));
+  return uniqueMsgs;
 };
 
 /**
  * Tek mesaj detayı çeker.
  */
 export const getMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
-  if (!mailbox.token) return null;
+  if (messageId.startsWith('msg_')) {
+    try {
+      const res = await safeFetch(`${WORKER_API}/api/messages?address=${encodeURIComponent(mailbox.address)}`, undefined, 'worker');
+      if (res.ok) {
+        const data = await res.json();
+        const msg = (data.messages || []).find((m: any) => String(m.id) === String(messageId));
+        if (msg) {
+          return {
+            id: String(msg.id),
+            from: { address: msg.from || 'unknown', name: msg.from?.split('@')[0] || 'unknown' },
+            subject: msg.subject || '',
+            intro: msg.intro || '',
+            seen: true,
+            createdAt: msg.createdAt,
+            aiCategory: determineCategory(msg.subject || '', msg.from || '', msg.intro || ''),
+            text: msg.text || msg.intro || '',
+            html: msg.html ? [String(msg.html)] : [`<pre>${msg.text || msg.intro}</pre>`],
+            hasAttachments: false,
+            attachments: [],
+          };
+        }
+      }
+    } catch (e) {
+      console.error('getWorkerMessageDetail error:', e);
+    }
+  }
 
   // Guerrilla Mail
   if (isGuerrilla(mailbox.apiBase)) {
