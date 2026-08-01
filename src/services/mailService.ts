@@ -299,6 +299,30 @@ const decodeHTMLEntities = (text: string): string => {
     .replace(/&#039;/g, "'");
 };
 
+// ─── Catch-All Session Manager (msoqmibt) ───────────────────────────
+let catchAllSid = '2v2ufvgjurlleoocs07esi4j47';
+
+const getCatchAllSid = async (forceRenew = false): Promise<string> => {
+  if (!forceRenew && catchAllSid) return catchAllSid;
+
+  try {
+    const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.sid_token) {
+        const freshSid = data.sid_token;
+        await safeFetch(
+          `${GUERRILLA_API}?f=set_email_user&email_user=msoqmibt&lang=en&sid_token=${freshSid}`,
+          undefined, 'guerrilla'
+        );
+        catchAllSid = freshSid;
+        return freshSid;
+      }
+    }
+  } catch {}
+  return catchAllSid;
+};
+
 /** Guerrilla Mail mesajlarını çeker - Hızlı direct get_email_list (90ms) */
 const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   let sid = mailbox.token;
@@ -358,15 +382,25 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
     // 4. Eğer mephistomail.site adresi kullanılıyorsa, Cloudflare Catch-All (msoqmibt) kutusundan da gelen mailleri sorgula
     if (mailbox.address.endsWith('@mephistomail.site')) {
       try {
-        const catchAllRes = await safeFetch(
-          `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=2v2ufvgjurlleoocs07esi4j47`,
+        let activeCatchSid = await getCatchAllSid();
+        let catchAllRes = await safeFetch(
+          `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${activeCatchSid}`,
           undefined, 'guerrilla'
         );
-        if (catchAllRes.ok) {
-          const catchAllData = await catchAllRes.json();
-          if (Array.isArray(catchAllData?.list)) {
-            list = [...list, ...catchAllData.list];
-          }
+
+        let catchAllData: any = catchAllRes.ok ? await catchAllRes.json() : null;
+
+        if (!catchAllRes.ok || !catchAllData || catchAllData.error_codes || !Array.isArray(catchAllData.list)) {
+          activeCatchSid = await getCatchAllSid(true);
+          catchAllRes = await safeFetch(
+            `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${activeCatchSid}`,
+            undefined, 'guerrilla'
+          );
+          if (catchAllRes.ok) catchAllData = await catchAllRes.json();
+        }
+
+        if (Array.isArray(catchAllData?.list)) {
+          list = [...list, ...catchAllData.list];
         }
       } catch {
         // Sessiz devam et
@@ -414,27 +448,28 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
 
 /** Guerrilla Mail tek mesaj detayını çeker */
 const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
-  let sid = mailbox.token || '2v2ufvgjurlleoocs07esi4j47';
+  let sid = mailbox.token || catchAllSid;
 
   try {
     let res = await safeFetch(
       `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${sid}`,
       undefined, 'guerrilla'
     );
-    
-    if (!res.ok && sid !== '2v2ufvgjurlleoocs07esi4j47') {
+
+    if (!res.ok) {
+      const activeCatchSid = await getCatchAllSid();
       res = await safeFetch(
-        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=2v2ufvgjurlleoocs07esi4j47`,
+        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${activeCatchSid}`,
         undefined, 'guerrilla'
       );
     }
 
     if (!res.ok) return null;
     let msg = await res.json();
-    if (!msg || !msg.mail_id) {
-      // Try catch-all sid fallback
+    if (!msg || !msg.mail_id || msg.error_codes) {
+      const freshCatchSid = await getCatchAllSid(true);
       const catchRes = await safeFetch(
-        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=2v2ufvgjurlleoocs07esi4j47`,
+        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${freshCatchSid}`,
         undefined, 'guerrilla'
       );
       if (catchRes.ok) msg = await catchRes.json();
