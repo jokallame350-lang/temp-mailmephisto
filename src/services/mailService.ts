@@ -573,9 +573,9 @@ const getWorkerMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   if (!mailbox.address) return [];
   try {
     const res = await safeFetch(`${WORKER_API}/api/messages?address=${encodeURIComponent(mailbox.address)}`, undefined, 'worker');
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!Array.isArray(data.messages)) return [];
+    if (!res || !res.ok) return [];
+    const data = await res.json().catch(() => null);
+    if (!data || !Array.isArray(data.messages)) return [];
     return data.messages.map((msg: any) => ({
       id: String(msg.id),
       from: {
@@ -588,8 +588,7 @@ const getWorkerMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
       createdAt: msg.createdAt || new Date().toISOString(),
       aiCategory: determineCategory(msg.subject || '', msg.from || '', msg.intro || ''),
     }));
-  } catch (err) {
-    console.error('getWorkerMessages error:', err);
+  } catch {
     return [];
   }
 };
