@@ -104,6 +104,13 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSend} className="p-6 space-y-4">
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 flex items-start space-x-2 leading-relaxed">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span>
+              <strong>Bilgilendirme:</strong> Dünya genelindeki geçici (Disposable) mail servisleri anti-spam politikaları gereği Gmail/Outlook gibi dış adreslere gönderimde filtreye takılabilir. Kutular arası (<code>@mephistomail.site</code>) e-posta gönderimleri anında iletilir.
+            </span>
+          </div>
+
           {errorMsg && (
             <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-300 flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
