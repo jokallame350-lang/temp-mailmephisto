@@ -385,10 +385,14 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
   }
 
   isFetchingDomains = true;
-  const allDomains: string[] = ['mephistomail.site', 'anon.mephistomail.site'];
+  const allDomains: string[] = ['mephistomail.site', 'guerrillamailblock.com', 'guerrillamail.com', 'grr.la', 'sharklasers.com', 'anon.mephistomail.site'];
   const domainProviderMap: Record<string, string> = {
     'mephistomail.site': 'guerrilla',
     'anon.mephistomail.site': 'guerrilla',
+    'guerrillamailblock.com': 'guerrilla',
+    'guerrillamail.com': 'guerrilla',
+    'grr.la': 'guerrilla',
+    'sharklasers.com': 'guerrilla',
   };
 
   // Hydra providers + Guerrilla Mail paralel sorgula
