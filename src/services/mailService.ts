@@ -204,14 +204,10 @@ const getGuerrillaDomains = async (): Promise<string[]> => {
     const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
     if (!res.ok) return [];
     const data = await res.json();
-    // Guerrilla Mail'in ana domainini al
     const addr: string = data.email_addr || '';
     const domain = addr.split('@')[1];
-    // Guerrilla Mail birden fazla domain sunabilir, ama API tek hesap döner
-    // Bilinen domainleri de ekleyelim
     const domains = new Set<string>();
     if (domain) domains.add(domain);
-    // Guerrilla'nın bilinen domainleri
     ['guerrillamailblock.com', 'guerrillamail.com', 'grr.la', 'sharklasers.com', 'guerrillamail.info', 'guerrillamail.net', 'guerrillamail.de'].forEach(d => domains.add(d));
     return Array.from(domains);
   } catch {
@@ -221,7 +217,6 @@ const getGuerrillaDomains = async (): Promise<string[]> => {
 
 /** Guerrilla Mail ile hesap oluşturur */
 const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): Promise<Mailbox> => {
-  // İlk adım: yeni email adresi ve sid_token al
   const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
   if (!res.ok) throw new Error(`Guerrilla Mail hesabı oluşturulamadı (HTTP ${res.status})`);
   const data = await res.json();
@@ -232,7 +227,6 @@ const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): 
 
   const targetUser = emailUser || user;
 
-  // Kullanıcı adını Guerrilla oturumuna bağla (set_email_user)
   const setRes = await safeFetch(
     `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(targetUser)}&lang=en&sid_token=${sid}`,
     undefined, 'guerrilla'
@@ -244,28 +238,13 @@ const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): 
 
   const address = `${user}@${dom}`;
 
-  // Hesabın oluşturulduğu anki en yüksek mail_id'yi kaydet
-  let minMailId = 0;
-  try {
-    const catchAllRes = await safeFetch(
-      `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=2v2ufvgjurlleoocs07esi4j47`,
-      undefined, 'guerrilla'
-    );
-    if (catchAllRes.ok) {
-      const catchAllData = await catchAllRes.json();
-      if (Array.isArray(catchAllData?.list) && catchAllData.list.length > 0) {
-        minMailId = Math.max(...catchAllData.list.map((m: any) => Number(m.mail_id) || 0));
-      }
-    }
-  } catch {}
-
   return {
     id: sid,
     address,
     apiBase: 'guerrilla',
     token: sid,
     password: '',
-    minMailId,
+    createdAt: Date.now(),
   };
 };
 
@@ -299,30 +278,6 @@ const decodeHTMLEntities = (text: string): string => {
     .replace(/&#039;/g, "'");
 };
 
-// ─── Catch-All Session Manager (msoqmibt) ───────────────────────────
-let catchAllSid = '2v2ufvgjurlleoocs07esi4j47';
-
-const getCatchAllSid = async (forceRenew = false): Promise<string> => {
-  if (!forceRenew && catchAllSid) return catchAllSid;
-
-  try {
-    const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.sid_token) {
-        const freshSid = data.sid_token;
-        await safeFetch(
-          `${GUERRILLA_API}?f=set_email_user&email_user=msoqmibt&lang=en&sid_token=${freshSid}`,
-          undefined, 'guerrilla'
-        );
-        catchAllSid = freshSid;
-        return freshSid;
-      }
-    }
-  } catch {}
-  return catchAllSid;
-};
-
 /** Guerrilla Mail mesajlarını çeker - Hızlı direct get_email_list (90ms) */
 const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> => {
   let sid = mailbox.token;
@@ -330,7 +285,6 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
   if (!username) return [];
 
   try {
-    // 1. Sid yoksa yeni oturum al ve adresi bağla
     if (!sid) {
       const initRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
       if (!initRes.ok) return [];
@@ -345,7 +299,6 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       );
     }
 
-    // 2. Doğrudan hızlı f=get_email_list çağrısı
     let res = await safeFetch(
       `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid}`,
       undefined, 'guerrilla'
@@ -356,7 +309,6 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       data = await res.json();
     }
 
-    // 3. Oturum düşmüşse tazeleyip re-bind et
     if (!res.ok || !data || data.error_codes || !Array.isArray(data.list)) {
       const renewRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
       if (renewRes.ok) {
@@ -379,38 +331,6 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
 
     let list = Array.isArray(data?.list) ? data.list : [];
 
-    // 4. Eğer mephistomail.site adresi kullanılıyorsa, Cloudflare Catch-All (msoqmibt) kutusundan da gelen mailleri sorgula
-    if (mailbox.address.endsWith('@mephistomail.site')) {
-      try {
-        let activeCatchSid = await getCatchAllSid();
-        let catchAllRes = await safeFetch(
-          `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${activeCatchSid}`,
-          undefined, 'guerrilla'
-        );
-
-        let catchAllData: any = catchAllRes.ok ? await catchAllRes.json() : null;
-
-        if (!catchAllRes.ok || !catchAllData || catchAllData.error_codes || !Array.isArray(catchAllData.list)) {
-          activeCatchSid = await getCatchAllSid(true);
-          catchAllRes = await safeFetch(
-            `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${activeCatchSid}`,
-            undefined, 'guerrilla'
-          );
-          if (catchAllRes.ok) catchAllData = await catchAllRes.json();
-        }
-
-        if (Array.isArray(catchAllData?.list)) {
-          list = [...list, ...catchAllData.list];
-        }
-      } catch {
-        // Sessiz devam et
-      }
-    }
-
-    const targetUser = mailbox.address ? mailbox.address.split('@')[0].toLowerCase() : '';
-    const targetAddr = mailbox.address ? mailbox.address.toLowerCase() : '';
-    const mailboxCreatedAt = mailbox.createdAt || 0;
-
     const seenIds = new Set<string>();
     const filteredList = list.filter((msg: any) => {
       if (!msg.mail_id || seenIds.has(String(msg.mail_id))) return false;
@@ -418,36 +338,10 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
 
       const fromStr = (msg.mail_from || '').toLowerCase();
       const subjStr = (msg.mail_subject || '').toLowerCase();
-      const recipientStr = (msg.mail_recipient || msg.to || '').toLowerCase();
-      const excerptStr = (msg.mail_excerpt || '').toLowerCase();
 
       // Guerrilla hoşgeldin maillerini filtrele
       if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
         return false;
-      }
-
-      // @mephistomail.site için Çift Katmanlı İzolasyon (Zaman + Alıcı)
-      if (mailbox.address.endsWith('@mephistomail.site') && targetUser) {
-        let msgTimestamp = 0;
-        if (msg.mail_timestamp && Number(msg.mail_timestamp) > 0) {
-          msgTimestamp = Number(msg.mail_timestamp) * 1000;
-        } else if (msg.mail_date) {
-          msgTimestamp = new Date(msg.mail_date).getTime();
-        }
-
-        // 1. Zaman İzolasyonu: Hesabın oluşturulma anından (45 sn tolerans) eski mailler bu adrese düşmesin
-        if (mailboxCreatedAt > 0 && msgTimestamp > 0 && msgTimestamp < (mailboxCreatedAt - 45000)) {
-          return false;
-        }
-
-        // 2. Alıcı İzolasyonu: Başka bir mephistomail.site adresine gönderilmiş mailler diğer kutuya sızmasın
-        const otherMatch = excerptStr.match(/([a-z0-9._-]+)@mephistomail\.site/i);
-        if (otherMatch) {
-          const mentionedUser = otherMatch[1].toLowerCase();
-          if (mentionedUser !== targetUser) {
-            return false; // Başka bir adrese ait mail — elenir!
-          }
-        }
       }
 
       return true;
@@ -480,7 +374,8 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
 
 /** Guerrilla Mail tek mesaj detayını çeker */
 const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
-  let sid = mailbox.token || catchAllSid;
+  let sid = mailbox.token;
+  if (!sid) return null;
 
   try {
     let res = await safeFetch(
@@ -488,24 +383,8 @@ const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): P
       undefined, 'guerrilla'
     );
 
-    if (!res.ok) {
-      const activeCatchSid = await getCatchAllSid();
-      res = await safeFetch(
-        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${activeCatchSid}`,
-        undefined, 'guerrilla'
-      );
-    }
-
     if (!res.ok) return null;
     let msg = await res.json();
-    if (!msg || !msg.mail_id || msg.error_codes) {
-      const freshCatchSid = await getCatchAllSid(true);
-      const catchRes = await safeFetch(
-        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${freshCatchSid}`,
-        undefined, 'guerrilla'
-      );
-      if (catchRes.ok) msg = await catchRes.json();
-    }
     if (!msg || !msg.mail_id) return null;
 
     const decodedSubject = decodeHTMLEntities(msg.mail_subject || '');
@@ -558,7 +437,6 @@ let isFetchingDomains = false;
 export const fetchDomains = async (): Promise<{ domains: string[]; domainProviderMap: Record<string, string>; apiBase: string }> => {
   if (cachedDomains) return cachedDomains;
   if (isFetchingDomains) {
-    // Eğer halihazırda fetch in progress ise biraz bekle
     return new Promise((resolve) => {
       const interval = setInterval(() => {
         if (cachedDomains) {
@@ -570,10 +448,8 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
   }
 
   isFetchingDomains = true;
-  const allDomains: string[] = ['mephistomail.site'];
-  const domainProviderMap: Record<string, string> = {
-    'mephistomail.site': 'guerrilla',
-  };
+  const allDomains: string[] = [];
+  const domainProviderMap: Record<string, string> = {};
 
   // Hydra providers + Guerrilla Mail paralel sorgula
   const results = await Promise.allSettled([
@@ -610,11 +486,11 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
 
   // Fallback
   if (allDomains.length === 0) {
-    allDomains.push('dollicons.com');
-    domainProviderMap['dollicons.com'] = 'mail_tm';
+    allDomains.push('guerrillamailblock.com', 'sharklasers.com', 'grr.la');
+    allDomains.forEach(d => domainProviderMap[d] = 'guerrilla');
   }
 
-  cachedDomains = { domains: ['mephistomail.site'], domainProviderMap: { 'mephistomail.site': 'guerrilla' }, apiBase: 'guerrilla' };
+  cachedDomains = { domains: allDomains, domainProviderMap, apiBase: 'guerrilla' };
   isFetchingDomains = false;
   return cachedDomains;
 };
