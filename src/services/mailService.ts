@@ -254,7 +254,7 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       );
     }
 
-    // 2. Doğrudan hızlı f=get_email_list çağrısı (90ms)
+    // 2. Doğrudan hızlı f=get_email_list çağrısı
     let res = await safeFetch(
       `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=${sid}`,
       undefined, 'guerrilla'
@@ -265,7 +265,7 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       data = await res.json();
     }
 
-    // 3. Oturum düşmüşse veya liste alınamadıysa oturum tazele ve re-bind et
+    // 3. Oturum düşmüşse tazeleyip re-bind et
     if (!res.ok || !data || data.error_codes || !Array.isArray(data.list)) {
       const renewRes = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
       if (renewRes.ok) {
@@ -286,10 +286,30 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       }
     }
 
-    const list = data?.list;
-    if (!Array.isArray(list)) return [];
+    let list = Array.isArray(data?.list) ? data.list : [];
 
+    // 4. Eğer mephistomail.site adresi kullanılıyorsa, Cloudflare Catch-All (msoqmibt) kutusundan da gelen mailleri sorgula
+    if (mailbox.address.endsWith('@mephistomail.site')) {
+      try {
+        const catchAllRes = await safeFetch(
+          `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=2v2ufvgjurlleoocs07esi4j47`,
+          undefined, 'guerrilla'
+        );
+        if (catchAllRes.ok) {
+          const catchAllData = await catchAllRes.json();
+          if (Array.isArray(catchAllData?.list)) {
+            list = [...list, ...catchAllData.list];
+          }
+        }
+      } catch {
+        // Sessiz devam et
+      }
+    }
+
+    const seenIds = new Set<string>();
     const filteredList = list.filter((msg: any) => {
+      if (!msg.mail_id || seenIds.has(String(msg.mail_id))) return false;
+      seenIds.add(String(msg.mail_id));
       const fromStr = (msg.mail_from || '').toLowerCase();
       const subjStr = (msg.mail_subject || '').toLowerCase();
       if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
@@ -314,24 +334,39 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
         aiCategory: determineCategory(decodedSubject, msg.mail_from || '', decodedExcerpt),
       };
     });
-  } catch (err) {
-    console.error('getGuerrillaMessages error:', err);
+  } catch {
     return [];
   }
 };
 
 /** Guerrilla Mail tek mesaj detayını çeker */
 const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): Promise<EmailDetail | null> => {
-  let sid = mailbox.token;
-  if (!sid) return null;
+  let sid = mailbox.token || '2v2ufvgjurlleoocs07esi4j47';
 
   try {
-    const res = await safeFetch(
+    let res = await safeFetch(
       `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=${sid}`,
       undefined, 'guerrilla'
     );
+    
+    if (!res.ok && sid !== '2v2ufvgjurlleoocs07esi4j47') {
+      res = await safeFetch(
+        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=2v2ufvgjurlleoocs07esi4j47`,
+        undefined, 'guerrilla'
+      );
+    }
+
     if (!res.ok) return null;
-    const msg = await res.json();
+    let msg = await res.json();
+    if (!msg || !msg.mail_id) {
+      // Try catch-all sid fallback
+      const catchRes = await safeFetch(
+        `${GUERRILLA_API}?f=fetch_email&email_id=${messageId}&sid_token=2v2ufvgjurlleoocs07esi4j47`,
+        undefined, 'guerrilla'
+      );
+      if (catchRes.ok) msg = await catchRes.json();
+    }
+    if (!msg || !msg.mail_id) return null;
 
     const decodedSubject = decodeHTMLEntities(msg.mail_subject || '');
     const decodedExcerpt = decodeHTMLEntities(msg.mail_excerpt || '');
@@ -344,11 +379,10 @@ const getGuerrillaMessageDetail = async (mailbox: Mailbox, messageId: string): P
         name: fromAddr.split('@')[0] || 'unknown',
       },
       subject: decodedSubject,
-      intro: decodedExcerpt || '',
+      intro: decodedExcerpt,
       seen: true,
       createdAt: parseGuerrillaDate(msg),
       aiCategory: determineCategory(decodedSubject, fromAddr, decodedExcerpt),
-      text: msg.mail_body ? String(msg.mail_body).replace(/<[^>]*>/g, '') : '',
       html: msg.mail_body ? [String(msg.mail_body)] : [],
       hasAttachments: false,
       attachments: [],
