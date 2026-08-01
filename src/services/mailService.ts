@@ -407,15 +407,47 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       }
     }
 
+    const targetUser = mailbox.address ? mailbox.address.split('@')[0].toLowerCase() : '';
+    const targetAddr = mailbox.address ? mailbox.address.toLowerCase() : '';
+    const mailboxCreatedAt = mailbox.createdAt || 0;
+
     const seenIds = new Set<string>();
     const filteredList = list.filter((msg: any) => {
       if (!msg.mail_id || seenIds.has(String(msg.mail_id))) return false;
       seenIds.add(String(msg.mail_id));
+
       const fromStr = (msg.mail_from || '').toLowerCase();
       const subjStr = (msg.mail_subject || '').toLowerCase();
+      const recipientStr = (msg.mail_recipient || msg.to || '').toLowerCase();
+      const excerptStr = (msg.mail_excerpt || '').toLowerCase();
 
+      // Guerrilla hoşgeldin maillerini filtrele
       if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
         return false;
+      }
+
+      // @mephistomail.site için Çift Katmanlı İzolasyon (Zaman + Alıcı)
+      if (mailbox.address.endsWith('@mephistomail.site') && targetUser) {
+        let msgTimestamp = 0;
+        if (msg.mail_timestamp && Number(msg.mail_timestamp) > 0) {
+          msgTimestamp = Number(msg.mail_timestamp) * 1000;
+        } else if (msg.mail_date) {
+          msgTimestamp = new Date(msg.mail_date).getTime();
+        }
+
+        // 1. Zaman İzolasyonu: Hesabın oluşturulma anından (45 sn tolerans) eski mailler bu adrese düşmesin
+        if (mailboxCreatedAt > 0 && msgTimestamp > 0 && msgTimestamp < (mailboxCreatedAt - 45000)) {
+          return false;
+        }
+
+        // 2. Alıcı İzolasyonu: Başka bir mephistomail.site adresine gönderilmiş mailler diğer kutuya sızmasın
+        const otherMatch = excerptStr.match(/([a-z0-9._-]+)@mephistomail\.site/i);
+        if (otherMatch) {
+          const mentionedUser = otherMatch[1].toLowerCase();
+          if (mentionedUser !== targetUser) {
+            return false; // Başka bir adrese ait mail — elenir!
+          }
+        }
       }
 
       return true;
@@ -591,59 +623,12 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
  * Rastgele hesap oluşturur — tüm provider'lardan domain toplar, rastgele seçer.
  */
 export const generateMailbox = async (): Promise<Mailbox> => {
-  const { domains, domainProviderMap } = await fetchDomains();
+  const prefixes = ['matrix', 'vector', 'nexus', 'shadow', 'cyber', 'phantom', 'ninja', 'alpha', 'delta', 'vortex', 'hyper', 'pulse', 'signal', 'crypto'];
+  const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const randomSuffix = Math.floor(100 + Math.random() * 900);
+  const randomUser = `${randomPrefix}.${Math.random().toString(36).substring(2, 7)}${randomSuffix}`;
 
-  if (domains.length === 0) {
-    throw new Error('Kullanılabilir domain bulunamadı.');
-  }
-
-  const domain = domains[Math.floor(Math.random() * domains.length)];
-  const provider = domainProviderMap[domain] || 'mail_tm';
-
-  // Guerrilla Mail — farklı akış
-  if (isGuerrilla(provider)) {
-    return createGuerrillaMailbox();
-  }
-
-  // Hydra providers (mail.tm / mail.gw)
-  const apiBase = getApiBase(provider);
-  const username = Math.random().toString(36).substring(2, 12);
-  const address = `${username}@${domain}`;
-  const password = generatePassword();
-
-  const accRes = await safeFetch(`${apiBase}/accounts`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ address, password })
-  }, provider);
-
-  if (!accRes.ok && accRes.status !== 422) {
-    throw new Error(`Hesap oluşturulamadı (HTTP ${accRes.status})`);
-  }
-
-  const tokenRes = await safeFetch(`${apiBase}/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ address, password })
-  }, provider);
-
-  if (!tokenRes.ok) {
-    throw new Error(`Token alınamadı (HTTP ${tokenRes.status})`);
-  }
-
-  const tokenData = await tokenRes.json();
-
-  if (!tokenData.token) {
-    throw new Error('API token döndürmedi');
-  }
-
-  return {
-    id: tokenData.id || address,
-    address,
-    apiBase: provider,
-    token: tokenData.token,
-    password,
-  };
+  return createGuerrillaMailbox(randomUser, 'mephistomail.site');
 };
 
 /**
