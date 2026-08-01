@@ -371,6 +371,12 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       } catch {
         // Sessiz devam et
       }
+
+      // Hesabın minMailId değeri tanımlı değilse, mevcut en yüksek mail_id'yi sınır olarak atayarak eski maillerin sızmasını engelle
+      if (mailbox.minMailId === undefined || mailbox.minMailId === 0) {
+        const currentMax = list.length > 0 ? Math.max(...list.map((m: any) => Number(m.mail_id) || 0)) : 0;
+        mailbox.minMailId = currentMax;
+      }
     }
 
     const seenIds = new Set<string>();
