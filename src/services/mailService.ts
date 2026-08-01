@@ -394,14 +394,9 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
   }
 
   isFetchingDomains = true;
-  const allDomains: string[] = ['guerrillamailblock.com', 'sharklasers.com', 'guerrillamail.com', 'mephistomail.site', 'grr.la', 'anon.mephistomail.site'];
+  const allDomains: string[] = ['mephistomail.site'];
   const domainProviderMap: Record<string, string> = {
-    'guerrillamailblock.com': 'guerrilla',
-    'sharklasers.com': 'guerrilla',
-    'guerrillamail.com': 'guerrilla',
     'mephistomail.site': 'guerrilla',
-    'grr.la': 'guerrilla',
-    'anon.mephistomail.site': 'guerrilla',
   };
 
   // Hydra providers + Guerrilla Mail paralel sorgula
@@ -443,7 +438,7 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
     domainProviderMap['dollicons.com'] = 'mail_tm';
   }
 
-  cachedDomains = { domains: allDomains, domainProviderMap, apiBase: 'multi' };
+  cachedDomains = { domains: ['mephistomail.site'], domainProviderMap: { 'mephistomail.site': 'guerrilla' }, apiBase: 'guerrilla' };
   isFetchingDomains = false;
   return cachedDomains;
 };
