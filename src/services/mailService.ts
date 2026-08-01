@@ -371,12 +371,6 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       } catch {
         // Sessiz devam et
       }
-
-      // Hesabın minMailId değeri tanımlı değilse, mevcut en yüksek mail_id'yi sınır olarak atayarak eski maillerin sızmasını engelle
-      if (mailbox.minMailId === undefined || mailbox.minMailId === 0) {
-        const currentMax = list.length > 0 ? Math.max(...list.map((m: any) => Number(m.mail_id) || 0)) : 0;
-        mailbox.minMailId = currentMax;
-      }
     }
 
     const seenIds = new Set<string>();
@@ -385,17 +379,9 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       seenIds.add(String(msg.mail_id));
       const fromStr = (msg.mail_from || '').toLowerCase();
       const subjStr = (msg.mail_subject || '').toLowerCase();
-      const msgIdNum = Number(msg.mail_id) || 0;
 
       if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
         return false;
-      }
-
-      // mephistomail.site adreslerinde: Bu hesap açılmadan ÖNCE havuzda var olan eski mailleri kesinlikle filtrelere takıp gizle!
-      if (mailbox.address.endsWith('@mephistomail.site') && mailbox.minMailId && mailbox.minMailId > 0) {
-        if (msgIdNum <= mailbox.minMailId) {
-          return false; // ESKİ HESABIN MAİLİDİR - ELENİR!
-        }
       }
 
       return true;
