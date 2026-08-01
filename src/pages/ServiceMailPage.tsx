@@ -516,6 +516,40 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
           <App />
         </div>
 
+        {/* Step-by-step Custom Guide for this topic */}
+        <section className="bg-gradient-to-b from-[#12121e]/80 to-[#0c0c14]/90 border border-slate-800/80 rounded-2xl p-6 sm:p-8">
+          <h2 className="text-lg sm:text-xl font-bold text-white mb-2 flex items-center gap-2 font-['Sora']">
+            <MessageSquare className="w-5 h-5 text-orange-400" />
+            <span>{isTr ? `${data.name} İçin Adım Adım Kullanım Rehberi` : `Step-by-Step Guide for ${data.name}`}</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 mb-6">
+            {isTr ? 'Kişisel e-posta adresinizi vermeden 4 kolay adımda işleminizi güvenle tamamlayın:' : 'Complete your registration securely in 4 simple steps without exposing your primary inbox:'}
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-[#050508] p-4 rounded-xl border border-slate-800/60 relative">
+              <span className="w-6 h-6 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center text-xs font-black mb-3">1</span>
+              <h3 className="text-xs font-bold text-white mb-1">{isTr ? 'Adresi Kopyalayın' : 'Copy Address'}</h3>
+              <p className="text-[11px] text-slate-400 leading-normal">{isTr ? 'Yukarıdaki panoda otomatik oluşan geçici adresi Kopyala butonuna basarak alın.' : 'Click Copy to get your instant volatile email handle.'}</p>
+            </div>
+            <div className="bg-[#050508] p-4 rounded-xl border border-slate-800/60 relative">
+              <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center justify-center text-xs font-black mb-3">2</span>
+              <h3 className="text-xs font-bold text-white mb-1">{isTr ? `${data.name} Formuna Yapıştırın` : `Paste in ${data.name}`}</h3>
+              <p className="text-[11px] text-slate-400 leading-normal">{isTr ? `${data.name} kayıt veya onay ekranındaki e-posta alanına bu adresi yapıştırın.` : `Paste the handle in the ${data.name} registration form.`}</p>
+            </div>
+            <div className="bg-[#050508] p-4 rounded-xl border border-slate-800/60 relative">
+              <span className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xs font-black mb-3">3</span>
+              <h3 className="text-xs font-bold text-white mb-1">{isTr ? 'Doğrulama Kodunu Alın' : 'Get OTP Code'}</h3>
+              <p className="text-[11px] text-slate-400 leading-normal">{isTr ? 'Aktivasyon maili 1-3 saniyede kutunuza düşer, Auto-Verify linki otomatik tıklar.' : 'Verification code lands in 1-3s; Auto-Verify clicks action links.'}</p>
+            </div>
+            <div className="bg-[#050508] p-4 rounded-xl border border-slate-800/60 relative">
+              <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs font-black mb-3">4</span>
+              <h3 className="text-xs font-bold text-white mb-1">{isTr ? 'Sıfır İzle Kapatın' : 'Zero Trace Exit'}</h3>
+              <p className="text-[11px] text-slate-400 leading-normal">{isTr ? 'İşleminiz bittiğinde sekmeyi kapatın, tüm veriler RAM\'den tamamen silinsin.' : 'Close tab when done; volatile RAM storage wipes all traces.'}</p>
+            </div>
+          </div>
+        </section>
+
         {/* Why Use for this Service Section */}
         <section className="grid md:grid-cols-2 gap-8 items-start">
           <div className="bg-[#12121e]/60 border border-slate-800/80 rounded-2xl p-6 sm:p-8">
