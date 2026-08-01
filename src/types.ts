@@ -12,6 +12,7 @@ export interface Mailbox {
   autoDeleteMinutes?: number; // Otomatik silme süresi
   isCustomDomain?: boolean; // Özel alan adı (Custom Domain) bayrağı
   customDomainName?: string; // İlgili alan adı
+  minMailId?: number;    // Oluşturulma anındaki en yüksek mail_id (izolasyon için)
 }
 
 export interface EmailSummary {

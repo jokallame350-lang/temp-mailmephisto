@@ -244,12 +244,28 @@ const createGuerrillaMailbox = async (emailUser?: string, domainName?: string): 
 
   const address = `${user}@${dom}`;
 
+  // Hesabın oluşturulduğu anki en yüksek mail_id'yi kaydet
+  let minMailId = 0;
+  try {
+    const catchAllRes = await safeFetch(
+      `${GUERRILLA_API}?f=get_email_list&offset=0&sid_token=2v2ufvgjurlleoocs07esi4j47`,
+      undefined, 'guerrilla'
+    );
+    if (catchAllRes.ok) {
+      const catchAllData = await catchAllRes.json();
+      if (Array.isArray(catchAllData?.list) && catchAllData.list.length > 0) {
+        minMailId = Math.max(...catchAllData.list.map((m: any) => Number(m.mail_id) || 0));
+      }
+    }
+  } catch {}
+
   return {
     id: sid,
     address,
     apiBase: 'guerrilla',
     token: sid,
     password: '',
+    minMailId,
   };
 };
 
@@ -357,31 +373,22 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       }
     }
 
-    const mailboxCreatedAt = mailbox.createdAt || (Date.now() - 300000); // 5 dk tolerans
-
     const seenIds = new Set<string>();
     const filteredList = list.filter((msg: any) => {
       if (!msg.mail_id || seenIds.has(String(msg.mail_id))) return false;
       seenIds.add(String(msg.mail_id));
       const fromStr = (msg.mail_from || '').toLowerCase();
       const subjStr = (msg.mail_subject || '').toLowerCase();
+      const msgIdNum = Number(msg.mail_id) || 0;
 
       if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
         return false;
       }
 
-      // mephistomail.site adresi için: Bu geçici mail adresi oluşturulmadan ÖNCE gelen eski mailleri gizle!
-      if (mailbox.address.endsWith('@mephistomail.site')) {
-        let msgTimestamp = 0;
-        if (msg.mail_timestamp && Number(msg.mail_timestamp) > 0) {
-          msgTimestamp = Number(msg.mail_timestamp) * 1000;
-        } else if (msg.mail_date) {
-          msgTimestamp = new Date(msg.mail_date).getTime();
-        }
-
-        // Hesabın oluşturulma anından (15 sn tolerans) eski mailler yeni adrese düşmesin
-        if (msgTimestamp > 0 && msgTimestamp < (mailboxCreatedAt - 15000)) {
-          return false;
+      // mephistomail.site adreslerinde: Bu hesap açılmadan ÖNCE havuzda var olan eski mailleri kesinlikle filtrelere takıp gizle!
+      if (mailbox.address.endsWith('@mephistomail.site') && mailbox.minMailId && mailbox.minMailId > 0) {
+        if (msgIdNum <= mailbox.minMailId) {
+          return false; // ESKİ HESABIN MAİLİDİR - ELENİR!
         }
       }
 
