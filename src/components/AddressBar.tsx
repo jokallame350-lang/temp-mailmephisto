@@ -166,13 +166,6 @@ const AddressBar: React.FC<AddressBarProps> = ({
             </button>
           )}
 
-          {onOpenCompose && (
-            <button onClick={onOpenCompose} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl font-bold text-[11px] transition-all shadow-sm" title={lang === 'tr' ? 'E-posta Gönder / Yanıtla' : 'Send / Reply Email'}>
-              <Send className="w-3.5 h-3.5 text-blue-400" />
-              <span>{lang === 'tr' ? 'Mail Gönder' : 'Compose Mail'}</span>
-            </button>
-          )}
-
           {onToggleAutoVerify && (
             <button onClick={onToggleAutoVerify} className={`flex items-center gap-1.5 px-3.5 py-1.5 border rounded-xl font-bold text-[11px] transition-all shadow-sm ${autoVerifyEnabled ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10' : 'bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/10'}`} title={lang === 'tr' ? 'Otomatik Doğrulama (Auto-Verify)' : 'Auto Verification Link Clicker'}>
               <Zap className={`w-3.5 h-3.5 ${autoVerifyEnabled ? 'text-amber-400 animate-pulse' : 'text-slate-400'}`} />

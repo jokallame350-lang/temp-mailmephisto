@@ -311,17 +311,6 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
             lang={lang}
           />
         )}
-        {showComposeModal && (
-          <ComposeModal
-            isOpen={showComposeModal}
-            onClose={() => setShowComposeModal(false)}
-            senderAddress={activeAccount?.address || 'mephisto@temp.mail'}
-            mailboxId={activeAccount?.id || ''}
-            initialData={composeInitialData}
-            lang={lang}
-            onSuccessToast={(msg) => addToast('✓ E-posta Gönderildi', msg)}
-          />
-        )}
 
         <main id="main-content" className={hideHeroBanner ? "w-full flex flex-col items-center justify-start gap-4 z-10" : "flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10"} role="main">
 
@@ -378,7 +367,6 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                 onForwarding={() => setShowForwardingModal(true)}
                 onShareDrop={() => setShowShareDropModal(true)}
                 onOpenCustomDomain={() => setShowCustomDomainModal(true)}
-                onOpenCompose={() => { setComposeInitialData(null); setShowComposeModal(true); }}
                 autoVerifyEnabled={autoVerifyEnabled}
                 onToggleAutoVerify={toggleAutoVerify}
               />
@@ -434,10 +422,6 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                     onBack={() => setSelectedEmailId(null)}
                     lang={lang}
                     token={activeAccount?.token}
-                    onReply={(initialData) => {
-                      setComposeInitialData(initialData);
-                      setShowComposeModal(true);
-                    }}
                   />
                 )}
               </div>

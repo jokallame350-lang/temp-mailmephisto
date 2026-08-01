@@ -307,16 +307,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> {t.back}
         </button>
         <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
-          {onReply && (
-            <button
-              onClick={() => onReply({ to: fromAddress, subject: email.subject || '', body: email.text || email.intro || '' })}
-              className="px-2.5 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
-              title={lang === 'tr' ? 'Cevap Ver' : 'Reply'}
-            >
-              <Reply className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{lang === 'tr' ? 'Yanıtla' : 'Reply'}</span>
-            </button>
-          )}
           <button onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')} className={`p-2 rounded-lg transition-colors ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}>
             <Smartphone className="w-4 h-4" />
           </button>

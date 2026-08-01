@@ -356,15 +356,35 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
       }
     }
 
+    const userPrefix = mailbox.address ? mailbox.address.split('@')[0].toLowerCase() : '';
+    const fullAddr = mailbox.address ? mailbox.address.toLowerCase() : '';
+
     const seenIds = new Set<string>();
     const filteredList = list.filter((msg: any) => {
       if (!msg.mail_id || seenIds.has(String(msg.mail_id))) return false;
       seenIds.add(String(msg.mail_id));
       const fromStr = (msg.mail_from || '').toLowerCase();
       const subjStr = (msg.mail_subject || '').toLowerCase();
+      const recipientStr = (msg.mail_recipient || msg.to || '').toLowerCase();
+      const excerptStr = (msg.mail_excerpt || '').toLowerCase();
+
       if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
         return false;
       }
+
+      // Kendi e-posta kutusuna ait olmayan diğer adreslerin maillerini filtrele (İzolasyon)
+      if (mailbox.address.endsWith('@mephistomail.site') && userPrefix) {
+        const isRecipientMatch =
+          recipientStr.includes(userPrefix) ||
+          excerptStr.includes(fullAddr) ||
+          excerptStr.includes(userPrefix) ||
+          subjStr.includes(userPrefix);
+
+        if (!isRecipientMatch) {
+          return false;
+        }
+      }
+
       return true;
     });
 
