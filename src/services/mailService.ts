@@ -14,6 +14,8 @@ const HYDRA_PROVIDERS: Record<string, string> = {
   mail_tm: 'https://api.mail.tm',
 };
 
+const WORKER_API = 'https://quiet-poetry-1d74.msoqmibt.workers.dev';
+
 const GUERRILLA_API = 'https://api.guerrillamail.com/ajax.php';
 
 // ─── Credential Store (for token refresh) ────────────────────────────
