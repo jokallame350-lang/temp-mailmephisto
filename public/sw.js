@@ -33,15 +33,16 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // API ve Real-time SSE istekleri her zaman doğrudan Network (Asla önbellekleme)
+    // API ve Real-time/Worker istekleri her zaman doğrudan NATIVE tarayıcı fetch'ine bırakılır (SW müdahale etmez)
     if (
+        url.hostname.includes('workers.dev') ||
         url.hostname.includes('api.mail.tm') ||
         url.hostname.includes('api.guerrillamail.com') ||
-        url.hostname.includes('mercure') ||
+        url.hostname.includes('guerrillamail') ||
+        url.hostname.includes('cloudflare') ||
         url.pathname.includes('/api/') ||
         request.method !== 'GET'
     ) {
-        event.respondWith(fetch(request));
         return;
     }
 
