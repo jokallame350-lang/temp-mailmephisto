@@ -129,15 +129,56 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/tools" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
-                    <Wrench size={10} />
-                    {lang === 'tr' ? 'Güvenlik Araçları' : 'Security Tools'}
+                  <Link to="/bulk-generator" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Shield size={10} />
+                    {lang === 'tr' ? 'Toplu Mail Üretici' : 'Bulk Mail Generator'}
                   </Link>
                 </li>
                 <li>
-                  <Link to="/" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
-                    <Shield size={10} />
-                    {lang === 'tr' ? 'Şifre Oluşturucu' : 'Password Generator'}
+                  <Link to="/burn-note" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Wrench size={10} />
+                    {lang === 'tr' ? 'Gizli Not (Burn Note)' : 'Burn Note'}
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
+
+          {/* Use Cases (Kullanım Alanları) */}
+          <div>
+            <h4 className="text-slate-300 text-[11px] font-bold uppercase tracking-wider mb-3">
+              {lang === 'tr' ? 'Kullanım Alanları' : 'Use Cases'}
+            </h4>
+            <nav aria-label={lang === 'tr' ? 'Kullanım alanı bağlantıları' : 'Use case links'}>
+              <ul className="space-y-1.5">
+                <li>
+                  <Link to="/temp-mail-for-discounts" className="text-slate-500 text-[11px] hover:text-orange-400 transition-colors">
+                    🎟️ {lang === 'tr' ? 'İndirim Kuponları' : 'Discount Codes'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/temp-mail-for-free-trials" className="text-slate-500 text-[11px] hover:text-orange-400 transition-colors">
+                    🎬 {lang === 'tr' ? 'Ücretsiz Deneme (Trial)' : 'Free Trial SaaS'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/temp-mail-for-wifi-login" className="text-slate-500 text-[11px] hover:text-orange-400 transition-colors">
+                    🌐 {lang === 'tr' ? 'Wi-Fi Giriş Kalkanı' : 'Public Wi-Fi Login'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/temp-mail-for-downloads" className="text-slate-500 text-[11px] hover:text-orange-400 transition-colors">
+                    📚 {lang === 'tr' ? 'PDF & E-Kitap İndirme' : 'Free PDF Downloads'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/temp-mail-for-gaming" className="text-slate-500 text-[11px] hover:text-orange-400 transition-colors">
+                    🎮 {lang === 'tr' ? 'Oyun & Yan Hesaplar' : 'Gaming Alt Accounts'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/temp-mail-for-qa-testing" className="text-slate-500 text-[11px] hover:text-orange-400 transition-colors">
+                    🧪 {lang === 'tr' ? 'Yazılım Testi & QA' : 'QA & Dev Automation'}
                   </Link>
                 </li>
               </ul>

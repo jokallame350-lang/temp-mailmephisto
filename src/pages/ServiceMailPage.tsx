@@ -182,7 +182,267 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     faqsEn: [
       { q: 'How fast do Roblox PIN emails arrive?', a: 'Powered by SSE, emails land in 1-3 seconds.' }
     ]
-  }
+  },
+  discounts: {
+    id: 'discounts',
+    name: 'İndirim Kuponları & E-Ticaret',
+    badge: '🎟️ Promo Codes & Deals',
+    color: 'from-orange-600 to-amber-600',
+    titleTr: 'İndirim Kuponu & İlk Alışveriş Kodu Almak İçin Geçici Mail',
+    titleEn: 'Temp Mail for Discount Codes & First-Order Promo Claims',
+    descriptionTr: 'E-ticaret sitelerinin "E-postanızı girin %15 indirim kazanın" kampanyaları için kişisel mailinizi vermeden anında kullan-at e-posta oluşturun.',
+    descriptionEn: 'Claim first-order promotional codes and discount vouchers instantly without sacrificing your personal inbox to marketing spam.',
+    whyTr: [
+      'Ana e-postanızı mağazaların günlük reklam ve kampanya bombardımanından koruyun.',
+      'Farklı indirim kodları için istediğiniz kadar tek kullanımlık adres üretin.',
+      'Aktivasyon veya kupon maili 2 saniyede ekranınıza düşsün.'
+    ],
+    whyEn: [
+      'Protect your main inbox from endless store marketing newsletters.',
+      'Generate unlimited addresses to claim promo codes repeatedly.',
+      'Coupon links and code emails land on your screen in 2 seconds.'
+    ],
+    faqsTr: [
+      { q: 'İndirim kodunu nasıl alırım?', a: 'Mağazanın kayıt formuna MephistoMail adresinizi yazın. Kupon maili 1-3 saniyede ekranınızda görünecektir.' }
+    ],
+    faqsEn: [
+      { q: 'How fast do promo code emails arrive?', a: 'Promo code emails land in your live inbox in under 3 seconds.' }
+    ]
+  },
+  'free-trials': {
+    id: 'free-trials',
+    name: 'Ücretsiz Deneme (Free Trials)',
+    badge: '🎬 Subscription Trials',
+    color: 'from-purple-600 to-pink-600',
+    titleTr: 'Ücretsiz Deneme Süreleri (Free Trial) İçin Geçici E-posta',
+    titleEn: 'Temp Mail for Free Trial Subscriptions & SaaS Testing',
+    descriptionTr: 'Canva, Adobe, VPN ve dijital servislerin 7-14 günlük ücretsiz deneme üyeliklerini kişisel mailinizi riske atmadan başlatın.',
+    descriptionEn: 'Start 7-day or 14-day free trials on SaaS, design, and VPN tools without cluttering your primary email with subscription alerts.',
+    whyTr: [
+      'Ücretsiz deneme sürelerini ana adresinizi vermeden deneyin.',
+      'Deneme süresi bittiğinde otomatik iptal edemeseniz bile spam maillerden korunun.',
+      'Otomatik doğrulama (Auto-Verify) kalkanı onay linklerini arka planda hemen tıklar.'
+    ],
+    whyEn: [
+      'Test premium software tiers without exposing your real email address.',
+      'Avoid unwanted recurring marketing follow-ups after trial period ends.',
+      'Auto-Verify engine handles activation link handshakes automatically.'
+    ],
+    faqsTr: [
+      { q: 'Otomatik doğrulama deneme üyeliklerinde çalışır mı?', a: 'Evet, Auto-Verify özelliğimiz üyelik onay bağlantılarını arka planda otomatik tıklar.' }
+    ],
+    faqsEn: [
+      { q: 'Does Auto-Verify work with free trial activation links?', a: 'Yes, our background DOM engine automatically processes confirmation link handshakes.' }
+    ]
+  },
+  'wifi-login': {
+    id: 'wifi-login',
+    name: 'Wi-Fi & Hotspot Girişi',
+    badge: '🌐 Wi-Fi Access Shield',
+    color: 'from-cyan-600 to-blue-600',
+    titleTr: 'Havaalanı, Kafe & Otel Wi-Fi Girişleri İçin Kullan-At Mail',
+    titleEn: 'Temp Mail for Airport, Hotel & Cafe Wi-Fi Captive Portals',
+    descriptionTr: 'Havaalanı, AVM, otel ve kafe Wi-Fi portal girişlerinde istenen zorunlu e-posta doğrulamasını spamsız 5 saniyede geçin.',
+    descriptionEn: 'Bypass mandatory email verification screens on airport, hotel, and public Wi-Fi networks safely and anonymously.',
+    whyTr: [
+      'Kamuya açık Wi-Fi ağlarında kişisel e-postanızı ve kimliğinizi koruyun.',
+      'Doğrulama linki veya 4 haneli SMS/E-posta kodunu anında ekranda görün.',
+      'Fiziksel konumunuzun e-posta üzerinden takip edilmesini engelleyin.'
+    ],
+    whyEn: [
+      'Protect your real identity and email address on public hotspot networks.',
+      'Instantly view Wi-Fi confirmation PINs and verification buttons.',
+      'Prevent location-tracking ad servers from profiling your visits.'
+    ],
+    faqsTr: [
+      { q: 'Havaalanı Wi-Fi onay mailleri düşüyor mu?', a: 'Evet, kamu ağlarındaki tüm doğrulama mailleri 1-3 saniyede ekranınıza gelir.' }
+    ],
+    faqsEn: [
+      { q: 'Do airport Wi-Fi confirmation emails land immediately?', a: 'Yes, portal verification emails arrive within 1 to 3 seconds.' }
+    ]
+  },
+  downloads: {
+    id: 'downloads',
+    name: 'Ücretsiz PDF & Dosya İndirme',
+    badge: '📚 PDF & File Shield',
+    color: 'from-emerald-600 to-green-600',
+    titleTr: 'Ücretsiz PDF, E-Kitap ve Dosya İndirmek İçin Sahte Mail',
+    titleEn: 'Temp Mail for Free eBook, PDF & File Downloads',
+    descriptionTr: 'E-Kitap, PDF raporu ve dosya indirmek için e-posta adresi şart koşan sitelerden güvenle dosya indirin.',
+    descriptionEn: 'Download free whitepapers, PDFs, and eBooks from websites requiring an email address without risking your personal inbox.',
+    whyTr: [
+      'İndirme linki içeren mailleri anında görüntüleyin ve dosyayı kaydedin.',
+      'Rehber ve şablon indirme sitelerinin e-bülten tuzağına düşmeyin.',
+      'Tek kullanımlık adresi işiniz bitince kapatın.'
+    ],
+    whyEn: [
+      'Receive download links and file attachments instantly.',
+      'Avoid newsletter traps when grabbing free templates and guides.',
+      'Volatile RAM storage deletes all downloaded trace data on tab close.'
+    ],
+    faqsTr: [
+      { q: 'Maildeki indirme bağlantısına tıklayabilir miyim?', a: 'Evet, MephistoMail indirme linklerini ve eylem butonlarını doğrudan öne çıkarır.' }
+    ],
+    faqsEn: [
+      { q: 'Can I click download links inside incoming emails?', a: 'Yes! Action links and download buttons are extracted and highlighted automatically.' }
+    ]
+  },
+  gaming: {
+    id: 'gaming',
+    name: 'Oyun & Yan Hesaplar',
+    badge: '🎮 Gaming & Alt Accounts',
+    color: 'from-violet-600 to-indigo-600',
+    titleTr: 'Oyun & Yan Hesaplar (Steam, Epic, Twitch) İçin Temp Mail',
+    titleEn: 'Temp Mail for Gaming, Steam, Epic Games & Alt Accounts',
+    descriptionTr: 'Steam, Epic Games, Twitch Drop ödülleri ve oyun içi yan hesaplar (Alt Accounts) için temiz kullan-at mail adresi edinin.',
+    descriptionEn: 'Create secondary gaming profiles for Steam, Epic Games, Roblox, and Twitch Drop reward claims without primary email exposure.',
+    whyTr: [
+      'Yan oyun profillerinizi asıl kimliğinizden tamamen ayırın.',
+      'Twitch drop ve oyun içi hediye kodlarını anında kopyalayın.',
+      'Oyun sunucu spamlerinden korunun.'
+    ],
+    whyEn: [
+      'Keep secondary game profiles isolated from your primary identity.',
+      'Copy Twitch drop codes and reward keys in real-time.',
+      'Shield your primary inbox from game server newsletter noise.'
+    ],
+    faqsTr: [
+      { q: 'Oyun doğrulama kodları ne zaman gelir?', a: 'Real-time WebSocket altyapısı ile kodlar 1-3 saniyede bildirime düşer.' }
+    ],
+    faqsEn: [
+      { q: 'How fast do game security PINs arrive?', a: 'Powered by SSE & WebSockets, PINs arrive in sub-3 seconds.' }
+    ]
+  },
+  'qa-testing': {
+    id: 'qa-testing',
+    name: 'Yazılım Testi & QA Otomasyonu',
+    badge: '🧪 QA & Dev Testing',
+    color: 'from-amber-600 to-red-600',
+    titleTr: 'Yazılım Testi & QA Otomasyonu İçin Geçici E-posta',
+    titleEn: 'Developer Temp Mail for QA Testing & Automation Flows',
+    descriptionTr: 'Yazılımcılar ve QA test mühendisleri için kayıt akışları, şifre sıfırlama ve bildirim testlerine özel kullan-at e-posta servisi.',
+    descriptionEn: 'Empower QA testing engineers and developers with instant disposable email accounts for automated signup & auth testing.',
+    whyTr: [
+      'Cypress, Playwright ve Selenium test otomasyonlarında temiz e-posta kutusu kullanın.',
+      'REST API & Webhook desteği ile e-posta içeriklerine programmatik ulaşın.',
+      'Gelen mailleri .eml ve JSON formatında dışa aktarın.'
+    ],
+    whyEn: [
+      'Seamlessly integrate with Cypress, Playwright, and Selenium test suites.',
+      'Access raw JSON and .eml payloads for automated validation.',
+      'Programmatic Webhook notifications for instant test execution.'
+    ],
+    faqsTr: [
+      { q: 'Test otomasyonu için API sunuyor musunuz?', a: 'Evet, /api-docs sayfamızdan REST API entegrasyon dokümanına erişebilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'Is there an API for test automation?', a: 'Yes, check out our /api-docs page for full REST API details.' }
+    ]
+  },
+  'spam-protection': {
+    id: 'spam-protection',
+    name: 'Spam Engelleme Kalkanı',
+    badge: '🛡️ Ultimate Privacy Shield',
+    color: 'from-red-600 to-rose-800',
+    titleTr: 'Spam Koruması & Gizlilik Kalkanı Geçici E-posta',
+    titleEn: 'Temp Mail for Spam Protection & Privacy Shielding',
+    descriptionTr: 'Gerçek e-posta adresinizi vermeden internette gezinin. Reklam verenlerin, veri avcılarının ve spam robotlarının hedefi olmaktan kurtulun.',
+    descriptionEn: 'Surf the web without revealing your real email address. Block marketers, data brokers, and spam bots instantly.',
+    whyTr: [
+      'Gelen maillerdeki casus takip piksellerini (1x1 Pixel Tracker) otomatik filtreleyin.',
+      'Veri sızıntılarında asıl e-postanızın ele geçirilmesini engelleyin.',
+      'Sadece RAM bellekte çalışan sıfır disk kayıt mimarisi.'
+    ],
+    whyEn: [
+      'Automatically strip 1x1 tracking pixels and location trackers.',
+      'Prevent your primary email from getting leaked in data breaches.',
+      'Volatile RAM-only architecture guarantees complete zero-disk privacy.'
+    ],
+    faqsTr: [
+      { q: 'Takip pikselleri nasıl engellenir?', a: 'MephistoMail gelen HTML içeriğini ayrıştırır ve casus takip piksellerini etkisiz hale getirir.' }
+    ],
+    faqsEn: [
+      { q: 'How are tracking pixels blocked?', a: 'MephistoMail parses incoming HTML and automatically strips 1x1 spy pixels.' }
+    ]
+  },
+  surveys: {
+    id: 'surveys',
+    name: 'Online Anket & Formlar',
+    badge: '📝 Form Shield',
+    color: 'from-teal-600 to-cyan-600',
+    titleTr: 'Online Anket & Quiz Sonuçlarını Görmek İçin Sahte Mail',
+    titleEn: 'Temp Mail for Online Surveys, Quizzes & Gated Content',
+    descriptionTr: 'Anket çözdükten veya kişilik testi yaptıktan sonra "Sonucunuzu görmek için e-posta girin" diyen siteleri spamsız aşın.',
+    descriptionEn: 'Bypass "Enter email to see your quiz/survey results" walls without getting spammed by marketers.',
+    whyTr: [
+      'Anket ve test sonuçlarınızı anında ekranda görün.',
+      'Daha sonra gelecek pazarlama maillerini otomatik çöp kutusuna atın.',
+      'Üyelik gerektirmeyen anlık anonim deneyim.'
+    ],
+    whyEn: [
+      'View quiz and survey results instantly without inbox clutter.',
+      'Prevent follow-up marketing pitches from polluting your primary email.',
+      'Zero registration required — instant browser accessibility.'
+    ],
+    faqsTr: [
+      { q: 'Anket sonucu maile düşüyor mu?', a: 'Evet, sonuç linkleri ve mailler 1-3 saniyede canlı kutunuza yansır.' }
+    ],
+    faqsEn: [
+      { q: 'Will the survey results arrive immediately?', a: 'Yes, incoming result emails appear on your screen within seconds.' }
+    ]
+  },
+  'crypto-airdrops': {
+    id: 'crypto-airdrops',
+    name: 'Kripto Airdrop & Web3',
+    badge: '🪙 Crypto Airdrops',
+    color: 'from-yellow-600 to-amber-600',
+    titleTr: 'Kripto Airdrop & Whitelist Kayıtları İçin Anonim E-posta',
+    titleEn: 'Temp Mail for Crypto Airdrops, Presales & NFT Whitelists',
+    descriptionTr: 'Kripto projeleri, NFT lansmanları ve Airdrop whitelist kayıtları için anonim geçici e-posta oluşturun.',
+    descriptionEn: 'Participate in Web3 airdrops, NFT presales, and token whitelists without exposing your primary email to phishing risks.',
+    whyTr: [
+      'Oltalama (Phishing) saldırılarına karşı ana e-postanızı ve cüzdan bilgilerinizi koruyun.',
+      'Farklı airdrop görevleri için sınırsız temp mail adresi üretin.',
+      'Gelen onay butonlarına akıllı eylem linki ile tek tıkla tıklayın.'
+    ],
+    whyEn: [
+      'Shield your primary identity from Web3 phishing attempts and spam.',
+      'Create unlimited email handles for multi-account testing.',
+      'Auto-extract activation links for instant confirmation.'
+    ],
+    faqsTr: [
+      { q: 'Airdrop onay linkleri çalışıyor mu?', a: 'Evet, gelen onay linkleri anında tespit edilir ve gösterilir.' }
+    ],
+    faqsEn: [
+      { q: 'Do Web3 confirmation links work?', a: 'Yes, confirmation links are extracted instantly in real time.' }
+    ]
+  },
+  classifieds: {
+    id: 'classifieds',
+    name: 'İkinci El İlan & İletişim',
+    badge: '🏷️ Classifieds & Deals',
+    color: 'from-stone-600 to-zinc-600',
+    titleTr: 'İkinci El İlan & Alışveriş İletişimi İçin Gizli Mail',
+    titleEn: 'Temp Mail for Online Marketplace & Classifieds Communication',
+    descriptionTr: 'Sahibinden, Craigslist ve online ilan sitelerinde alıcı/satıcılarla iletişim kurarken kişisel e-posta adresinizi gizli tutun.',
+    descriptionEn: 'Communicate with buyers and sellers on online marketplaces without revealing your personal email address.',
+    whyTr: [
+      'Yabancılarla iletişim kurarken gerçek e-postanızı ve adınızı gizleyin.',
+      'Satış bittiğinde adresi tek tıkla silin.',
+      'Outbound Mail özelliği ile anonim olarak yanıt verin.'
+    ],
+    whyEn: [
+      'Hide your real identity when negotiating with buyers/sellers.',
+      'Destroy the temporary handle in one click after deal completion.',
+      'Reply anonymously using our RAM-only Outbound Mail feature.'
+    ],
+    faqsTr: [
+      { q: 'İlan sahibine yanıt verebilir miyim?', a: 'Evet, MephistoMail Outbound Mail özelliği ile geçici mailiniz üzerinden yanıt gönderebilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'Can I reply to marketplace messages?', a: 'Yes! Use our Outbound Mail feature to send anonymous replies directly.' }
+    ]
+  },
 };
 
 export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
