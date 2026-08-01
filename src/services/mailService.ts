@@ -287,7 +287,16 @@ const getGuerrillaMessages = async (mailbox: Mailbox): Promise<EmailSummary[]> =
     const list = data?.list;
     if (!Array.isArray(list)) return [];
 
-    return list.map((msg: any) => {
+    const filteredList = list.filter((msg: any) => {
+      const fromStr = (msg.mail_from || '').toLowerCase();
+      const subjStr = (msg.mail_subject || '').toLowerCase();
+      if (fromStr.includes('guerrillamail') && subjStr.includes('welcome')) {
+        return false;
+      }
+      return true;
+    });
+
+    return filteredList.map((msg: any) => {
       const decodedSubject = decodeHTMLEntities(msg.mail_subject || '');
       const decodedExcerpt = decodeHTMLEntities(msg.mail_excerpt || '');
       return {
@@ -385,14 +394,14 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
   }
 
   isFetchingDomains = true;
-  const allDomains: string[] = ['mephistomail.site', 'guerrillamailblock.com', 'guerrillamail.com', 'grr.la', 'sharklasers.com', 'anon.mephistomail.site'];
+  const allDomains: string[] = ['guerrillamailblock.com', 'sharklasers.com', 'guerrillamail.com', 'mephistomail.site', 'grr.la', 'anon.mephistomail.site'];
   const domainProviderMap: Record<string, string> = {
-    'mephistomail.site': 'guerrilla',
-    'anon.mephistomail.site': 'guerrilla',
     'guerrillamailblock.com': 'guerrilla',
-    'guerrillamail.com': 'guerrilla',
-    'grr.la': 'guerrilla',
     'sharklasers.com': 'guerrilla',
+    'guerrillamail.com': 'guerrilla',
+    'mephistomail.site': 'guerrilla',
+    'grr.la': 'guerrilla',
+    'anon.mephistomail.site': 'guerrilla',
   };
 
   // Hydra providers + Guerrilla Mail paralel sorgula
