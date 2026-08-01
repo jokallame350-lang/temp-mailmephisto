@@ -39,9 +39,10 @@ interface AppProps {
   hideSEOContent?: boolean;
   hideFooter?: boolean;
   hideHeroBanner?: boolean;
+  hideNavbar?: boolean;
 }
 
-const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, hideHeroBanner = false }) => {
+const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, hideHeroBanner = false, hideNavbar = false }) => {
   // Custom hooklar
   const {
     accounts,
@@ -246,7 +247,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col font-['Sora'] bg-[#050505] text-slate-200 overflow-x-hidden relative">
+      <div className={hideHeroBanner ? "w-full flex flex-col font-['Sora'] text-slate-200 relative" : "min-h-screen flex flex-col font-['Sora'] bg-[#050505] text-slate-200 overflow-x-hidden relative"}>
 
         {/* SEO Head */}
         <SEOHead lang={lang} />
@@ -271,22 +272,24 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
         {/* Toast Bildirimleri */}
         <Toast toasts={toasts} onDismiss={dismissToast} />
 
-        <Header
-          accounts={accounts}
-          currentAccount={activeAccount}
-          onSwitchAccount={setActiveAccountId}
-          onDeleteAccount={deleteAccount}
-          lang={lang}
-          setLang={setLang}
-          theme={theme}
-          setTheme={setTheme}
-          onOpenQR={() => setShowQRModal(true)}
-          onOpenPass={() => setShowPassModal(true)}
-          onOpenExtension={() => setShowExtensionModal(true)}
-          onOpenStats={() => setShowStatsModal(true)}
-          onOpenFilters={() => setShowNotifFilterModal(true)}
-          onOpenLabels={() => setShowAliasModal(true)}
-        />
+        {!hideNavbar && (
+          <Header
+            accounts={accounts}
+            currentAccount={activeAccount}
+            onSwitchAccount={setActiveAccountId}
+            onDeleteAccount={deleteAccount}
+            lang={lang}
+            setLang={setLang}
+            theme={theme}
+            setTheme={setTheme}
+            onOpenQR={() => setShowQRModal(true)}
+            onOpenPass={() => setShowPassModal(true)}
+            onOpenExtension={() => setShowExtensionModal(true)}
+            onOpenStats={() => setShowStatsModal(true)}
+            onOpenFilters={() => setShowNotifFilterModal(true)}
+            onOpenLabels={() => setShowAliasModal(true)}
+          />
+        )}
 
         {/* Modals */}
         {showCustomModal && <CustomAddressModal isOpen={showCustomModal} onClose={() => setShowCustomModal(false)} onCreate={handleCreateCustom} lang={lang} />}
@@ -320,7 +323,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
           />
         )}
 
-        <main id="main-content" className="flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10" role="main">
+        <main id="main-content" className={hideHeroBanner ? "w-full flex flex-col items-center justify-start gap-4 z-10" : "flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10"} role="main">
 
           {/* HERO BAŞLIK — Sadeleştirildi */}
           {!hideHeroBanner && (

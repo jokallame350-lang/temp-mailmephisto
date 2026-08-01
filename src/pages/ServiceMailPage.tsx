@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import App from '../App';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -447,8 +447,9 @@ const SERVICES_MAP: Record<string, ServiceData> = {
 };
 
 export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
-  const { service = 'discord' } = useParams<{ service: string }>();
-  const data = SERVICES_MAP[service.toLowerCase()] || SERVICES_MAP.discord;
+  const location = useLocation();
+  const rawSlug = location.pathname.replace(/^\/temp-mail-for-?/, '').toLowerCase();
+  const data = SERVICES_MAP[rawSlug] || SERVICES_MAP.classifieds;
 
   const isTr = lang === 'tr';
   const title = isTr ? data.titleTr : data.titleEn;
@@ -502,7 +503,7 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
             </p>
           </div>
           <Link
-            to="/"
+            to="/services"
             className="shrink-0 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium text-sm transition-all shadow-lg shadow-red-500/25 flex items-center gap-2"
           >
             <span>{isTr ? 'Tüm Servisler' : 'All Services'}</span>
@@ -514,7 +515,7 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
       {/* Main Mailbox Dashboard Component */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-12">
         <div className="bg-[#12121e]/90 border border-slate-800/90 rounded-2xl shadow-2xl p-4 sm:p-6 backdrop-blur-xl">
-          <App hideHeroBanner={true} hideSEOContent={true} hideFooter={true} />
+          <App hideNavbar={true} hideHeroBanner={true} hideSEOContent={true} hideFooter={true} />
         </div>
 
         {/* Step-by-step Custom Guide for this topic */}

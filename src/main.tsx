@@ -17,6 +17,7 @@ const ServiceMailPage = lazy(() => import('./pages/ServiceMailPage'));
 const DisposableCheckerPage = lazy(() => import('./pages/DisposableCheckerPage'));
 const BulkGeneratorPage = lazy(() => import('./pages/BulkGeneratorPage'));
 const BurnNotePage = lazy(() => import('./pages/BurnNotePage'));
+const ServicesCatalogPage = lazy(() => import('./pages/ServicesCatalogPage'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -86,6 +87,34 @@ const AppRouter = () => {
           <Route path="/help" element={<HelpPage lang={lang} />} />
           <Route path="/contact" element={<ContactPage lang={lang} />} />
           <Route path="/api-docs" element={<ApiDocsPage lang={lang} />} />
+          <Route path="/services" element={<ServicesCatalogPage lang={lang} />} />
+          <Route path="/kullanim-alanlari" element={<ServicesCatalogPage lang={lang} />} />
+          {/* 25 Targeted Service & Use-Case Landing Pages */}
+          <Route path="/temp-mail-for-classifieds" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-discounts" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-free-trials" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-wifi-login" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-downloads" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-gaming" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-qa-testing" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-spam-protection" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-surveys" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-crypto-airdrops" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-chatgpt" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-discord" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-instagram" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-spotify" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-netflix" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-roblox" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-steam" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-epicgames" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-twitch" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-tiktok" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-canva" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-github" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-amazon" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-vinted" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-saas" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
           <Route path="/bulk-generator" element={<BulkGeneratorPage lang={lang} />} />

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { Mailbox } from '../types';
 import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette } from 'lucide-react';
 import { translations, Language } from '../translations';
@@ -90,6 +91,46 @@ const Header: React.FC<HeaderProps> = ({
         {/* Mobile-only brand text */}
         <span className="md:hidden font-black text-sm text-white tracking-tight leading-none font-['Sora'] truncate">Mephisto</span>
       </div>
+
+      {/* Central Navigation Links */}
+      <nav className="hidden lg:flex items-center gap-1 xl:gap-2 mx-4" aria-label="Main Navigation">
+        <Link
+          to="/"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
+        >
+          <span>🏠 {lang === 'tr' ? 'Ana Sayfa' : 'Home'}</span>
+        </Link>
+        <Link
+          to="/services"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 transition-all flex items-center gap-1.5 bg-orange-500/[0.06] border border-orange-500/20"
+        >
+          <span>🚀 {lang === 'tr' ? 'Servisler' : 'Services'}</span>
+        </Link>
+        <Link
+          to="/bulk-generator"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
+        >
+          <span>📦 {lang === 'tr' ? 'Toplu Mail' : 'Bulk Mail'}</span>
+        </Link>
+        <Link
+          to="/burn-note"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
+        >
+          <span>🔥 Burn Note</span>
+        </Link>
+        <Link
+          to="/tools"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
+        >
+          <span>🛡️ {lang === 'tr' ? 'Araçlar' : 'Tools'}</span>
+        </Link>
+        <Link
+          to="/blog"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
+        >
+          <span>📖 Blog</span>
+        </Link>
+      </nav>
 
       <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
         <div className="flex items-center gap-0.5 sm:gap-1">

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Flame, Copy, Check, Lock, EyeOff } from 'lucide-react';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';
 
@@ -26,15 +29,28 @@ const BurnNotePage: React.FC<BurnNotePageProps> = ({ lang }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-200 pt-24 pb-16 px-4">
+    <div className="min-h-screen bg-[#050505] text-slate-200 flex flex-col font-['Sora']">
       <SEOHead
         title={lang === 'tr' ? 'Şifreli Not Oluştur (Privnote) | MephistoMail' : 'Self-Destructing Burn Notes | MephistoMail'}
         description={lang === 'tr' ? 'Okunduktan sonra kendini yok eden şifreli gizli mesaj oluşturun.' : 'Create encrypted self-destructing secret notes that vanish after reading.'}
         canonicalUrl="https://mephistomail.site/burn-note"
         lang={lang}
       />
+      <Header accounts={[]} currentAccount={null} onSwitchAccount={() => {}} onDeleteAccount={() => {}} lang={lang} setLang={() => {}} theme="dark" setTheme={() => {}} onOpenQR={() => {}} onOpenPass={() => {}} onOpenExtension={() => {}} onOpenStats={() => {}} onOpenFilters={() => {}} onOpenLabels={() => {}} />
 
-      <div className="max-w-3xl mx-auto space-y-8">
+      <main className="flex-1 max-w-3xl w-full mx-auto pt-24 pb-16 px-4 space-y-8">
+        {/* Back to Home Button */}
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 transition-all text-xs font-bold"
+          >
+            <span>← {lang === 'tr' ? 'Ana Sayfaya Dön (Posta Kutuma Git)' : 'Back to Home (Go to Inbox)'}</span>
+          </Link>
+          <span className="text-xs text-slate-500">
+            {lang === 'tr' ? 'Canlı e-posta alımı sadece Ana Sayfada aktiftir.' : 'Live mailbox receiver active on Home.'}
+          </span>
+        </div>
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-widest">
             <Flame className="w-3.5 h-3.5" />
@@ -92,7 +108,9 @@ const BurnNotePage: React.FC<BurnNotePageProps> = ({ lang }) => {
             </div>
           )}
         </div>
-      </div>
+      </main>
+
+      <Footer lang={lang} />
     </div>
   );
 };

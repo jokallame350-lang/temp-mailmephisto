@@ -19,9 +19,9 @@ const BlogPage: React.FC<BlogPageProps> = ({ lang }) => {
             {/* Header */}
             <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-3 text-white hover:text-red-400 transition-colors">
-                        <ArrowLeft size={18} />
-                        <span className="text-sm font-medium">MephistoMail</span>
+                    <Link to="/" className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 transition-all text-xs font-bold">
+                        <ArrowLeft size={16} />
+                        <span>{lang === 'tr' ? 'Ana Sayfaya Dön' : 'Back to Home'}</span>
                     </Link>
                     <h1 className="text-lg font-bold tracking-tight">
                         Blog
