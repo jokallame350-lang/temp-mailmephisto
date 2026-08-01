@@ -38,9 +38,10 @@ const extractOTPCode = (subject: string): string | null => {
 interface AppProps {
   hideSEOContent?: boolean;
   hideFooter?: boolean;
+  hideHeroBanner?: boolean;
 }
 
-const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false }) => {
+const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, hideHeroBanner = false }) => {
   // Custom hooklar
   const {
     accounts,
@@ -322,30 +323,33 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false })
         <main id="main-content" className="flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10" role="main">
 
           {/* HERO BAŞLIK — Sadeleştirildi */}
-          <div className="w-full max-w-4xl flex flex-col items-center text-center space-y-4 relative">
-            <div className="space-y-2">
-              <h1 className="hero-title text-2xl md:text-4xl font-black text-white tracking-tighter leading-tight">
-                {t.heroTitle} <br />
-                <span className="hero-gradient-text text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-400 to-orange-500">{t.heroSubtitle}</span>
-              </h1>
-              <p className="text-sm md:text-base text-slate-400 max-w-lg mx-auto leading-relaxed">
-                {lang === 'tr'
-                  ? 'Kayıt yok. Log yok. Sekmeyi kapat, her şey silinsin.'
-                  : 'No signup. No logs. Close the tab, everything is gone.'}
-              </p>
-            </div>
+          {!hideHeroBanner && (
+            <div className="w-full max-w-4xl flex flex-col items-center text-center space-y-4 relative">
+              <div className="space-y-2">
+                <h1 className="hero-title text-2xl md:text-4xl font-black text-white tracking-tighter leading-tight">
+                  {t.heroTitle} <br />
+                  <span className="hero-gradient-text text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-400 to-orange-500">{t.heroSubtitle}</span>
+                </h1>
+                <p className="text-sm md:text-base text-slate-400 max-w-lg mx-auto leading-relaxed">
+                  {lang === 'tr'
+                    ? 'Kayıt yok. Log yok. Sekmeyi kapat, her şey silinsin.'
+                    : 'No signup. No logs. Close the tab, everything is gone.'}
+                </p>
+              </div>
 
-            {/* Trust Signals — Tek satır, sakin */}
-            <div className="flex items-center gap-4 text-[10px] text-slate-500 font-medium uppercase tracking-widest">
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-orange-500/60" aria-hidden="true" />
-                {lang === 'tr' ? 'Sıfır Log' : 'Zero Logs'}
-              </span>
-              <span className="text-slate-700">|</span>
-              <span>{lang === 'tr' ? 'Sadece RAM' : 'RAM-Only'}</span>
-              <span className="text-slate-700">|</span>
-              <span>{lang === 'tr' ? 'Açık Kaynak' : 'Open Source'}</span>
+              {/* Trust Signals — Tek satır, sakin */}
+              <div className="flex items-center gap-4 text-[10px] text-slate-500 font-medium uppercase tracking-widest">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-orange-500/60" aria-hidden="true" />
+                  {lang === 'tr' ? 'Sıfır Log' : 'Zero Logs'}
+                </span>
+                <span className="text-slate-700">|</span>
+                <span>{lang === 'tr' ? 'Sadece RAM' : 'RAM-Only'}</span>
+                <span className="text-slate-700">|</span>
+                <span>{lang === 'tr' ? 'Açık Kaynak' : 'Open Source'}</span>
+              </div>
             </div>
+          )}
 
             {accounts.length === 0 || isLoadingAccount ? (
               <div className="w-full max-w-2xl h-16 flex items-center justify-center border border-white/10 rounded-2xl bg-[#0f1115] shadow-lg animate-pulse gap-3" role="status" aria-live="polite">
@@ -376,7 +380,6 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false })
                 onToggleAutoVerify={toggleAutoVerify}
               />
             )}
-          </div>
 
           {/* E-POSTA İÇERİK ALANI */}
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 md:gap-6 pb-8 sm:pb-12">

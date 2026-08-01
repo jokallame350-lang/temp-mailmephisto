@@ -514,7 +514,7 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
       {/* Main Mailbox Dashboard Component */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-12">
         <div className="bg-[#12121e]/90 border border-slate-800/90 rounded-2xl shadow-2xl p-4 sm:p-6 backdrop-blur-xl">
-          <App hideSEOContent={true} hideFooter={true} />
+          <App hideHeroBanner={true} hideSEOContent={true} hideFooter={true} />
         </div>
 
         {/* Step-by-step Custom Guide for this topic */}
