@@ -35,37 +35,24 @@ const AdBanner: React.FC<AdBannerProps> = ({ slot, lang }) => {
         <div
             className={`relative ${size.w} ${size.h} bg-white/[0.015] border border-white/5 rounded-2xl flex flex-col items-center justify-center text-slate-600 overflow-hidden group transition-all hover:border-white/10`}
             data-ad-slot={`mephisto-${slot}`}
-            data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+            data-ad-client="ca-pub-7387541759838501"
             id={`ad-${slot}`}
         >
-            {/* Placeholder — Replace with actual ad code in production */}
-            <div className="flex flex-col items-center gap-1.5 opacity-40">
+            <ins
+                className="adsbygoogle"
+                style={{ display: 'block', width: '100%', height: '100%' }}
+                data-ad-client="ca-pub-7387541759838501"
+                data-ad-slot={`mephisto-${slot}`}
+                data-ad-format="auto"
+                data-full-width-responsive="true"
+            />
+            {/* Fallback label when ads are loading */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 opacity-30 pointer-events-none -z-10">
                 <span className="text-[9px] font-mono uppercase tracking-widest">{size.label}</span>
                 <span className="text-[8px]">
-                    {lang === 'tr' ? 'Reklam Alanı' : 'Ad Space'}
+                    {lang === 'tr' ? 'Sponsor / Reklam Alanı' : 'Sponsor / Ad Space'}
                 </span>
             </div>
-
-            {/* 
-        Google AdSense Integration Example:
-        <ins className="adsbygoogle"
-          style={{ display: 'block' }}
-          data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-          data-ad-slot="XXXXXXXXXX"
-          data-ad-format="auto"
-          data-full-width-responsive="true"
-        />
-      */}
-
-            {/* 
-        Carbon Ads Integration Example:
-        <script 
-          async 
-          type="text/javascript" 
-          src="//cdn.carbonads.com/carbon.js?serve=XXXXXXXX&placement=mephistomailcom" 
-          id="_carbonads_js"
-        />
-      */}
         </div>
     );
 };
