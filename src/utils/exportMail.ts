@@ -1,4 +1,5 @@
 import { EmailDetail } from '../types';
+import DOMPurify from 'dompurify';
 
 /**
  * Utility functions for exporting emails into EML, JSON, and PDF/Print formats.
@@ -72,7 +73,16 @@ export const printEmailContent = (email: EmailDetail) => {
   if (!printWindow) return;
 
   const senderStr = typeof email.from === 'string' ? email.from : `${email.from.name || ''} <${email.from.address}>`;
-  const bodyContent = (email.html && email.html.length > 0) ? email.html[0] : `<p style="white-space: pre-wrap;">${email.text || email.intro}</p>`;
+  const rawBodyContent = (email.html && email.html.length > 0) ? email.html[0] : `<p style="white-space: pre-wrap;">${email.text || email.intro}</p>`;
+
+  const sanitizedBody = DOMPurify.sanitize(rawBodyContent, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit'],
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/(?:png|jpeg|jpg|gif|svg\+xml|webp);base64,)/i,
+    ALLOW_DATA_ATTR: false,
+    ADD_ATTR: ['target'],
+  });
 
   printWindow.document.write(`
     <!DOCTYPE html>
@@ -98,7 +108,7 @@ export const printEmailContent = (email: EmailDetail) => {
           </div>
         </div>
         <div class="body-box">
-          ${bodyContent}
+          ${sanitizedBody}
         </div>
         <div class="footer">
           MephistoMail Privacy Shield — mephistomail.site

@@ -90,6 +90,11 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     if (!email) return;
     try {
       const url = att.downloadUrl || `https://api.mail.tm/messages/${email.id}/attachment/${att.id}`;
+      const lowerUrl = url.toLowerCase().trim();
+      if (lowerUrl.startsWith('file:') || lowerUrl.startsWith('file:/') || lowerUrl.startsWith('file://')) {
+        console.warn('Blocked file:/// attachment download URL:', url);
+        return;
+      }
       const headers: Record<string, string> = { 'Accept': '*/*' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -107,13 +112,15 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.warn('Attachment download failed:', err);
-      if (att.downloadUrl) window.open(att.downloadUrl, '_blank');
+      if (att.downloadUrl && (att.downloadUrl.startsWith('http://') || att.downloadUrl.startsWith('https://'))) {
+        window.open(att.downloadUrl, '_blank', 'noopener,noreferrer');
+      }
     }
   }, [email, token]);
 
   useEffect(() => { setViewSource(false); setShowHeaders(false); setCodeCopied(false); }, [email?.id]);
 
-  // Sandbox HTML - Tracker Blocker & DOMPurify ile temizle
+  // Sandbox HTML - Tracker Blocker & DOMPurify ile temizle (file:/// ve güvensiz protokolleri kesin engelle)
   const trackerResult = useMemo(() => {
     if (!email) return { cleanHtml: '', trackerCount: 0, trackerDomains: [] };
     let raw = '';
@@ -130,13 +137,73 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     const { cleanHtml, trackerCount, trackerDomains } = sanitizeAndBlockTrackers(raw);
 
     try {
+      // DOMPurify Hook: file:/// ve güvensiz protokolleri öznitelik düzeyinde temizle
+      const attrHook = (node: Element, data: any) => {
+        if (data.attrValue) {
+          const val = data.attrValue.trim().toLowerCase();
+          if (
+            val.startsWith('file:') ||
+            val.startsWith('file:/') ||
+            val.startsWith('file://') ||
+            val.startsWith('content:') ||
+            val.startsWith('chrome:') ||
+            val.startsWith('resource:') ||
+            val.startsWith('filesystem:') ||
+            val.startsWith('javascript:') ||
+            val.startsWith('vbscript:') ||
+            val.startsWith('about:')
+          ) {
+            data.attrValue = '';
+          }
+          if (data.attrName === 'style' && (val.includes('file:') || val.includes('content:') || val.includes('chrome:'))) {
+            data.attrValue = data.attrValue
+              .replace(/url\(['"]?file:[^'"]+['"]?\)/gi, 'none')
+              .replace(/url\(['"]?content:[^'"]+['"]?\)/gi, 'none')
+              .replace(/url\(['"]?chrome:[^'"]+['"]?\)/gi, 'none');
+          }
+        }
+      };
+
+      const nodeHook = (node: Node) => {
+        if (node.nodeType === 1) {
+          const el = node as Element;
+          if (el.tagName === 'A') {
+            el.setAttribute('rel', 'noopener noreferrer');
+            const href = el.getAttribute('href');
+            if (href) {
+              const cleanHref = href.trim().toLowerCase();
+              if (
+                cleanHref.startsWith('file:') ||
+                cleanHref.startsWith('file:/') ||
+                cleanHref.startsWith('file://') ||
+                cleanHref.startsWith('content:') ||
+                cleanHref.startsWith('chrome:') ||
+                cleanHref.startsWith('resource:') ||
+                cleanHref.startsWith('javascript:') ||
+                cleanHref.startsWith('vbscript:')
+              ) {
+                el.removeAttribute('href');
+              }
+            }
+          }
+        }
+      };
+
+      DOMPurify.addHook('uponSanitizeAttribute', attrHook);
+      DOMPurify.addHook('uponSanitizeElement', nodeHook);
+
       const sanitized = DOMPurify.sanitize(cleanHtml, {
         USE_PROFILES: { html: true },
         FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
         FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit'],
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/(?:png|jpeg|jpg|gif|svg\+xml|webp);base64,)/i,
         ALLOW_DATA_ATTR: false,
         ADD_ATTR: ['target'],
       });
+
+      DOMPurify.removeHook('uponSanitizeAttribute');
+      DOMPurify.removeHook('uponSanitizeElement');
+
       return { cleanHtml: sanitized, trackerCount, trackerDomains };
     } catch (e) {
       console.error('DOMPurify sanitize error:', e);
@@ -160,14 +227,12 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
         <meta charset="UTF-8">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; font-src https: http: data:;">
         <style>
-          /* Minimal reset - orijinal e-posta stillerini bozmamak için hafif */
           body { 
             margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             font-size: 14px; line-height: 1.6;
             word-wrap: break-word; overflow-wrap: break-word;
           }
-          /* E-postanın kendi arka planı yoksa beyaz fallback */
           img { max-width: 100%; height: auto; }
           table { max-width: 100% !important; }
           td, th { word-break: break-word; }
@@ -186,14 +251,33 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     });
     if (doc.body) resizeObserver.observe(doc.body);
 
-    // Linkleri yeni sekmede aç (file:// ve güvensiz protokolleri engelle)
+    // Linkleri güvenli protokollerle aç (file:// ve güvensiz protokolleri kesin engelle)
     const handleLinkClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a');
       if (target) {
         e.preventDefault();
         const href = target.getAttribute('href');
-        if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:'))) {
-          window.open(href, '_blank', 'noopener,noreferrer');
+        if (href) {
+          const cleanHref = href.trim();
+          const lower = cleanHref.toLowerCase();
+          if (
+            lower.startsWith('file:') ||
+            lower.startsWith('file:/') ||
+            lower.startsWith('file://') ||
+            lower.startsWith('javascript:') ||
+            lower.startsWith('data:') ||
+            lower.startsWith('blob:') ||
+            lower.startsWith('content:') ||
+            lower.startsWith('chrome:')
+          ) {
+            console.warn('Blocked unsafe protocol link navigation:', cleanHref);
+            return;
+          }
+          if (lower.startsWith('http://') || lower.startsWith('https://')) {
+            window.open(cleanHref, '_blank', 'noopener,noreferrer');
+          } else if (lower.startsWith('mailto:') || lower.startsWith('tel:')) {
+            window.location.href = cleanHref;
+          }
         }
       }
     };
@@ -307,29 +391,29 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     <div className="flex flex-col h-full bg-transparent text-slate-200" role="article" aria-label={`Email: ${email.subject || 'No subject'}`}>
       {/* Üst Toolbar */}
       <div className="flex items-center justify-between p-3 md:p-4 border-b border-white/5 bg-[#0e0e11]/40">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase md:hidden" aria-label={t.back}>
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase md:hidden min-h-[44px] px-2" aria-label={t.back}>
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> {t.back}
         </button>
         <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
-          <button onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')} className={`p-2 rounded-lg transition-colors ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}>
+          <button onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}>
             <Smartphone className="w-4 h-4" />
           </button>
-          <button onClick={() => { setShowHeaders(!showHeaders); if (!showHeaders) setViewSource(false); }} className={`p-2 rounded-lg transition-colors ${showHeaders ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'} aria-label={showHeaders ? 'Hide headers' : 'Show headers'} aria-pressed={showHeaders}>
+          <button onClick={() => { setShowHeaders(!showHeaders); if (!showHeaders) setViewSource(false); }} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${showHeaders ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'} aria-label={showHeaders ? 'Hide headers' : 'Show headers'} aria-pressed={showHeaders}>
             <List className="w-4 h-4" />
           </button>
-          <button onClick={() => { setViewSource(!viewSource); if (!viewSource) setShowHeaders(false); }} className={`p-2 rounded-lg transition-colors ${viewSource ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={t.sourceCode} aria-label={viewSource ? 'View rendered' : t.sourceCode} aria-pressed={viewSource}>
+          <button onClick={() => { setViewSource(!viewSource); if (!viewSource) setShowHeaders(false); }} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewSource ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={t.sourceCode} aria-label={viewSource ? 'View rendered' : t.sourceCode} aria-pressed={viewSource}>
             {viewSource ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
           </button>
-          <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors" title={t.forward} aria-label={t.forward}>
+          <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={t.forward} aria-label={t.forward}>
             <Forward className="w-4 h-4" />
           </button>
-          <button onClick={() => downloadAsEML(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-purple-400 transition-colors" title={lang === 'tr' ? 'EML İndir (.eml)' : 'Download EML'}>
+          <button onClick={() => downloadAsEML(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-purple-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'EML İndir (.eml)' : 'Download EML'}>
             <FileType className="w-4 h-4" />
           </button>
-          <button onClick={() => downloadAsJSON(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors" title={lang === 'tr' ? 'JSON İndir (.json)' : 'Download JSON'}>
+          <button onClick={() => downloadAsJSON(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'JSON İndir (.json)' : 'Download JSON'}>
             <FileJson className="w-4 h-4" />
           </button>
-          <button onClick={() => printEmailContent(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'}>
+          <button onClick={() => printEmailContent(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'}>
             <Printer className="w-4 h-4" />
           </button>
         </div>

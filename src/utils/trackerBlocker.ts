@@ -58,10 +58,21 @@ export const sanitizeAndBlockTrackers = (htmlContent: string): TrackerBlockerRes
     const images = Array.from(doc.querySelectorAll('img'));
 
     images.forEach(img => {
-      const src = (img.getAttribute('src') || '').toLowerCase();
+      const src = (img.getAttribute('src') || '').trim();
+      const lowerSrc = src.toLowerCase();
       const widthAttr = img.getAttribute('width');
       const heightAttr = img.getAttribute('height');
       const style = (img.getAttribute('style') || '').toLowerCase();
+
+      // Detect file:/// or unsafe local protocols and block immediately
+      const isUnsafeProtocol =
+        lowerSrc.startsWith('file:') ||
+        lowerSrc.startsWith('file:/') ||
+        lowerSrc.startsWith('file://') ||
+        lowerSrc.startsWith('content:') ||
+        lowerSrc.startsWith('chrome:') ||
+        lowerSrc.startsWith('resource:') ||
+        lowerSrc.startsWith('filesystem:');
 
       // Detect 1x1 or zero dimension pixel
       const isOnePixel =
@@ -79,24 +90,28 @@ export const sanitizeAndBlockTrackers = (htmlContent: string): TrackerBlockerRes
         style.includes('visibility:hidden');
 
       // Detect known tracker domain
-      const matchedDomain = KNOWN_TRACKER_DOMAINS.find(domain => src.includes(domain));
+      const matchedDomain = KNOWN_TRACKER_DOMAINS.find(domain => lowerSrc.includes(domain));
 
-      if (isOnePixel || matchedDomain) {
+      if (isUnsafeProtocol || isOnePixel || matchedDomain) {
         trackerCount++;
         if (matchedDomain) {
           trackerDomainsSet.add(matchedDomain);
-        } else {
+        } else if (isUnsafeProtocol) {
+          trackerDomainsSet.add('Blocked Local/File Resource');
+        } else if (lowerSrc.startsWith('http://') || lowerSrc.startsWith('https://')) {
           try {
             const url = new URL(src);
             trackerDomainsSet.add(url.hostname);
           } catch {
             trackerDomainsSet.add('Hidden Pixel Tracker');
           }
+        } else {
+          trackerDomainsSet.add('Hidden Pixel Tracker');
         }
 
-        // Replace tracker img with non-tracking empty placeholder
+        // Replace tracker/unsafe img with non-tracking empty placeholder
         img.setAttribute('src', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
-        img.setAttribute('alt', '🛡️ Engellenen Takip Pikseli');
+        img.setAttribute('alt', isUnsafeProtocol ? '🛡️ Engellenen Yerel Dosya' : '🛡️ Engellenen Takip Pikseli');
         img.setAttribute('style', 'display: none !important;');
         img.setAttribute('data-blocked-tracker', 'true');
       }
