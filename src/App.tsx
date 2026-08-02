@@ -26,6 +26,7 @@ import ShareDropModal from './components/ShareDropModal';
 import ExtensionInstallModal from './components/ExtensionInstallModal';
 import CustomDomainModal from './components/CustomDomainModal';
 import ComposeModal from './components/ComposeModal';
+import AdBanner from './components/AdBanner';
 import { Mailbox, ComposeMailData } from './types';
 
 // OTP kodunu subject'ten çıkar (toast için)
@@ -371,6 +372,11 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                 onToggleAutoVerify={toggleAutoVerify}
               />
             )}
+
+          {/* REKLAM ALANI — Header Banner */}
+          <div className="w-full max-w-4xl mx-auto my-2">
+            <AdBanner slot="header" lang={lang} />
+          </div>
 
           {/* E-POSTA İÇERİK ALANI */}
           <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 md:gap-6 pb-8 sm:pb-12">
