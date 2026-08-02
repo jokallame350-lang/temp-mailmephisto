@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
-import { translations, Language } from './translations'
+import { translations, Language, LANGUAGES } from './translations'
 
 // Lazy load pages for code splitting
 const BlogPage = lazy(() => import('./pages/BlogPage'));
@@ -38,24 +38,17 @@ const ScrollToTop = () => {
 // Language hook
 const useLang = (): Language => {
   const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('mephisto_lang');
-    if (['tr', 'en', 'es', 'de', 'fr', 'it', 'pt', 'ru', 'ar'].includes(saved || '')) return saved as Language;
+    const saved = localStorage.getItem('mephisto_lang') as Language;
+    if (saved && LANGUAGES.some(l => l.code === saved)) return saved;
     const bl = navigator.language.toLowerCase();
-    if (bl.startsWith('tr')) return 'tr';
-    if (bl.startsWith('es')) return 'es';
-    if (bl.startsWith('de')) return 'de';
-    if (bl.startsWith('fr')) return 'fr';
-    if (bl.startsWith('it')) return 'it';
-    if (bl.startsWith('pt')) return 'pt';
-    if (bl.startsWith('ru')) return 'ru';
-    if (bl.startsWith('ar')) return 'ar';
-    return 'en';
+    const match = LANGUAGES.find(l => bl.startsWith(l.code));
+    return match ? match.code : 'en';
   });
 
   useEffect(() => {
     const handleStorage = () => {
       const saved = localStorage.getItem('mephisto_lang') as Language;
-      if (saved && ['tr', 'en', 'es', 'de', 'fr', 'it', 'pt', 'ru', 'ar'].includes(saved)) {
+      if (saved && LANGUAGES.some(l => l.code === saved)) {
         setLang(saved);
       }
     };

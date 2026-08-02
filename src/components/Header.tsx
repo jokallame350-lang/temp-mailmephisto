@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mailbox } from '../types';
 import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X } from 'lucide-react';
-import { translations, Language } from '../translations';
+import { translations, Language, LANGUAGES } from '../translations';
 
 interface HeaderProps {
   accounts: Mailbox[];
@@ -175,42 +175,40 @@ const Header: React.FC<HeaderProps> = ({
               <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${langOpen ? 'rotate-180' : ''}`} />
             </button>
             {langOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-[#111] border border-white/10 rounded-lg shadow-xl z-50 min-w-[130px] py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-                {([
-                  { code: 'en' as const, label: '🇬🇧 English' },
-                  { code: 'tr' as const, label: '🇹🇷 Türkçe' },
-                  { code: 'es' as const, label: '🇪🇸 Español' },
-                  { code: 'de' as const, label: '🇩🇪 Deutsch' },
-                  { code: 'fr' as const, label: '🇫🇷 Français' },
-                  { code: 'it' as const, label: '🇮🇹 Italiano' },
-                  { code: 'pt' as const, label: '🇵🇹 Português' },
-                  { code: 'ru' as const, label: '🇷🇺 Русский' },
-                  { code: 'ar' as const, label: '🇸🇦 العربية' },
-                ]).map(l => (
+              <div className="absolute right-0 top-full mt-1 bg-[#0f1117] border border-white/10 rounded-xl shadow-2xl z-50 w-48 max-h-80 overflow-y-auto py-1 animate-in fade-in zoom-in-95 duration-150 custom-scrollbar">
+                {LANGUAGES.map(l => (
                   <button
                     key={l.code}
                     onClick={() => {
                       setLang(l.code);
+                      localStorage.setItem('mephisto_lang', l.code);
+                      window.dispatchEvent(new Event('mephisto-lang-change'));
                       setLangOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors min-h-[44px] flex items-center ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors min-h-[44px] flex items-center justify-between ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
                   >
-                    {l.label}
+                    <span className="flex items-center gap-2">
+                      <span>{l.flag}</span>
+                      <span>{l.nativeName}</span>
+                    </span>
+                    <span className="text-[10px] text-slate-500 uppercase">{l.code}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Tema Değiştirici */}
+          {/* Tema Değiştirici (4 Profesyonel Tema) */}
           {setTheme && (
             <button
               onClick={() => {
-                const nextTheme = theme === 'cyberpunk' ? 'light' : theme === 'light' ? 'dark' : 'cyberpunk';
+                const themes = ['dark', 'cyberpunk', 'sapphire', 'light'];
+                const currentIndex = themes.indexOf(theme || 'dark');
+                const nextTheme = themes[(currentIndex + 1) % themes.length];
                 setTheme(nextTheme);
               }}
               className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-400 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 justify-center"
-              title={lang === 'tr' ? 'Tema Değiştir (Dark / Cyberpunk / Light)' : 'Switch Theme (Dark / Cyberpunk / Light)'}
+              title={lang === 'tr' ? 'Tema Değiştir (Obsidian / Cyberpunk / Sapphire / Light)' : 'Switch Theme (Obsidian / Cyberpunk / Sapphire / Light)'}
             >
               <Palette className="w-4 h-4 text-orange-500" />
             </button>

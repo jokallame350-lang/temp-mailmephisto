@@ -67,7 +67,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
 
   useEffect(() => {
     localStorage.setItem('mephisto_theme', theme);
-    document.body.className = theme === 'cyberpunk' ? 'theme-cyberpunk' : theme === 'light' ? 'theme-light' : '';
+    document.body.className = `theme-${theme}`;
   }, [theme]);
 
   // Toast bildirimleri (useEmails'den önce tanımlanmalı, callback olarak geçilecek)
