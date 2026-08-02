@@ -83,6 +83,65 @@
       radial-gradient(at 100% 0%, hsla(24, 90%, 90%, 0.4) 0px, transparent 50%);
   }
 
+  /* ===== THEME COMPONENT OVERRIDES ===== */
+  body.theme-light header {
+    background-color: rgba(255, 255, 255, 0.92) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+  }
+  body.theme-light header span,
+  body.theme-light header a,
+  body.theme-light header button {
+    color: #1e293b !important;
+  }
+  body.theme-light .glass-panel,
+  body.theme-light .bg-\[\#0a0a0c\],
+  body.theme-light .bg-\[\#0f1115\],
+  body.theme-light .bg-\[\#0e0e11\],
+  body.theme-light .bg-\[\#111\] {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06) !important;
+  }
+  body.theme-light .text-white {
+    color: #0f172a !important;
+  }
+  body.theme-light .text-slate-200,
+  body.theme-light .text-slate-300,
+  body.theme-light .text-slate-400 {
+    color: #334155 !important;
+  }
+  body.theme-light .text-slate-500,
+  body.theme-light .text-slate-600 {
+    color: #64748b !important;
+  }
+  body.theme-light input,
+  body.theme-light select,
+  body.theme-light textarea {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Cyberpunk Theme Accent Overrides */
+  body.theme-cyberpunk header {
+    background-color: rgba(6, 9, 19, 0.95) !important;
+    border-bottom-color: rgba(6, 182, 212, 0.25) !important;
+  }
+  body.theme-cyberpunk .hero-gradient-text {
+    background-image: linear-gradient(to right, #06b6d4, #a855f7, #06b6d4) !important;
+  }
+
+  /* Sapphire Theme Accent Overrides */
+  body.theme-sapphire header {
+    background-color: rgba(10, 14, 26, 0.95) !important;
+    border-bottom-color: rgba(59, 130, 246, 0.25) !important;
+  }
+  body.theme-sapphire .hero-gradient-text {
+    background-image: linear-gradient(to right, #3b82f6, #10b981, #3b82f6) !important;
+  }
+
   /* Focus indicators (WCAG 2.1 AA) */
   :focus-visible {
     outline: 2px solid rgba(239, 68, 68, 0.7);
