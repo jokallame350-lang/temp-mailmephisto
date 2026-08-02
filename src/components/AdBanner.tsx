@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language } from '../translations';
 
 interface AdBannerProps {
@@ -19,6 +19,14 @@ interface AdBannerProps {
  */
 const AdBanner: React.FC<AdBannerProps> = ({ slot, lang }) => {
     const [dismissed, setDismissed] = useState(false);
+
+    useEffect(() => {
+        try {
+            ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        } catch (e) {
+            // Silently handle AdBlock / script block errors so app rendering is unaffected
+        }
+    }, [slot]);
 
     if (dismissed) return null;
 

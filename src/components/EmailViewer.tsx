@@ -186,13 +186,13 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     });
     if (doc.body) resizeObserver.observe(doc.body);
 
-    // Linkleri yeni sekmede aç
+    // Linkleri yeni sekmede aç (file:// ve güvensiz protokolleri engelle)
     const handleLinkClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'A') {
+      const target = (e.target as HTMLElement).closest('a');
+      if (target) {
         e.preventDefault();
         const href = target.getAttribute('href');
-        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+        if (href && (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:'))) {
           window.open(href, '_blank', 'noopener,noreferrer');
         }
       }
