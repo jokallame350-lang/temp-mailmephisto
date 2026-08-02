@@ -31,8 +31,10 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
             ? 'geçici e-posta, kullan at mail, temp mail, anonim e-posta, sahte mail, güvenli e-posta, gizlilik, disposable email'
             : 'temp mail, temporary email, disposable email, fake email, anonymous email, privacy, burner email, throwaway email');
 
-        // Google Site Verification
+        // Search Console Site Verifications
         updateMeta('google-site-verification', 'ilHoKSVNnesPjnRlavAgpYELKUaVhvyk7YiyS2a02NE');
+        updateMeta('msvalidate.01', 'BING_INDEXER_VERIFICATION_MEPHISTO');
+        updateMeta('yandex-verification', 'YANDEX_INDEXER_VERIFICATION_MEPHISTO');
 
         // Canonical
         updateLink('canonical', canonicalUrl || (siteUrl + '/'));
