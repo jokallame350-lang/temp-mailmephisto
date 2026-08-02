@@ -270,17 +270,9 @@ export function useEmails(
         };
     }, [activeAccount, fetchEmails]);
 
-    // Otomatik e-posta çekme döngüsü ve %100 Senkronize İlerleme Çubuğu (Adaptive Loop)
+    // Otomatik e-posta çekme döngüsü (Adaptive Loop)
     useEffect(() => {
         fetchEmails();
-        let step = 0;
-        let progressInterval = setInterval(() => {
-            step += 1;
-            setProgress(prev => {
-                const next = prev + 4;
-                return next >= 100 ? 0 : next;
-            });
-        }, 100);
 
         let dataInterval = setInterval(() => {
             setProgress(90);
@@ -292,18 +284,10 @@ export function useEmails(
 
         const handleVisibilityChange = () => {
             clearInterval(dataInterval);
-            clearInterval(progressInterval);
             if (document.hidden) {
                 dataInterval = setInterval(fetchEmails, REFRESH_INTERVAL_HIDDEN);
-                progressInterval = setInterval(() => setProgress(prev => (prev >= 100 ? 0 : prev + 1)), 200);
             } else {
                 fetchEmails();
-                progressInterval = setInterval(() => {
-                    setProgress(prev => {
-                        const next = prev + 4;
-                        return next >= 100 ? 0 : next;
-                    });
-                }, 100);
                 dataInterval = setInterval(() => {
                     setProgress(90);
                     fetchEmails().then(() => {
@@ -316,7 +300,6 @@ export function useEmails(
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => {
-            clearInterval(progressInterval);
             clearInterval(dataInterval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };

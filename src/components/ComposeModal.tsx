@@ -23,6 +23,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
   lang,
   onSuccessToast,
 }) => {
+  const t = translations[lang];
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -33,21 +34,21 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
     if (initialData) {
       setTo(initialData.to || '');
       setSubject(initialData.subject ? (initialData.subject.startsWith('Re:') ? initialData.subject : `Re: ${initialData.subject}`) : '');
-      setBody(initialData.body ? `\n\n--- Alıntılanan Mesaj ---\n${initialData.body}` : '');
+      setBody(initialData.body ? `\n\n${t.composeQuotedHeader || '--- Alıntılanan Mesaj ---'}\n${initialData.body}` : '');
     } else {
       setTo('');
       setSubject('');
       setBody('');
     }
     setErrorMsg(null);
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, t]);
 
   if (!isOpen) return null;
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!to.trim() || !subject.trim() || !body.trim()) {
-      setErrorMsg('Lütfen tüm alanları (Alıcı, Konu ve Mesaj) doldurun.');
+      setErrorMsg(t.composeErrorRequired);
       return;
     }
 
@@ -64,13 +65,13 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
       });
 
       if (success) {
-        onSuccessToast('✓ E-posta başarıyla gönderildi!');
+        onSuccessToast(t.composeSuccessToast);
         onClose();
       } else {
-        setErrorMsg('E-posta gönderimi başarısız oldu. Lütfen tekrar deneyin.');
+        setErrorMsg(t.composeSendFailed);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Gönderim sırasında hata oluştu.');
+      setErrorMsg(err.message || t.composeErrorGeneric);
     } finally {
       setSending(false);
     }
@@ -87,10 +88,10 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">
-                {initialData ? 'E-postaya Yanıt Ver (Reply)' : 'Yeni E-posta Gönder (Outbound Mail)'}
+                {initialData ? t.composeTitleReply : t.composeTitleNew}
               </h3>
               <p className="text-xs text-slate-400">
-                Kimden: <span className="text-blue-400 font-mono">{senderAddress}</span>
+                {t.composeFrom} <span className="text-blue-400 font-mono">{senderAddress}</span>
               </p>
             </div>
           </div>
@@ -107,7 +108,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
           <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 flex items-start space-x-2 leading-relaxed">
             <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <span>
-              <strong>Bilgilendirme:</strong> Dünya genelindeki geçici (Disposable) mail servisleri anti-spam politikaları gereği Gmail/Outlook gibi dış adreslere gönderimde filtreye takılabilir. Kutular arası (<code>@mephistomail.site</code>) e-posta gönderimleri anında iletilir.
+              <strong>{t.composeNoticeTitle}</strong> {t.composeNoticeText}
             </span>
           </div>
 
@@ -120,7 +121,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              Alıcı E-posta Adresi (To)
+              {t.composeToLabel}
             </label>
             <input
               type="email"
@@ -134,12 +135,12 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              Konu (Subject)
+              {t.composeSubjectLabel}
             </label>
             <input
               type="text"
               required
-              placeholder="Konu başlığı"
+              placeholder={t.composeSubjectPlaceholder}
               value={subject}
               onChange={e => setSubject(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
@@ -148,12 +149,12 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
 
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1">
-              Mesaj İçeriği
+              {t.composeBodyLabel}
             </label>
             <textarea
               required
               rows={6}
-              placeholder="Mesajınızı yazın..."
+              placeholder={t.composeBodyPlaceholder}
               value={body}
               onChange={e => setBody(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm font-mono leading-relaxed resize-none"
@@ -163,7 +164,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
           <div className="pt-3 flex items-center justify-between border-t border-slate-800">
             <div className="flex items-center text-xs text-slate-400">
               <Sparkles className="w-3.5 h-3.5 text-blue-400 mr-1.5" />
-              <span>RAM-Only Güvenli Gönderim</span>
+              <span>{t.composeRamSecure}</span>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -172,7 +173,7 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
                 onClick={onClose}
                 className="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors"
               >
-                İptal
+                {t.composeCancel}
               </button>
               <button
                 type="submit"
@@ -182,12 +183,12 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
                 {sending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Gönderiliyor...</span>
+                    <span>{t.composeSending}</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    <span>E-posta Gönder</span>
+                    <span>{t.composeSendBtn}</span>
                   </>
                 )}
               </button>

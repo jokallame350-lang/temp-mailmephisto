@@ -12,5 +12,22 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, '.'),
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('lucide-react')) {
+              return 'lucide-react';
+            }
+            if (id.includes('dompurify')) {
+              return 'dompurify';
+            }
+            return 'vendor';
+          }
+        }
+      }
+    }
   }
 });

@@ -47,6 +47,11 @@ let tokenRefreshListener: TokenRefreshCallback | null = null;
 
 export const onTokenRefresh = (cb: TokenRefreshCallback) => {
   tokenRefreshListener = cb;
+  return () => {
+    if (tokenRefreshListener === cb) {
+      tokenRefreshListener = null;
+    }
+  };
 };
 
 // ─── Rate Limit Tracking ─────────────────────────────────────────────

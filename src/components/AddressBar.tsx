@@ -81,8 +81,16 @@ const AddressBar: React.FC<AddressBarProps> = ({
 
       {/* ADRES KUTUSU */}
       <div
+        role="button"
+        tabIndex={0}
         onClick={handleCopy}
-        className="w-full relative group cursor-pointer active:scale-[0.99] transition-all duration-200"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleCopy();
+          }
+        }}
+        className="w-full relative group cursor-pointer active:scale-[0.99] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/50 rounded-2xl"
         title={t.tipCopy}
       >
         <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500/20 to-orange-400/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
@@ -133,23 +141,23 @@ const AddressBar: React.FC<AddressBarProps> = ({
       <div className="flex flex-col gap-3 w-full items-center">
         {/* TEMEL İŞLEMLER */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full">
-          <button onClick={(e) => { e.stopPropagation(); handleCopy(); }} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+          <button onClick={(e) => { e.stopPropagation(); handleCopy(); }} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
             <span>{t.copy}</span>
           </button>
-          <button onClick={onRefresh} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+          <button onClick={onRefresh} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{t.refresh}</span>
           </button>
-          <button onClick={onChange} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+          <button onClick={onChange} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             <Plus className="w-4 h-4 text-slate-400" />
             <span>{lang === 'tr' ? 'Yeni' : 'New'}</span>
           </button>
-          <button onClick={onCreateCustom} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+          <button onClick={onCreateCustom} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             <Pencil className="w-4 h-4 text-slate-400" />
             <span>{t.change}</span>
           </button>
-          <button onClick={onDelete} className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#111] text-red-500 hover:bg-red-900/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95">
+          <button onClick={onDelete} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-red-500 hover:bg-red-900/10 border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             <Trash2 className="w-4 h-4" />
             <span>{t.delete}</span>
           </button>
@@ -160,40 +168,40 @@ const AddressBar: React.FC<AddressBarProps> = ({
           <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Araçlar & Güvenlik' : 'Tools & Security'}</span>
           
           {onOpenCustomDomain && (
-            <button onClick={onOpenCustomDomain} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl font-bold text-[11px] transition-all shadow-sm" title={lang === 'tr' ? 'Kendi Alan Adını Bağla' : 'Bring Your Own Domain'}>
+            <button onClick={onOpenCustomDomain} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl font-bold text-[11px] transition-all shadow-sm min-h-[44px]" title={lang === 'tr' ? 'Kendi Alan Adını Bağla' : 'Bring Your Own Domain'}>
               <Globe className="w-3.5 h-3.5 text-purple-400" />
               <span>{lang === 'tr' ? 'Kendi Domainin' : 'Custom Domain'}</span>
             </button>
           )}
 
           {onToggleAutoVerify && (
-            <button onClick={onToggleAutoVerify} className={`flex items-center gap-1.5 px-3.5 py-1.5 border rounded-xl font-bold text-[11px] transition-all shadow-sm ${autoVerifyEnabled ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10' : 'bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/10'}`} title={lang === 'tr' ? 'Otomatik Doğrulama (Auto-Verify)' : 'Auto Verification Link Clicker'}>
+            <button onClick={onToggleAutoVerify} className={`flex items-center justify-center gap-1.5 px-3.5 py-2 border rounded-xl font-bold text-[11px] transition-all shadow-sm min-h-[44px] ${autoVerifyEnabled ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10' : 'bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/10'}`} title={lang === 'tr' ? 'Otomatik Doğrulama (Auto-Verify)' : 'Auto Verification Link Clicker'}>
               <Zap className={`w-3.5 h-3.5 ${autoVerifyEnabled ? 'text-amber-400 animate-pulse' : 'text-slate-400'}`} />
               <span>Auto-Verify {autoVerifyEnabled ? '[AÇIK]' : '[KAPALI]'}</span>
             </button>
           )}
 
           {onIdentity && (
-            <button onClick={onIdentity} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
+            <button onClick={onIdentity} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
               <UserCheck className="w-3.5 h-3.5" />
               <span>{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
             </button>
           )}
           {onShareDrop && (
-            <button onClick={onShareDrop} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
+            <button onClick={onShareDrop} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
               <SendToBack className="w-3.5 h-3.5" />
               <span>Drop Link</span>
             </button>
           )}
-          <a href="/bulk-generator" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 rounded-xl font-bold text-[11px] transition-all">
+          <a href="/bulk-generator" className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]">
             <Layers className="w-3.5 h-3.5" />
             <span>{lang === 'tr' ? 'Toplu Mail' : 'Bulk Temp'}</span>
           </a>
-          <a href="/burn-note" className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 rounded-xl font-bold text-[11px] transition-all">
+          <a href="/burn-note" className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]">
             <Flame className="w-3.5 h-3.5" />
             <span>{lang === 'tr' ? 'Burn Note' : 'Burn Note'}</span>
           </a>
-          <div className="flex items-center gap-1 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 font-bold text-[10px]" title="Domain Health Risk Score: 100% Clean">
+          <div className="flex items-center justify-center gap-1 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 font-bold text-[10px] min-h-[44px]" title="Domain Health Risk Score: 100% Clean">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Risk: %0 (Temiz)</span>
           </div>

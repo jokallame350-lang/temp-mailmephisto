@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import Header from './components/Header';
 import AddressBar from './components/AddressBar';
 import EmailList from './components/EmailList';
@@ -14,20 +14,23 @@ import { useEmails } from './hooks/useEmails';
 import { Terminal, Loader2, Sparkles, ShieldCheck, ArrowDown } from 'lucide-react';
 import { SEOContent } from './components/SEOContent';
 import { translations, Language } from './translations';
-import CustomAddressModal from './components/CustomAddressModal';
-import QRCodeModal from './components/QRCodeModal';
-import PasswordGenModal from './components/PasswordGenModal';
-import LimitModal from './components/LimitModal';
-import { StatsModal as StatsAndFiltersModule, NotifFilterModal as NotifFilterModule } from './components/StatsAndFilters';
-import AliasManagerModal from './components/AliasManagerModal';
-import IdentityModal from './components/IdentityModal';
-import ForwardingModal from './components/ForwardingModal';
-import ShareDropModal from './components/ShareDropModal';
-import ExtensionInstallModal from './components/ExtensionInstallModal';
-import CustomDomainModal from './components/CustomDomainModal';
-import ComposeModal from './components/ComposeModal';
 import AdBanner from './components/AdBanner';
 import { Mailbox, ComposeMailData } from './types';
+
+// Dynamically imported modals (React.lazy)
+const CustomAddressModal = lazy(() => import('./components/CustomAddressModal'));
+const QRCodeModal = lazy(() => import('./components/QRCodeModal'));
+const PasswordGenModal = lazy(() => import('./components/PasswordGenModal'));
+const LimitModal = lazy(() => import('./components/LimitModal'));
+const StatsAndFiltersModule = lazy(() => import('./components/StatsAndFilters').then(m => ({ default: m.StatsModal })));
+const NotifFilterModule = lazy(() => import('./components/StatsAndFilters').then(m => ({ default: m.NotifFilterModal })));
+const AliasManagerModal = lazy(() => import('./components/AliasManagerModal'));
+const IdentityModal = lazy(() => import('./components/IdentityModal'));
+const ForwardingModal = lazy(() => import('./components/ForwardingModal'));
+const ShareDropModal = lazy(() => import('./components/ShareDropModal'));
+const ExtensionInstallModal = lazy(() => import('./components/ExtensionInstallModal'));
+const CustomDomainModal = lazy(() => import('./components/CustomDomainModal'));
+const ComposeModal = lazy(() => import('./components/ComposeModal'));
 
 // OTP kodunu subject'ten çıkar (toast için)
 const extractOTPCode = (subject: string): string | null => {
@@ -293,25 +296,27 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
         )}
 
         {/* Modals */}
-        {showCustomModal && <CustomAddressModal isOpen={showCustomModal} onClose={() => setShowCustomModal(false)} onCreate={handleCreateCustom} lang={lang} />}
-        {showQRModal && <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} email={activeAccount?.address || ''} lang={lang} />}
-        {showPassModal && <PasswordGenModal isOpen={showPassModal} onClose={() => setShowPassModal(false)} lang={lang} />}
-        {limitModal.isOpen && <LimitModal isOpen={limitModal.isOpen} onClose={() => setLimitModal(p => ({ ...p, isOpen: false }))} title={limitModal.title} message={limitModal.message} type={limitModal.type} lang={lang} />}
-        {showStatsModal && <StatsAndFiltersModule isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} stats={stats} lang={lang} />}
-        {showNotifFilterModal && <NotifFilterModule isOpen={showNotifFilterModal} onClose={() => setShowNotifFilterModal(false)} filters={notifFilters} setFilters={setNotifFilters} lang={lang} />}
-        {showAliasModal && <AliasManagerModal isOpen={showAliasModal} onClose={() => setShowAliasModal(false)} accounts={accounts} onUpdateLabel={updateAccountLabel} onSetAutoDelete={setAutoDelete} onBulkCopy={bulkCopyAddresses} lang={lang} />}
-        {showIdentityModal && <IdentityModal isOpen={showIdentityModal} onClose={() => setShowIdentityModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
-        {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={() => setShowForwardingModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
-        {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
-        {showExtensionModal && <ExtensionInstallModal isOpen={showExtensionModal} onClose={() => setShowExtensionModal(false)} lang={lang} />}
-        {showCustomDomainModal && (
-          <CustomDomainModal
-            isOpen={showCustomDomainModal}
-            onClose={() => setShowCustomDomainModal(false)}
-            onAddCustomDomain={handleAddCustomDomain}
-            lang={lang}
-          />
-        )}
+        <Suspense fallback={null}>
+          {showCustomModal && <CustomAddressModal isOpen={showCustomModal} onClose={() => setShowCustomModal(false)} onCreate={handleCreateCustom} lang={lang} />}
+          {showQRModal && <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} email={activeAccount?.address || ''} lang={lang} />}
+          {showPassModal && <PasswordGenModal isOpen={showPassModal} onClose={() => setShowPassModal(false)} lang={lang} />}
+          {limitModal.isOpen && <LimitModal isOpen={limitModal.isOpen} onClose={() => setLimitModal(p => ({ ...p, isOpen: false }))} title={limitModal.title} message={limitModal.message} type={limitModal.type} lang={lang} />}
+          {showStatsModal && <StatsAndFiltersModule isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} stats={stats} lang={lang} />}
+          {showNotifFilterModal && <NotifFilterModule isOpen={showNotifFilterModal} onClose={() => setShowNotifFilterModal(false)} filters={notifFilters} setFilters={setNotifFilters} lang={lang} />}
+          {showAliasModal && <AliasManagerModal isOpen={showAliasModal} onClose={() => setShowAliasModal(false)} accounts={accounts} onUpdateLabel={updateAccountLabel} onSetAutoDelete={setAutoDelete} onBulkCopy={bulkCopyAddresses} lang={lang} />}
+          {showIdentityModal && <IdentityModal isOpen={showIdentityModal} onClose={() => setShowIdentityModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
+          {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={() => setShowForwardingModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
+          {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
+          {showExtensionModal && <ExtensionInstallModal isOpen={showExtensionModal} onClose={() => setShowExtensionModal(false)} lang={lang} />}
+          {showCustomDomainModal && (
+            <CustomDomainModal
+              isOpen={showCustomDomainModal}
+              onClose={() => setShowCustomDomainModal(false)}
+              onAddCustomDomain={handleAddCustomDomain}
+              lang={lang}
+            />
+          )}
+        </Suspense>
 
         <main id="main-content" className={hideHeroBanner ? "w-full flex flex-col items-center justify-start gap-4 z-10" : "flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10"} role="main">
 

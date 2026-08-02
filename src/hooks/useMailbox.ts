@@ -52,7 +52,7 @@ export function useMailbox() {
 
     // Token refresh listener — update token in accounts when auto-refreshed
     useEffect(() => {
-        onTokenRefresh((mailboxId: string, newToken: string) => {
+        const unsubscribe = onTokenRefresh((mailboxId: string, newToken: string) => {
             setAccounts(prev => {
                 const updated = prev.map(a =>
                     a.id === mailboxId ? { ...a, token: newToken } : a
@@ -61,6 +61,9 @@ export function useMailbox() {
                 return updated;
             });
         });
+        return () => {
+            unsubscribe();
+        };
     }, []);
 
     // Hesaplar değiştiğinde localStorage'a kaydet

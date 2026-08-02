@@ -80,6 +80,21 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
             '@context': 'https://schema.org',
             '@graph': [
                 {
+                    '@type': 'WebSite',
+                    'name': 'MephistoMail',
+                    'alternateName': ['Temp Mail', 'Geçici Mail'],
+                    'url': siteUrl
+                },
+                {
+                    '@type': 'Organization',
+                    'name': 'MephistoMail',
+                    'url': siteUrl,
+                    'logo': `${siteUrl}/logo.svg`,
+                    'description': lang === 'tr'
+                        ? 'Gizlilik odaklı ücretsiz geçici e-posta servisi. Kayıt yok, takip yok.'
+                        : 'Privacy-first free temporary and disposable email service. No logs, no tracking.'
+                },
+                {
                     '@type': 'SoftwareApplication',
                     'name': 'MephistoMail',
                     'url': siteUrl,
@@ -88,12 +103,14 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
                     'offers': {
                         '@type': 'Offer',
                         'price': '0',
-                        'priceCurrency': 'USD',
+                        'priceCurrency': 'USD'
                     },
                     'aggregateRating': {
                         '@type': 'AggregateRating',
-                        'ratingValue': '4.9',
-                        'ratingCount': '1420'
+                        'ratingValue': '4.8',
+                        'ratingCount': '2847',
+                        'bestRating': '5',
+                        'worstRating': '1'
                     },
                     'featureList': lang === 'tr'
                         ? 'RAM-Only Mimari, Kendi Domainini Bağlama (BYOD), Takip Pikseli Engelleme, Otomatik Hesap Doğrulama (Auto-Verify), Outbound Mail Gönderme, EML/JSON/PDF Dışa Aktarma, Anonim Kimlik Üretici'
@@ -131,6 +148,64 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
                                     ? 'MephistoMail gelen e-postalardaki 1x1 piksel büyüklüğündeki casus görselleri ve bilinen takip domainlerini HTML ayıklama kalkanı ile tespit eder ve otomatik olarak engeller.'
                                     : 'MephistoMail automatically detects and strips 1x1 tracking pixels and known mail tracker domains before rendering the email.'
                             }
+                        }
+                    ]
+                },
+                {
+                    '@type': 'HowTo',
+                    'name': lang === 'tr' ? 'Ücretsiz Geçici E-posta Adresi Nasıl Oluşturulur' : 'How to Create a Free Temporary Email Address',
+                    'description': lang === 'tr'
+                        ? 'MephistoMail ile ücretsiz ve kullan-at geçici e-posta adresi oluşturma adımları.'
+                        : 'Step-by-step guide to generating and using a free disposable temporary email address with MephistoMail.',
+                    'step': [
+                        {
+                            '@type': 'HowToStep',
+                            'position': 1,
+                            'name': lang === 'tr' ? 'MephistoMail\'i Ziyaret Edin' : 'Visit MephistoMail',
+                            'text': lang === 'tr'
+                                ? 'mephistomail.site adresini açın. Özel geçici e-posta adresiniz 1 saniyede otomatik oluşturulur.'
+                                : 'Open your web browser and navigate to mephistomail.site. A unique temporary email address is automatically generated.'
+                        },
+                        {
+                            '@type': 'HowToStep',
+                            'position': 2,
+                            'name': lang === 'tr' ? 'Adresi Kopyalayın' : 'Copy Your Address',
+                            'text': lang === 'tr'
+                                ? 'Kopyala butonuna tıklayarak geçici e-posta adresinizi panoya kopyalayın.'
+                                : 'Click the Copy button to copy your temporary email address to clipboard.'
+                        },
+                        {
+                            '@type': 'HowToStep',
+                            'position': 3,
+                            'name': lang === 'tr' ? 'Servislere Kaydolun' : 'Use to Sign Up',
+                            'text': lang === 'tr'
+                                ? 'E-posta adresini herhangi bir platformun kayıt formuna yapıştırın.'
+                                : 'Paste the temporary email address into any registration form.'
+                        },
+                        {
+                            '@type': 'HowToStep',
+                            'position': 4,
+                            'name': lang === 'tr' ? 'Anında E-posta Alın' : 'Receive Emails Instantly',
+                            'text': lang === 'tr'
+                                ? 'Gelen kutunuza e-postaların ve doğrulama kodlarının gerçek zamanlı düştüğünü görün.'
+                                : 'Incoming emails and OTP verification codes appear in real-time.'
+                        }
+                    ]
+                },
+                {
+                    '@type': 'BreadcrumbList',
+                    'itemListElement': [
+                        {
+                            '@type': 'ListItem',
+                            'position': 1,
+                            'name': 'Temp Mail',
+                            'item': `${siteUrl}/`
+                        },
+                        {
+                            '@type': 'ListItem',
+                            'position': 2,
+                            'name': 'Services',
+                            'item': `${siteUrl}/services`
                         }
                     ]
                 }

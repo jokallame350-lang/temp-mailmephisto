@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette } from 'lucide-react';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 interface HeaderProps {
@@ -27,12 +27,19 @@ const Header: React.FC<HeaderProps> = ({
   onOpenStats, onOpenFilters, onOpenLabels
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const t = translations[lang];
+  const location = useLocation();
 
   const langDropRef = useRef<HTMLDivElement>(null);
   const [langOpen, setLangOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -41,6 +48,9 @@ const Header: React.FC<HeaderProps> = ({
       }
       if (langDropRef.current && !langDropRef.current.contains(event.target as Node)) {
         setLangOpen(false);
+      }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setMobileMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -92,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({
         <span className="md:hidden font-black text-sm text-white tracking-tight leading-none font-['Sora'] truncate">Mephisto</span>
       </div>
 
-      {/* Central Navigation Links */}
+      {/* Central Navigation Links (Desktop lg+) */}
       <nav className="hidden lg:flex items-center gap-1 xl:gap-2 mx-4" aria-label="Main Navigation">
         <Link
           to="/"
@@ -137,7 +147,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Extension Download */}
           <button
             onClick={onOpenExtension}
-            className="p-1.5 sm:p-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-all"
+            className="p-1.5 sm:p-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-all min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
             title={lang === 'tr' ? 'Chrome Eklentisini İndir' : 'Download Chrome Extension'}
           >
             <Download className="w-4 h-4" />
@@ -147,8 +157,8 @@ const Header: React.FC<HeaderProps> = ({
           {pwaInstallable && (
             <button
               onClick={handleInstallPWA}
-              className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-all"
-              title={lang === 'tr' ? 'Uygulamayı Yüke (PWA)' : 'Install App (PWA)'}
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-all min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
+              title={lang === 'tr' ? 'Uygulamayı Yükle (PWA)' : 'Install App (PWA)'}
             >
               <Download className="w-4 h-4" />
             </button>
@@ -158,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({
           <div className="relative" ref={langDropRef}>
             <button
               onClick={() => setLangOpen(prev => !prev)}
-              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1 sm:gap-1.5 font-bold text-[10px] tracking-widest"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1 sm:gap-1.5 font-bold text-[10px] tracking-widest min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 justify-center"
             >
               <Languages className="w-4 h-4" />
               <span className="hidden sm:inline">{lang.toUpperCase()}</span>
@@ -183,7 +193,7 @@ const Header: React.FC<HeaderProps> = ({
                       setLang(l.code);
                       setLangOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors min-h-[44px] flex items-center ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                   >
                     {l.label}
                   </button>
@@ -199,7 +209,7 @@ const Header: React.FC<HeaderProps> = ({
                 const nextTheme = theme === 'cyberpunk' ? 'light' : theme === 'light' ? 'dark' : 'cyberpunk';
                 setTheme(nextTheme);
               }}
-              className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-400 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1"
+              className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-400 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 justify-center"
               title={lang === 'tr' ? 'Tema Değiştir (Dark / Cyberpunk / Light)' : 'Switch Theme (Dark / Cyberpunk / Light)'}
             >
               <Palette className="w-4 h-4 text-orange-500" />
@@ -221,7 +231,7 @@ const Header: React.FC<HeaderProps> = ({
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1.5 sm:gap-3 bg-[#111] hover:bg-[#161616] border border-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl transition-all duration-200 group"
+            className="flex items-center gap-1.5 sm:gap-3 bg-[#111] hover:bg-[#161616] border border-white/10 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl transition-all duration-200 group min-h-[44px]"
           >
             <div className="hidden sm:flex flex-col items-end text-right">
               <span className="text-[10px] sm:text-[11px] text-slate-200 font-mono max-w-[80px] sm:max-w-[120px] md:max-w-[160px] truncate font-bold">
@@ -259,20 +269,88 @@ const Header: React.FC<HeaderProps> = ({
               </div>
               {/* Quick Tools */}
               <div className="border-t border-white/5 p-2 space-y-0.5">
-                <button onClick={() => { onOpenStats?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={() => { onOpenStats?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors min-h-[44px]">
                   <BarChart3 className="w-3.5 h-3.5" /> {lang === 'tr' ? 'İstatistikler' : 'Stats'}
                 </button>
-                <button onClick={() => { onOpenFilters?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={() => { onOpenFilters?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors min-h-[44px]">
                   <Bell className="w-3.5 h-3.5" /> {lang === 'tr' ? 'Bildirim Filtreleri' : 'Notification Filters'}
                 </button>
-                <button onClick={() => { onOpenLabels?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                <button onClick={() => { onOpenLabels?.(); setIsOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-[11px] text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors min-h-[44px]">
                   <Tag className="w-3.5 h-3.5" /> {lang === 'tr' ? 'Etiketler' : 'Labels'}
                 </button>
               </div>
             </div>
           )}
         </div>
+
+        {/* Hamburger Menu Button (< 1024px) */}
+        <button
+          onClick={() => setMobileMenuOpen(prev => !prev)}
+          className="lg:hidden p-2 text-slate-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors flex items-center justify-center min-h-[44px] min-w-[44px]"
+          aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6 text-orange-400" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
+
+      {/* Mobile Navigation Drawer (< 1024px) */}
+      {mobileMenuOpen && (
+        <div
+          ref={mobileMenuRef}
+          className="lg:hidden absolute top-full left-0 w-full bg-[#0a0a0c]/95 border-b border-white/10 backdrop-blur-2xl shadow-2xl z-50 p-4 space-y-1 animate-in slide-in-from-top-2 duration-200"
+        >
+          <nav className="flex flex-col space-y-1" aria-label="Mobile Navigation Drawer">
+            <Link
+              to="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">🏠</span>
+              <span>{lang === 'tr' ? 'Ana Sayfa' : 'Home'}</span>
+            </Link>
+            <Link
+              to="/services"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/20 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">🚀</span>
+              <span>{lang === 'tr' ? 'Servisler' : 'Services'}</span>
+            </Link>
+            <Link
+              to="/bulk-generator"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">📦</span>
+              <span>{lang === 'tr' ? 'Toplu Mail' : 'Bulk Mail'}</span>
+            </Link>
+            <Link
+              to="/burn-note"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">🔥</span>
+              <span>Burn Note</span>
+            </Link>
+            <Link
+              to="/tools"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">🛡️</span>
+              <span>{lang === 'tr' ? 'Araçlar' : 'Tools'}</span>
+            </Link>
+            <Link
+              to="/blog"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">📖</span>
+              <span>Blog</span>
+            </Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };

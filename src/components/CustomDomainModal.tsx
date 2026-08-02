@@ -54,13 +54,13 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                Kendi Alan Adını Bağla (Custom Domain)
+                {t.customDomainTitle}
                 <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-normal border border-purple-500/30">
-                  PRO / Premium
+                  {t.customDomainBadge}
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                MephistoMail arayüzünü kendi özel domainin ile engel takılmadan kullan.
+                {t.customDomainSubtitle}
               </p>
             </div>
           </div>
@@ -82,7 +82,7 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            1. Cloudflare / DNS Kayıtları
+            {t.customDomainTab1}
           </button>
 
           <button
@@ -93,7 +93,7 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            2. Özel Posta Kutusunu Oluştur
+            {t.customDomainTab2}
           </button>
         </div>
 
@@ -104,15 +104,15 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
               <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 flex items-start space-x-3">
                 <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                 <div>
-                  Cloudflare, GoDaddy veya Namecheap DNS ayarlarınıza aşağıdaki <strong>MX</strong> kaydını girin. Bu sayede domaininiz gelen mailleri MephistoMail kalkanına yönlendirir.
+                  {t.customDomainStep1Info}
                 </div>
               </div>
 
               {/* Record 1: MX */}
               <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-purple-300">
-                  <span>MX Kaydı (Mail Yönlendirme)</span>
-                  <span className="text-slate-500">Öncelik (Priority): 10</span>
+                  <span>{t.customDomainMxTitle}</span>
+                  <span className="text-slate-500">{t.customDomainMxPriority}</span>
                 </div>
                 <div className="flex items-center justify-between bg-slate-900 px-3 py-2 rounded-lg border border-slate-800 text-sm font-mono">
                   <span className="text-slate-200 truncate">{mxRecord}</span>
@@ -123,12 +123,12 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
                     {copiedField === 'mx' ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Kopyalandı</span>
+                        <span className="text-emerald-400">{t.copied}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Kopyala</span>
+                        <span>{t.copy}</span>
                       </>
                     )}
                   </button>
@@ -138,8 +138,8 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
               {/* Record 2: TXT (SPF) */}
               <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-indigo-300">
-                  <span>TXT Kaydı (SPF - Mail Gönderim İzni)</span>
-                  <span className="text-slate-500">Host: @</span>
+                  <span>{t.customDomainSpfTitle}</span>
+                  <span className="text-slate-500">{t.customDomainSpfHost}</span>
                 </div>
                 <div className="flex items-center justify-between bg-slate-900 px-3 py-2 rounded-lg border border-slate-800 text-sm font-mono">
                   <span className="text-slate-200 truncate">{spfRecord}</span>
@@ -150,12 +150,12 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
                     {copiedField === 'spf' ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Kopyalandı</span>
+                        <span className="text-emerald-400">{t.copied}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Kopyala</span>
+                        <span>{t.copy}</span>
                       </>
                     )}
                   </button>
@@ -167,7 +167,7 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
                   onClick={() => setActiveStep(2)}
                   className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-medium text-sm transition-all shadow-lg shadow-purple-600/20 flex items-center space-x-2"
                 >
-                  <span>Sonraki Adıma Geç (Posta Kutusu Oluştur)</span>
+                  <span>{t.customDomainNextStep}</span>
                   <Sparkles className="w-4 h-4" />
                 </button>
               </div>
@@ -178,13 +178,13 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  Özel Alan Adınız (Domain)
+                  {t.customDomainDomainLabel}
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     required
-                    placeholder="ornekdomainim.com"
+                    placeholder={t.customDomainDomainPlaceholder}
                     value={domainInput}
                     onChange={e => setDomainInput(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors text-sm"
@@ -195,13 +195,13 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
 
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  Kullanıcı Adı (Username / Prefix)
+                  {t.customDomainUsernameLabel}
                 </label>
                 <div className="flex items-center space-x-2">
                   <input
                     type="text"
                     required
-                    placeholder="destek / admin / alex"
+                    placeholder={t.customDomainUsernamePlaceholder}
                     value={usernameInput}
                     onChange={e => setUsernameInput(e.target.value)}
                     className="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors text-sm"
@@ -215,7 +215,7 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
               <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 flex items-center space-x-2.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>
-                  Oluşturulan özel e-posta adresi de RAM-Only gizlilik kalkanı ile tamamen korunacaktır.
+                  {t.customDomainStep2Info}
                 </span>
               </div>
 
@@ -225,14 +225,14 @@ export const CustomDomainModal: React.FC<CustomDomainModalProps> = ({
                   onClick={() => setActiveStep(1)}
                   className="px-4 py-2 text-slate-400 hover:text-white text-sm"
                 >
-                  ← DNS Adımına Dön
+                  {t.customDomainBackStep}
                 </button>
                 <button
                   type="submit"
                   disabled={!domainInput.trim()}
                   className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl font-medium text-sm transition-all shadow-lg shadow-purple-600/20"
                 >
-                  Özel Posta Kutusunu Aktif Et ✨
+                  {t.customDomainActivateBtn}
                 </button>
               </div>
             </form>

@@ -187,7 +187,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     if (doc.body) resizeObserver.observe(doc.body);
 
     // Linkleri yeni sekmede aç
-    doc.addEventListener('click', (e) => {
+    const handleLinkClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'A') {
         e.preventDefault();
@@ -196,9 +196,13 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           window.open(href, '_blank', 'noopener,noreferrer');
         }
       }
-    });
+    };
+    doc.addEventListener('click', handleLinkClick);
 
-    return () => resizeObserver.disconnect();
+    return () => {
+      resizeObserver.disconnect();
+      doc.removeEventListener('click', handleLinkClick);
+    };
   }, [sanitizedHTML, viewSource]);
 
   const actionLink = useMemo(() => {
