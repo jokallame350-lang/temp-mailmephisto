@@ -15,8 +15,6 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage'));
 const ServiceMailPage = lazy(() => import('./pages/ServiceMailPage'));
 const DisposableCheckerPage = lazy(() => import('./pages/DisposableCheckerPage'));
-const BulkGeneratorPage = lazy(() => import('./pages/BulkGeneratorPage'));
-const BurnNotePage = lazy(() => import('./pages/BurnNotePage'));
 const ServicesCatalogPage = lazy(() => import('./pages/ServicesCatalogPage'));
 
 // Loading fallback
@@ -110,8 +108,6 @@ const AppRouter = () => {
           <Route path="/temp-mail-for-saas" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
-          <Route path="/bulk-generator" element={<BulkGeneratorPage lang={lang} />} />
-          <Route path="/burn-note" element={<BurnNotePage lang={lang} />} />
           {/* Catch-all: redirect to home */}
           <Route path="*" element={<App />} />
         </Routes>

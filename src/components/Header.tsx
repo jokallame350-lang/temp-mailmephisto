@@ -117,18 +117,6 @@ const Header: React.FC<HeaderProps> = ({
           <span>🚀 {lang === 'tr' ? 'Servisler' : 'Services'}</span>
         </Link>
         <Link
-          to="/bulk-generator"
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
-        >
-          <span>📦 {lang === 'tr' ? 'Toplu Mail' : 'Bulk Mail'}</span>
-        </Link>
-        <Link
-          to="/burn-note"
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
-        >
-          <span>🔥 Burn Note</span>
-        </Link>
-        <Link
           to="/tools"
           className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
         >
@@ -313,22 +301,6 @@ const Header: React.FC<HeaderProps> = ({
             >
               <span className="text-base">🚀</span>
               <span>{lang === 'tr' ? 'Servisler' : 'Services'}</span>
-            </Link>
-            <Link
-              to="/bulk-generator"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
-            >
-              <span className="text-base">📦</span>
-              <span>{lang === 'tr' ? 'Toplu Mail' : 'Bulk Mail'}</span>
-            </Link>
-            <Link
-              to="/burn-note"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
-            >
-              <span className="text-base">🔥</span>
-              <span>Burn Note</span>
             </Link>
             <Link
               to="/tools"

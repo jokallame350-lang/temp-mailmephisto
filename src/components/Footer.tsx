@@ -128,18 +128,6 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                     10 {lang === 'tr' ? 'Dakikalık Mail' : 'Minute Mail'}
                   </Link>
                 </li>
-                <li>
-                  <Link to="/bulk-generator" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
-                    <Shield size={10} />
-                    {lang === 'tr' ? 'Toplu Mail Üretici' : 'Bulk Mail Generator'}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/burn-note" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
-                    <Wrench size={10} />
-                    {lang === 'tr' ? 'Gizli Not (Burn Note)' : 'Burn Note'}
-                  </Link>
-                </li>
               </ul>
             </nav>
           </div>

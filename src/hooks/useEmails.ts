@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
 import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
-import { extractActionLinks } from '../utils/actionLinks';
 
 const REFRESH_INTERVAL = 2500; // 2.5 saniyede bir ultra-hızlı senkronize kontrol
 const REFRESH_INTERVAL_HIDDEN = 20000; // Sekme arka plandayken 20 sn
@@ -24,9 +23,7 @@ const defaultFilters: NotificationFilter = {
 
 export function useEmails(
     activeAccount: Mailbox | null,
-    onNewEmail?: (from: string, subject: string) => void,
-    autoVerifyEnabled?: boolean,
-    onAutoVerifySuccess?: (urlLabel: string) => void
+    onNewEmail?: (from: string, subject: string) => void
 ) {
     const [emails, setEmails] = useState<EmailSummary[]>([]);
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
@@ -48,7 +45,6 @@ export function useEmails(
     });
 
     const previousEmailCountRef = useRef(0);
-    const verifiedEmailIdsRef = useRef<Set<string>>(new Set());
 
     // Aktif hesap değiştiğinde sıfırla
     useEffect(() => {
@@ -61,7 +57,6 @@ export function useEmails(
         setCurrentEmailDetail(null);
         setDeletedIds(new Set());
         deletedIdsRef.current = new Set();
-        verifiedEmailIdsRef.current = new Set();
         setFetchError(null);
         previousEmailCountRef.current = 0;
         setProgress(0);
@@ -158,51 +153,6 @@ export function useEmails(
                         }
                         onNewEmail?.(fromName, e.subject);
                     });
-
-                    // Otomatik Doğrulama (Auto-Verify) kontrolü — Her gelen veya listedeki yeni mail için
-                    if (autoVerifyEnabled && filtered.length > 0) {
-                        filtered.forEach(async (e) => {
-                            if (verifiedEmailIdsRef.current.has(e.id)) return;
-                            verifiedEmailIdsRef.current.add(e.id);
-
-                            try {
-                                const detail = await getMessageDetail(activeAccount, e.id);
-                                if (detail) {
-                                    const htmlText = detail.html && detail.html.length > 0 ? (typeof detail.html[0] === 'string' ? detail.html[0] : '') : '';
-                                    const action = extractActionLinks(htmlText);
-                                    if (action && action.url) {
-                                        // 1. HTTP GET Fetch isteği (cors / fallback no-cors)
-                                        fetch(action.url, { method: 'GET', credentials: 'omit' }).catch(() => {
-                                            return fetch(action.url, { method: 'GET', mode: 'no-cors' });
-                                        });
-
-                                        // 2. Arka plan 1x1 iFrame Entegrasyonu (Tam Tarayıcı Gezinmesi ve Redirect Takibi İçin)
-                                        if (typeof document !== 'undefined') {
-                                            try {
-                                                const iframe = document.createElement('iframe');
-                                                iframe.style.position = 'fixed';
-                                                iframe.style.width = '0px';
-                                                iframe.style.height = '0px';
-                                                iframe.style.border = 'none';
-                                                iframe.style.opacity = '0';
-                                                iframe.style.pointerEvents = 'none';
-                                                iframe.src = action.url;
-                                                document.body.appendChild(iframe);
-
-                                                setTimeout(() => {
-                                                    try {
-                                                        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-                                                    } catch {}
-                                                }, 6000);
-                                            } catch {}
-                                        }
-
-                                        onAutoVerifySuccess?.(action.label || 'Doğrulama Linki');
-                                    }
-                                }
-                            } catch { /* sessizce geç */ }
-                        });
-                    }
 
                     // Stats güncelle
                     setStats(prev => {
