@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X } from 'lucide-react';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X, Github, Mail } from 'lucide-react';
 import { translations, Language, LANGUAGES } from '../translations';
 
 interface HeaderProps {
@@ -140,6 +140,28 @@ const Header: React.FC<HeaderProps> = ({
           >
             <Download className="w-4 h-4" />
           </button>
+
+          {/* GitHub Repository */}
+          <a
+            href="https://github.com/jokallame350-lang/temp-mailmephisto"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+            title="GitHub Repository"
+            aria-label="GitHub Repository"
+          >
+            <Github className="w-4 h-4" />
+          </a>
+
+          {/* Support Email */}
+          <a
+            href="mailto:jokallame0@gmail.com"
+            className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+            title="Contact Support (jokallame0@gmail.com)"
+            aria-label="Contact Support"
+          >
+            <Mail className="w-4 h-4" />
+          </a>
 
           {/* PWA Install */}
           {pwaInstallable && (
@@ -318,6 +340,24 @@ const Header: React.FC<HeaderProps> = ({
               <span className="text-base">📖</span>
               <span>Blog</span>
             </Link>
+            <a
+              href="https://github.com/jokallame350-lang/temp-mailmephisto"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <Github className="w-4 h-4 text-purple-400" />
+              <span>GitHub Repository</span>
+            </a>
+            <a
+              href="mailto:jokallame0@gmail.com"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <Mail className="w-4 h-4 text-red-400" />
+              <span>jokallame0@gmail.com</span>
+            </a>
           </nav>
         </div>
       )}

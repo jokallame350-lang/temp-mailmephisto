@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Zap, Lock, ChevronDown, ChevronUp, Cpu, Network, Key, ScanLine, CheckCircle2, ArrowRight, Star, Globe, Smartphone, Search, Timer, Users, Layers } from 'lucide-react';
+import { Shield, Zap, Lock, ChevronDown, ChevronUp, Cpu, Network, Key, ScanLine, CheckCircle2, ArrowRight, Star, Globe, Smartphone, Search, Timer, Users, Layers, Bookmark } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 interface SEOContentProps {
@@ -56,6 +56,106 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
             </h2>
             <p className="text-slate-400 text-[14px] leading-relaxed mb-4">{t.artIntro1}</p>
             <p className="text-slate-400 text-[14px] leading-relaxed">{t.artIntro2}</p>
+          </div>
+
+          {/* ----- Onboarding & Retention Booster Section ----- */}
+          <div className="my-8 p-6 md:p-8 bg-gradient-to-r from-orange-950/20 via-[#0d0f17] to-amber-950/20 border border-orange-500/30 rounded-2xl shadow-xl" role="region" aria-label="Retention Boosters">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0">
+                <Bookmark className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <h2 className="text-base md:text-lg font-bold text-white uppercase tracking-wider font-['Sora']">
+                  {lang === 'tr' ? '🚀 Hızlı Erişim & Tekrar Ziyaret İpuçları' : '🚀 Instant Access & Repeat Traffic Hacks'}
+                </h2>
+                <p className="text-xs text-slate-400">
+                  {lang === 'tr' ? 'MephistoMail\'i tekrar kullanırken zaman kazanmak ve anlık bildirimleri kaçırmamak için 3 retention booster:' : '3 engagement boosters to save time and never miss incoming OTP emails:'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+              <div className="bg-[#050508] p-4 rounded-xl border border-white/5 hover:border-orange-500/30 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-black">1</span>
+                    <h3 className="text-xs font-bold text-white font-['Sora']">
+                      {lang === 'tr' ? '📌 1-Tıkla Yer İmi (Ctrl+D)' : '📌 1-Click Bookmark (Ctrl+D)'}
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {lang === 'tr'
+                      ? 'Adresinizi kaybetmemek için tarayıcınıza ekleyin. Ctrl+D kısayolu ile anında yer imlerine ekleyebilirsiniz.'
+                      : 'Save your current session address. Press Ctrl+D (or Cmd+D) to add MephistoMail to your bookmarks bar.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert(lang === 'tr' ? '★ Adres bağlantısı kopyalandı! Ctrl+D ile tarayıcınıza ekleyebilirsiniz.' : '★ Link copied! Press Ctrl+D to bookmark.');
+                  }}
+                  className="mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 transition-all text-center cursor-pointer"
+                >
+                  {lang === 'tr' ? 'Bağlantıyı Kopyala & Kaydet' : 'Copy & Bookmark Link'}
+                </button>
+              </div>
+
+              <div className="bg-[#050508] p-4 rounded-xl border border-white/5 hover:border-orange-500/30 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-black">2</span>
+                    <h3 className="text-xs font-bold text-white font-['Sora']">
+                      {lang === 'tr' ? '📱 PWA Masaüstü & Mobil App' : '📱 PWA Desktop & Mobile App'}
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {lang === 'tr'
+                      ? 'Tarayıcı sekmesine ihtiyaç duymadan doğrudan masaüstünüzden veya mobil ana ekranınızdan 1-tıkla açın.'
+                      : 'Launch MephistoMail directly from your home screen or taskbar without browser headers.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new Event('beforeinstallprompt'));
+                    alert(lang === 'tr' ? '📱 Yüklemek için ekranın altındaki PWA Yükle rozetini kullanabilirsiniz.' : '📱 Use the floating PWA Install prompt at the bottom of your screen.');
+                  }}
+                  className="mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 transition-all text-center cursor-pointer"
+                >
+                  {lang === 'tr' ? 'PWA Yükleme İpucu' : 'PWA Install Guidance'}
+                </button>
+              </div>
+
+              <div className="bg-[#050508] p-4 rounded-xl border border-white/5 hover:border-orange-500/30 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-black">3</span>
+                    <h3 className="text-xs font-bold text-white font-['Sora']">
+                      {lang === 'tr' ? '🔔 Anlık Masaüstü Bildirimleri' : '🔔 Live Desktop Notifications'}
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    {lang === 'tr'
+                      ? 'Sekme arka planda bile olsa OTP doğrulama kodları ekranda anında pop-up olarak belirir.'
+                      : 'Get instant notification popups when OTP verification codes arrive even if the tab is backgrounded.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (typeof Notification !== 'undefined') {
+                      Notification.requestPermission().then(permission => {
+                        alert(permission === 'granted' 
+                          ? (lang === 'tr' ? '✅ Bildirimler aktif!' : '✅ Notifications enabled!')
+                          : (lang === 'tr' ? '⚠️ Bildirim izni verilmedi.' : '⚠️ Notification permission not granted.')
+                        );
+                      });
+                    }
+                  }}
+                  className="mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 transition-all text-center cursor-pointer"
+                >
+                  {lang === 'tr' ? 'Bildirimleri Aktifleştir' : 'Enable Live Alerts'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* ----- Section 1.5: SaaS Platform Modules ----- */}
