@@ -444,6 +444,136 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       { q: 'Can I reply to marketplace messages?', a: 'Yes! Use our Outbound Mail feature to send anonymous replies directly.' }
     ]
   },
+  telegram: {
+    id: 'telegram',
+    name: 'Telegram',
+    badge: '✈️ Messaging & Web App',
+    color: 'from-sky-500 to-blue-600',
+    titleTr: 'Telegram İçin Geçici Mail - Anonim Web & Uygulama Doğrulama',
+    titleEn: 'Temp Mail for Telegram Web & App Account Verification',
+    descriptionTr: 'Telegram web kayıtları, bot entegrasyonları ve kanal doğrulama e-postaları için hızlı kullan-at e-posta oluşturun.',
+    descriptionEn: 'Generate instant temporary email handles for Telegram web logins, bot testing, and channel admin verification with zero logs.',
+    whyTr: [
+      'Telegram bot ve mini-app testlerinde kişisel gelen kutunuzu koruyun.',
+      'E-posta ile 2-Adımlı Doğrulama (2FA) sıfırlama kodlarını 1-3 saniyede alın.',
+      'Sınırsız sayıda geçici adres oluşturarak Telegram projelerinizi anonim yönetin.'
+    ],
+    whyEn: [
+      'Keep your main email address hidden when testing Telegram bots and WebApps.',
+      'Receive 2-step verification reset OTP codes in under 3 seconds.',
+      'Spin up unlimited disposable addresses with zero tracking or logging.'
+    ],
+    faqsTr: [
+      { q: 'Telegram 2FA e-posta onay kodu gelir mi?', a: 'Evet! Telegram e-posta doğrulama ve 2FA kodları WebSocket altyapımızla 1-3 saniye içinde görünür.' }
+    ],
+    faqsEn: [
+      { q: 'Can I receive Telegram 2FA verification emails?', a: 'Yes! Telegram login and security verification emails land in your inbox within 1 to 3 seconds.' }
+    ]
+  },
+  tiktok: {
+    id: 'tiktok',
+    name: 'TikTok',
+    badge: '🎵 Social Media & Video',
+    color: 'from-neutral-900 to-rose-600',
+    titleTr: 'TikTok İçin Geçici E-posta - Anonim Profil Kaydı',
+    titleEn: 'Temp Mail for TikTok - Anonymous Profile Registration',
+    descriptionTr: 'TikTok yan hesapları veya içerik test profilleri açarken kişisel e-posta adresinizi vermeyin. Doğrulama kodunu anında alın.',
+    descriptionEn: 'Create secondary TikTok accounts for content testing or personal privacy without sharing your primary email.',
+    whyTr: [
+      'Kişisel e-postanızı TikTok reklam ve bildirim bombardımanından koruyun.',
+      '6 haneli TikTok aktivasyon kodunu anında Toast bildirimi ile kopyalayın.',
+      'İşiniz bittiğinde sekmeyi kapatın, tüm izler silinsin.'
+    ],
+    whyEn: [
+      'Prevent TikTok marketing emails and daily alerts from cluttering your primary inbox.',
+      'Instantly view and copy 6-digit TikTok verification codes.',
+      'Close your tab to purge all temporary inbox data permanently from RAM.'
+    ],
+    faqsTr: [
+      { q: 'TikTok geçici e-postaya doğrulama kodu gönderiyor mu?', a: 'Evet, MephistoMail temiz ve güncel domain yapısı sayesinde TikTok doğrulama kodlarını sorunsuz teslim eder.' }
+    ],
+    faqsEn: [
+      { q: 'Does TikTok send verification codes to temporary emails?', a: 'Yes, MephistoMail rotated domain architecture handles TikTok OTP verification smoothly.' }
+    ]
+  },
+  steam: {
+    id: 'steam',
+    name: 'Steam',
+    badge: '🎮 PC Gaming',
+    color: 'from-blue-700 to-slate-900',
+    titleTr: 'Steam İçin Geçici E-posta - Oyun Hesabı Doğrulama',
+    titleEn: 'Temp Mail for Steam - Instant Game Account Verification',
+    descriptionTr: 'Steam hesap kayıtları, Guard e-posta kodları ve yan hesaplar için kullan-at mail adresi edinin.',
+    descriptionEn: 'Get instant disposable email handles for Steam Guard codes, secondary gaming profiles, and developer testing.',
+    whyTr: [
+      'Steam Guard 5 karakterli doğrulama kodlarını 2 saniyede alın.',
+      'İkinci oyun hesaplarınızı ana e-postanızdan tamamen yalıtın.',
+      'Oyun indirim ve bülten maillerinin ana kutunuza düşmesini engelleyin.'
+    ],
+    whyEn: [
+      'Receive 5-character Steam Guard authorization codes within 2 seconds.',
+      'Isolate secondary gaming alt accounts from your main personal email.',
+      'Protect your inbox from relentless store sale spam.'
+    ],
+    faqsTr: [
+      { q: 'Steam Guard kodları ne kadar hızlı geliyor?', a: 'Real-time WebSocket ve SSE altyapımız sayesinde Steam Guard mailleri 1-3 saniyede ekranınıza yansır.' }
+    ],
+    faqsEn: [
+      { q: 'How fast do Steam Guard codes arrive?', a: 'Powered by SSE real-time streaming, Steam Guard emails arrive in 1 to 3 seconds.' }
+    ]
+  },
+  amazon: {
+    id: 'amazon',
+    name: 'Amazon',
+    badge: '🛒 Shopping & Cloud',
+    color: 'from-amber-500 to-orange-600',
+    titleTr: 'Amazon İçin Geçici Mail - Alışveriş & AWS Deneme Kalkanı',
+    titleEn: 'Temp Mail for Amazon - Shopping & AWS Trial Shield',
+    descriptionTr: 'Amazon hesap kayıtları, AWS test hesapları ve indirim bildirimleri için anonim geçici e-posta adresi oluşturun.',
+    descriptionEn: 'Generate disposable email addresses for Amazon registrations, AWS free tier testing, and order notifications without tracking.',
+    whyTr: [
+      'Amazon pazarlama ve ürün öneri e-postalarından ana adresinizi koruyun.',
+      'AWS geliştirici deneme hesaplarında temiz kullan-at adres kullanın.',
+      'Doğrulama OTP kodlarını anında görüntüleyin.'
+    ],
+    whyEn: [
+      'Shield your primary inbox from endless Amazon marketing and recommendation emails.',
+      'Use clean temporary addresses for AWS developer sandbox testing.',
+      'Extract Amazon OTP security codes instantly.'
+    ],
+    faqsTr: [
+      { q: 'Amazon OTP doğrulama kodu düşüyor mu?', a: 'Evet, Amazon kayıt ve 6 haneli OTP mailleri 1-3 saniye içinde canlı kutunuzda gösterilir.' }
+    ],
+    faqsEn: [
+      { q: 'Can I receive Amazon OTP verification codes?', a: 'Yes, Amazon OTP security codes land live on your screen in 1 to 3 seconds.' }
+    ]
+  },
+  linkedin: {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    badge: '💼 Professional Network',
+    color: 'from-blue-600 to-cyan-700',
+    titleTr: 'LinkedIn İçin Geçici E-posta - Profesyonel Gizlilik Kalkanı',
+    titleEn: 'Temp Mail for LinkedIn - Professional Privacy Shield',
+    descriptionTr: 'LinkedIn araştırmaları, iş arama ve şirket analizi yaparken kişisel veya kurumsal e-posta adresinizi gizli tutun.',
+    descriptionEn: 'Protect your career inbox while conducting company research, recruiters outreach testing, or setting up secondary LinkedIn profiles.',
+    whyTr: [
+      'Kurumsal veya kişisel e-postanızı spamlardan ve takipçilerden uzak tutun.',
+      'LinkedIn PIN ve aktivasyon e-postalarını anında alın.',
+      'Hesap açılışında tam anonimlik sağlayın.'
+    ],
+    whyEn: [
+      'Keep your corporate or primary email protected from recruiter spam list brokers.',
+      'Receive LinkedIn security PINs and activation links instantly.',
+      'Ensure complete identity isolation for research tasks.'
+    ],
+    faqsTr: [
+      { q: 'LinkedIn onay maili MephistoMail\'e gelir mi?', a: 'Evet, LinkedIn aktivasyon ve PIN e-postaları 1-3 saniye içerisinde gelen kutunuzda görüntülenir.' }
+    ],
+    faqsEn: [
+      { q: 'Do LinkedIn verification emails work with MephistoMail?', a: 'Yes, LinkedIn security PINs and account confirmation links land in seconds.' }
+    ]
+  },
 };
 
 export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {

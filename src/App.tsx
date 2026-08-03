@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SEOHead from './components/SEOHead';
 import SkipNavigation from './components/SkipNavigation';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
+import PWAPromptBadge from './components/PWAPromptBadge';
 import { useMailbox } from './hooks/useMailbox';
 import { useEmails } from './hooks/useEmails';
 import { Terminal, Loader2, Sparkles, ShieldCheck, ArrowDown } from 'lucide-react';
@@ -384,6 +385,9 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
 
           {!hideSEOContent && <SEOContent lang={lang} />}
         </main>
+
+        {/* Floating PWA Quick-Prompt Badge */}
+        <PWAPromptBadge lang={lang} />
 
         {!hideFooter && <Footer lang={lang} />}
       </div>

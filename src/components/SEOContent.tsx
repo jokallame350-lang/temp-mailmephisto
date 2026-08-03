@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Shield, Zap, Lock, ChevronDown, ChevronUp, Cpu, Network, Key, ScanLine, CheckCircle2, ArrowRight, Star, Globe, Smartphone, Search, Timer, Users, Layers } from 'lucide-react';
 import { translations, Language } from '../translations';
 
@@ -93,6 +94,51 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                 title={lang === 'tr' ? '👤 Anonim Kimlik & Şifre Üretici' : '👤 Fake Identity & Pass Gen'}
                 desc={lang === 'tr' ? 'Form doldururken ad, soyad ve 256-bit karmaşık parola önerileriyle anında anonim kalın.' : 'Generate realistic fake identities and strong passwords for instant signup forms.'}
               />
+            </div>
+          </div>
+
+          {/* ----- Section 1.8: Programmatic High-Volume Target Services Hub ----- */}
+          <div className="my-10 p-6 md:p-8 bg-[#0a0a0f] border border-red-500/20 rounded-2xl" role="region" aria-label="Target Services">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[16px] md:text-[18px] font-bold text-white uppercase tracking-wider font-['Sora'] flex items-center gap-2">
+                <Globe className="w-5 h-5 text-red-500" />
+                {lang === 'tr' ? 'Yüksek Hacimli Geçici E-posta Hedef Sayfaları' : 'High-Volume Disposable Email Destinations'}
+              </h2>
+              <Link to="/services" className="text-xs text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1">
+                {lang === 'tr' ? 'Tüm Kataloğu Gör' : 'View Full Catalog'} →
+              </Link>
+            </div>
+            <p className="text-slate-400 text-xs md:text-sm mb-6 leading-relaxed">
+              {lang === 'tr'
+                ? 'Popüler sosyal medya, yapay zeka, oyun ve dijital platformlar için özel olarak optimize edilmiş, anlık OTP doğrulama kalkanlı geçici e-posta sayfalarımız:'
+                : 'Programmatically optimized temporary mail hubs for high-volume searches across popular AI, social, gaming, and cloud platforms:'}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {[
+                { slug: 'instagram', icon: '📸', title: 'Temp Mail for Instagram', descTr: 'Instagram 6-haneli OTP ve aktivasyon kodları', descEn: 'Instagram 6-digit OTP & account verification' },
+                { slug: 'chatgpt', icon: '🤖', title: 'Temp Mail for ChatGPT', descTr: 'ChatGPT & OpenAI API doğrulama mailleri', descEn: 'ChatGPT & OpenAI API developer signups' },
+                { slug: 'discord', icon: '🎮', title: 'Temp Mail for Discord', descTr: 'Discord sunucu ve bot doğrulama PIN kodları', descEn: 'Discord server & bot verification PINs' },
+                { slug: 'roblox', icon: '🎲', title: 'Temp Mail for Roblox', descTr: 'Roblox oyuncu hesapları ve güvenlik PIN kodları', descEn: 'Roblox gamer profiles & security PINs' },
+                { slug: 'telegram', icon: '✈️', title: 'Temp Mail for Telegram', descTr: 'Telegram Web & 2FA e-posta doğrulama', descEn: 'Telegram Web & 2FA email verification' },
+                { slug: 'netflix', icon: '🎬', title: 'Temp Mail for Netflix', descTr: 'Netflix yayın kaydı ve spam engelleme', descEn: 'Netflix streaming signup & spam barrier' },
+                { slug: 'spotify', icon: '🎵', title: 'Temp Mail for Spotify', descTr: 'Spotify Premium ve ücretsiz deneme aktivasyonları', descEn: 'Spotify Premium & trial activation links' },
+                { slug: 'tiktok', icon: '🎵', title: 'Temp Mail for TikTok', descTr: 'TikTok içerik ve yan hesap aktivasyonu', descEn: 'TikTok content & alt account activation' },
+                { slug: 'steam', icon: '🎮', title: 'Temp Mail for Steam', descTr: 'Steam Guard 5-karakter doğrulama kodları', descEn: 'Steam Guard 5-character security codes' },
+                { slug: 'amazon', icon: '🛒', title: 'Temp Mail for Amazon', descTr: 'Amazon alışveriş ve AWS deneme OTP kalkanı', descEn: 'Amazon order privacy & AWS trial OTP shield' },
+                { slug: 'linkedin', icon: '💼', title: 'Temp Mail for LinkedIn', descTr: 'LinkedIn profesyonel ağ ve şirket araştırma kalkanı', descEn: 'LinkedIn recruiter research & privacy shield' }
+              ].map(target => (
+                <Link
+                  key={target.slug}
+                  to={`/temp-mail-for-${target.slug}`}
+                  className="bg-[#050508] p-3.5 rounded-xl border border-white/5 hover:border-red-500/40 hover:bg-white/[0.03] transition-all group block"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base">{target.icon}</span>
+                    <h3 className="text-[13px] font-bold text-white group-hover:text-red-400 transition-colors font-['Sora']">{target.title}</h3>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-tight">{lang === 'tr' ? target.descTr : target.descEn}</p>
+                </Link>
+              ))}
             </div>
           </div>
 

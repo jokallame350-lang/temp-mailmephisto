@@ -106,6 +106,8 @@ const AppRouter = () => {
           <Route path="/temp-mail-for-amazon" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-vinted" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-saas" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-telegram" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-linkedin" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
           {/* Catch-all: redirect to home */}

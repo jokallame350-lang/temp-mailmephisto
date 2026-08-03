@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, ShieldCheck } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, ShieldCheck, Share2, Bookmark, ExternalLink } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -48,6 +48,8 @@ const AddressBar: React.FC<AddressBarProps> = ({
 }) => {
   const t = translations[lang];
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [showBookmarkTip, setShowBookmarkTip] = useState(false);
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
   // Geri sayım zamanlayıcısı
@@ -70,6 +72,40 @@ const AddressBar: React.FC<AddressBarProps> = ({
       navigator.clipboard.writeText(mailbox.address);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleShareBookmark = async () => {
+    if (!mailbox?.address) return;
+
+    const shareData = {
+      title: 'MephistoMail - Temp Mail',
+      text: lang === 'tr' 
+        ? `Geçici e-posta adresim: ${mailbox.address}` 
+        : `My temporary email address: ${mailbox.address}`,
+      url: window.location.href,
+    };
+
+    let shared = false;
+    if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      try {
+        await navigator.share(shareData);
+        shared = true;
+      } catch {
+        // User cancelled native share
+      }
+    }
+
+    if (!shared) {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+      } catch {
+        // Fallback
+      }
+      setShareCopied(true);
+      setShowBookmarkTip(true);
+      setTimeout(() => setShareCopied(false), 3000);
+      setTimeout(() => setShowBookmarkTip(false), 6000);
     }
   };
 
@@ -142,6 +178,18 @@ const AddressBar: React.FC<AddressBarProps> = ({
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
             <span>{t.copy}</span>
           </button>
+          <button 
+            onClick={handleShareBookmark} 
+            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-orange-500/15 text-orange-400 hover:text-white hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/30 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-md shadow-orange-500/10 active:scale-95 min-h-[44px] min-w-[44px]"
+            title={lang === 'tr' ? 'Mail Adresini Kaydet & Paylaş (Ctrl+D)' : 'Share & Bookmark Mailbox (Ctrl+D)'}
+          >
+            {shareCopied ? (
+              <Check className="w-4 h-4 text-green-400" />
+            ) : (
+              <Bookmark className="w-4 h-4 text-orange-400" />
+            )}
+            <span>{shareCopied ? (lang === 'tr' ? 'Kopyalandı!' : 'Link Copied!') : (lang === 'tr' ? 'Kaydet / Paylaş' : 'Bookmark & Share')}</span>
+          </button>
           <button onClick={onRefresh} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{t.refresh}</span>
@@ -160,6 +208,23 @@ const AddressBar: React.FC<AddressBarProps> = ({
           </button>
         </div>
 
+        {/* BOOKMARK / SHARE FEEDBACK BANNER */}
+        {showBookmarkTip && (
+          <div className="w-full max-w-lg bg-[#0d1017] border border-orange-500/40 rounded-xl p-3 shadow-xl flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 text-slate-200">
+              <Bookmark className="w-4 h-4 text-orange-400 shrink-0" />
+              <span>
+                {lang === 'tr'
+                  ? '★ Adres bağlantısı kopyalandı! Tekrar erişim için Ctrl+D (veya Cmd+D) basarak tarayıcınıza kaydedin.'
+                  : '★ Address link copied! Press Ctrl+D (or Cmd+D) to bookmark MephistoMail for repeat visits.'}
+              </span>
+            </div>
+            <button onClick={() => setShowBookmarkTip(false)} className="text-slate-400 hover:text-white font-bold px-1.5 py-0.5 rounded text-xs shrink-0 cursor-pointer">
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* EKSTRA ARAÇLAR */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full mt-2 pt-3 border-t border-white/5 relative">
           <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Araçlar & Güvenlik' : 'Tools & Security'}</span>
@@ -176,6 +241,14 @@ const AddressBar: React.FC<AddressBarProps> = ({
               <span>Drop Link</span>
             </button>
           )}
+          <button 
+            onClick={handleShareBookmark} 
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/30 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" 
+            title={lang === 'tr' ? 'Adresi Paylaş / Favorilere Ekle' : 'Share / Bookmark Mailbox'}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>{lang === 'tr' ? 'Paylaş / Kaydet' : 'Share / Bookmark'}</span>
+          </button>
           <div className="flex items-center justify-center gap-1 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 font-bold text-[10px] min-h-[44px]" title="Domain Health Risk Score: 100% Clean">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Risk: %0 (Temiz)</span>
