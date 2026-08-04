@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Environment variables & secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+
+# Build & TypeScript cache
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -23,8 +38,9 @@ dist-ssr
 *.sln
 *.sw?
 
-# Playwright screenshots
+# Playwright screenshots & testing
 .playwright-mcp/
+coverage/
 
 .vercel
 
@@ -39,3 +55,4 @@ automation/
 .used-tweets.json
 competitor_analysis_x.md
 reddit_story_post.md
+

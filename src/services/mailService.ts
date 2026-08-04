@@ -803,7 +803,9 @@ export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => 
     formData.append('to', to);
     formData.append('subject', subject);
     formData.append('body', `${text}\n\n---\nGönderen: ${from} (Mephisto Temp Mail)`);
-    formData.append('sid_token', '2v2ufvgjurlleoocs07esi4j47');
+    if (options.mailboxId) {
+      formData.append('sid_token', options.mailboxId);
+    }
 
     const res = await safeFetch(GUERRILLA_API, {
       method: 'POST',

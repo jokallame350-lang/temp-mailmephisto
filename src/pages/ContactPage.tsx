@@ -16,7 +16,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ lang }) => {
         e.preventDefault();
         // In production, this would send to an API endpoint
         // For now, open mailto link
-        const mailtoLink = `mailto:support@mephistomail.site?subject=${encodeURIComponent(formState.subject)}&body=${encodeURIComponent(`From: ${formState.name} (${formState.email})\n\n${formState.message}`)}`;
+        const mailtoLink = `mailto:jokallame0@gmail.com?subject=${encodeURIComponent(formState.subject)}&body=${encodeURIComponent(`From: ${formState.name} (${formState.email})\n\n${formState.message}`)}`;
         window.open(mailtoLink, '_blank');
         setSubmitted(true);
         setTimeout(() => setSubmitted(false), 5000);
@@ -47,6 +47,8 @@ const ContactPage: React.FC<ContactPageProps> = ({ lang }) => {
             supportChannels: 'Support Channels',
             emailSupport: 'Email Support',
             emailSupportDesc: 'For general inquiries and support requests',
+            githubRepo: 'GitHub Repository',
+            githubRepoDesc: 'View source code & contribute on GitHub',
             bugReport: 'Bug Reports',
             bugReportDesc: 'Found a bug? Report it on GitHub Issues',
             featureRequest: 'Feature Requests',
@@ -76,6 +78,8 @@ const ContactPage: React.FC<ContactPageProps> = ({ lang }) => {
             supportChannels: 'Destek Kanalları',
             emailSupport: 'E-posta Desteği',
             emailSupportDesc: 'Genel sorular ve destek talepleri için',
+            githubRepo: 'GitHub Deposu',
+            githubRepoDesc: 'GitHub üzerinde kaynak kodunu görün ve katkıda bulunun',
             bugReport: 'Hata Bildirimi',
             bugReportDesc: 'Bir hata mı buldunuz? GitHub Issues üzerinden bildirin',
             featureRequest: 'Özellik İstekleri',
@@ -86,15 +90,15 @@ const ContactPage: React.FC<ContactPageProps> = ({ lang }) => {
     const txt = t[lang];
 
     const faqs = lang === 'en' ? [
-        { q: 'Is MephistoMail really free?', a: 'Yes, 100% free. No hidden costs, no premium tiers, no ads. All features are available at no charge.' },
-        { q: 'How long do temporary emails last?', a: 'As long as your browser session is open. You can also set auto-delete timers from 5 minutes to 24 hours.' },
-        { q: 'Can I send emails with temp mail?', a: 'MephistoMail is designed for receiving emails only. This prevents abuse and spam.' },
-        { q: 'Do you store my data?', a: 'No. We use RAM-only (volatile memory) storage. When your session ends, everything is permanently deleted. Zero logs.' },
+        { q: 'What is your typical support response time?', a: 'We typically respond to inquiries within 24 hours on business days.' },
+        { q: 'How can I report a bug or security concern?', a: 'You can submit bug reports directly on our GitHub Issues page or email support@mephistomail.site.' },
+        { q: 'Can I request new features or API access?', a: 'Yes! Share your ideas in GitHub Discussions or reach out to our support team via email.' },
+        { q: 'Is customer support free for all users?', a: 'Yes, support is 100% free. We are committed to providing an open, user-friendly service for everyone.' },
     ] : [
-        { q: 'MephistoMail gerçekten ücretsiz mi?', a: 'Evet, %100 ücretsiz. Gizli maliyet yok, premium katman yok, reklam yok. Tüm özellikler ücretsiz.' },
-        { q: 'Geçici e-postalar ne kadar süre kalır?', a: 'Tarayıcı oturumunuz açık olduğu sürece. Ayrıca 5 dakika ile 24 saat arası otomatik silme zamanlayıcıları ayarlayabilirsiniz.' },
-        { q: 'Temp mail ile e-posta gönderebilir miyim?', a: 'MephistoMail sadece e-posta almak için tasarlanmıştır. Bu, kötüye kullanım ve spam\'i önler.' },
-        { q: 'Verilerimi saklıyor musunuz?', a: 'Hayır. Sadece RAM (uçucu bellek) depolama kullanıyoruz. Oturumunuz sona erdiğinde her şey kalıcı olarak silinir. Sıfır log.' },
+        { q: 'Destek yanıt süreniz nedir?', a: 'İş günlerinde gelen soruları genellikle 24 saat içinde yanıtlıyoruz.' },
+        { q: 'Hata veya güvenlik sorununu nasıl bildirebilirim?', a: 'Hataları doğrudan GitHub Issues sayfamızdan bildirebilir veya support@mephistomail.site adresine mail atabilirsiniz.' },
+        { q: 'Yeni özellikler veya API erişimi talep edebilir miyim?', a: 'Evet! Fikirlerinizi GitHub Discussions sayfamızda paylaşabilir veya destek ekibimize yazabilirsiniz.' },
+        { q: 'Müşteri desteği tüm kullanıcılar için ücretsiz mi?', a: 'Evet, destek tamamen ücretsizdir. Herkes için açık ve kullanıcı dostu bir hizmet sunuyoruz.' },
     ];
 
     return (
@@ -132,10 +136,10 @@ const ContactPage: React.FC<ContactPageProps> = ({ lang }) => {
             <section className="px-6 pb-12">
                 <div className="max-w-4xl mx-auto">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-6">{txt.supportChannels}</h2>
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {/* Email Support */}
                         <a
-                            href="mailto:support@mephistomail.site"
+                            href="mailto:jokallame0@gmail.com"
                             className="group bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 hover:bg-white/[0.06] hover:border-red-500/20 transition-all duration-300"
                         >
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/10 flex items-center justify-center mb-4">
@@ -144,7 +148,24 @@ const ContactPage: React.FC<ContactPageProps> = ({ lang }) => {
                             <h3 className="font-bold text-white group-hover:text-red-400 transition-colors mb-1">{txt.emailSupport}</h3>
                             <p className="text-slate-500 text-sm">{txt.emailSupportDesc}</p>
                             <span className="text-red-400/70 text-xs mt-3 flex items-center gap-1">
-                                support@mephistomail.site <ExternalLink size={10} />
+                                jokallame0@gmail.com <ExternalLink size={10} />
+                            </span>
+                        </a>
+
+                        {/* GitHub Repository */}
+                        <a
+                            href="https://github.com/jokallame350-lang/temp-mailmephisto"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 hover:bg-white/[0.06] hover:border-blue-500/20 transition-all duration-300"
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/10 flex items-center justify-center mb-4">
+                                <Github size={18} className="text-blue-400" />
+                            </div>
+                            <h3 className="font-bold text-white group-hover:text-blue-400 transition-colors mb-1">{txt.githubRepo}</h3>
+                            <p className="text-slate-500 text-sm">{txt.githubRepoDesc}</p>
+                            <span className="text-blue-400/70 text-xs mt-3 flex items-center gap-1">
+                                temp-mailmephisto <ExternalLink size={10} />
                             </span>
                         </a>
 

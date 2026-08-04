@@ -66,10 +66,10 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
               </div>
               <div>
                 <h2 className="text-base md:text-lg font-bold text-white uppercase tracking-wider font-['Sora']">
-                  {lang === 'tr' ? '🚀 Hızlı Erişim & Tekrar Ziyaret İpuçları' : '🚀 Instant Access & Repeat Traffic Hacks'}
+                  {lang === 'tr' ? '🚀 MephistoMail’i Daha Verimli Kullanın' : '🚀 Supercharge Your MephistoMail Experience'}
                 </h2>
                 <p className="text-xs text-slate-400">
-                  {lang === 'tr' ? 'MephistoMail\'i tekrar kullanırken zaman kazanmak ve anlık bildirimleri kaçırmamak için 3 retention booster:' : '3 engagement boosters to save time and never miss incoming OTP emails:'}
+                  {lang === 'tr' ? 'Gelen kutunuzu daha pratik kullanmak ve onay kodlarını anında yakalamak için 3 tatlı ipucu:' : 'Three quick tips to make checking your emails even faster and easier:'}
                 </p>
               </div>
             </div>
@@ -80,13 +80,13 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-black">1</span>
                     <h3 className="text-xs font-bold text-white font-['Sora']">
-                      {lang === 'tr' ? '📌 1-Tıkla Yer İmi (Ctrl+D)' : '📌 1-Click Bookmark (Ctrl+D)'}
+                      {lang === 'tr' ? '📌 Adresi Kaydedin (Ctrl+D)' : '📌 Save for Later (Ctrl+D)'}
                     </h3>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     {lang === 'tr'
-                      ? 'Adresinizi kaybetmemek için tarayıcınıza ekleyin. Ctrl+D kısayolu ile anında yer imlerine ekleyebilirsiniz.'
-                      : 'Save your current session address. Press Ctrl+D (or Cmd+D) to add MephistoMail to your bookmarks bar.'}
+                      ? 'Bu adrese daha sonra kolayca dönmek isterseniz Ctrl+D kısayoluyla tarayıcınıza ekleyebilirsiniz.'
+                      : 'Need to check this address again later? Press Ctrl+D to bookmark it in one second.'}
                   </p>
                 </div>
                 <button
@@ -96,7 +96,7 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                   }}
                   className="mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 transition-all text-center cursor-pointer"
                 >
-                  {lang === 'tr' ? 'Bağlantıyı Kopyala & Kaydet' : 'Copy & Bookmark Link'}
+                  {lang === 'tr' ? 'Bağlantıyı Kopyala' : 'Copy Bookmark Link'}
                 </button>
               </div>
 
@@ -105,13 +105,13 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-black">2</span>
                     <h3 className="text-xs font-bold text-white font-['Sora']">
-                      {lang === 'tr' ? '📱 PWA Masaüstü & Mobil App' : '📱 PWA Desktop & Mobile App'}
+                      {lang === 'tr' ? '📱 Masaüstü & Mobil Uygulama' : '📱 Add to Home Screen'}
                     </h3>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     {lang === 'tr'
-                      ? 'Tarayıcı sekmesine ihtiyaç duymadan doğrudan masaüstünüzden veya mobil ana ekranınızdan 1-tıkla açın.'
-                      : 'Launch MephistoMail directly from your home screen or taskbar without browser headers.'}
+                      ? 'MephistoMail\'i telefonunuzun veya bilgisayarınızın ana ekranına ekleyerek bir uygulama gibi kullanabilirsiniz.'
+                      : 'You can add MephistoMail directly to your home screen so it opens like a normal app anytime.'}
                   </p>
                 </div>
                 <button
@@ -121,7 +121,7 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                   }}
                   className="mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 transition-all text-center cursor-pointer"
                 >
-                  {lang === 'tr' ? 'PWA Yükleme İpucu' : 'PWA Install Guidance'}
+                  {lang === 'tr' ? 'Uygulamayı Ekle' : 'How to Install'}
                 </button>
               </div>
 
@@ -130,13 +130,13 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-black">3</span>
                     <h3 className="text-xs font-bold text-white font-['Sora']">
-                      {lang === 'tr' ? '🔔 Anlık Masaüstü Bildirimleri' : '🔔 Live Desktop Notifications'}
+                      {lang === 'tr' ? '🔔 Canlı Masaüstü Bildirimleri' : '🔔 Live Alerts'}
                     </h3>
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     {lang === 'tr'
-                      ? 'Sekme arka planda bile olsa OTP doğrulama kodları ekranda anında pop-up olarak belirir.'
-                      : 'Get instant notification popups when OTP verification codes arrive even if the tab is backgrounded.'}
+                      ? 'Sekmeyi alta küçültseniz bile doğrulama kodunuz geldiğinde ekranda tatlı bir bildirim belirir.'
+                      : 'Even if this tab is in the background, we\'ll send you a friendly notification when your code arrives.'}
                   </p>
                 </div>
                 <button
@@ -152,7 +152,7 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                   }}
                   className="mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 transition-all text-center cursor-pointer"
                 >
-                  {lang === 'tr' ? 'Bildirimleri Aktifleştir' : 'Enable Live Alerts'}
+                  {lang === 'tr' ? 'Bildirimlere İzin Ver' : 'Turn On Live Alerts'}
                 </button>
               </div>
             </div>
@@ -162,37 +162,37 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
           <div className="my-8 p-6 md:p-8 bg-[#09090d] border border-white/10 rounded-2xl" role="region" aria-label="SaaS Features">
             <h2 className="text-[16px] md:text-[18px] font-bold text-white mb-2 uppercase tracking-wider font-['Sora'] flex items-center gap-2">
               <Layers className="w-5 h-5 text-orange-500" />
-              {lang === 'tr' ? 'MephistoMail SaaS Gizlilik & Güvenlik Kalkanları' : 'MephistoMail SaaS Security Modules'}
+              {lang === 'tr' ? 'Sizi Güvende Tutacak Sevilen Özelliklerimiz' : 'Cool Features Built to Protect Your Privacy'}
             </h2>
             <p className="text-slate-400 text-xs md:text-sm mb-6 leading-relaxed">
               {lang === 'tr'
-                ? 'Standart geçici mail servislerinin ötesinde; özel domain bağlama, casus takip pikseli engelleme ve otomatik hesap aktivasyonu gibi 10+ gelişmiş SaaS kalkanı.'
-                : 'Beyond standard disposable email services; 10+ advanced SaaS features including BYOD custom domains, tracker blockers, and automated verification.'}
+                ? 'Sıradan geçici e-posta servislerinin ötesine geçtik. Gelen kutunuzu daha güvenli, hızlı ve rahat hale getirecek zengin araçlar hazırladık:'
+                : 'We built MephistoMail with thoughtful privacy features so you can sign up for websites effortlessly and keep control of your inbox:'}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <SaaSModuleCard
-                title={lang === 'tr' ? '🌐 Kendi Alan Adını Bağla (BYOD)' : '🌐 Bring Your Own Domain'}
-                desc={lang === 'tr' ? 'Cloudflare DNS ile özel domaininizi bağlayın, engelli temp mail listelerini %100 kesinlikle aşın.' : 'Connect your custom DNS to bypass temp-mail blacklist filters with 100% success.'}
+                title={lang === 'tr' ? '🌐 Kendi Alan Adınızı Bağlayın' : '🌐 Use Your Own Domain'}
+                desc={lang === 'tr' ? 'Kendi domain adınızı bağlayarak engelli geçici mail filtrelerine takılmadan e-posta alın.' : 'Connect your own domain to bypass temp-mail blocks and keep full control over your addresses.'}
               />
               <SaaSModuleCard
-                title={lang === 'tr' ? '🛡️ Casus Takip Pikseli Engelleme' : '🛡️ Tracker & Pixel Blocker'}
-                desc={lang === 'tr' ? 'E-postalardaki 1x1 piksel görünmez casus görselleri ve konum takip eden domainleri anında filtreler.' : 'Detects and strips 1x1 spy pixels and location tracker scripts automatically.'}
+                title={lang === 'tr' ? '🛡️ Takip Piksellerini Engelleme' : '🛡️ Automatic Tracker Blocker'}
+                desc={lang === 'tr' ? 'E-postalara gizlenen 1x1 piksel casus görselleri ve konum takibini siz fark etmeden engelleriz.' : 'We strip away hidden 1x1 tracking pixels so senders can\'t secretly trace your location or email opens.'}
               />
               <SaaSModuleCard
-                title={lang === 'tr' ? '⚡ Otomatik Hesap Doğrulama' : '⚡ Auto-Verify Engine'}
-                desc={lang === 'tr' ? 'Gelen üyelik onay e-postalarındaki aktivasyon linklerini arka planda otomatik olarak tıklar.' : 'Background HTTP GET & DOM execution engine auto-clicks account verification links.'}
+                title={lang === 'tr' ? '⚡ Otomatik Bağlantı Tıklama' : '⚡ One-Click Auto Verification'}
+                desc={lang === 'tr' ? 'Gelen aktivasyon e-postalarındaki onay butonlarını arka planda otomatik olarak tıklarız.' : 'Got an activation email? We can auto-click verification links for you so you don\'t even have to open them.'}
               />
               <SaaSModuleCard
-                title={lang === 'tr' ? '✉️ E-posta Yanıtlama ve Gönderme' : '✉️ Outbound & Reply Mail'}
-                desc={lang === 'tr' ? 'Gelen geçici mailleri yanıtlayın veya disk izi bırakmadan dışarıya anonim e-posta gönderin.' : 'Reply to incoming messages or compose outbound mail without disk footprint.'}
+                title={lang === 'tr' ? '✉️ E-postaları Yanıtlama' : '✉️ Reply Directly & Anonymously'}
+                desc={lang === 'tr' ? 'Gelen geçici mailleri hemen yanıtlayın veya anonim olarak dışarıya e-posta gönderin.' : 'Need to reply to a confirmation email? You can answer back directly without exposing your real address.'}
               />
               <SaaSModuleCard
-                title={lang === 'tr' ? '📥 EML, JSON & PDF Dışa Aktarma' : '📥 EML, JSON & PDF Export'}
-                desc={lang === 'tr' ? 'E-postalarınızı ham .eml dosyası, yapılandırılmış JSON verisi veya PDF formatında indirin.' : 'Export emails as raw .eml RFC822 format, structured JSON data, or print PDF.'}
+                title={lang === 'tr' ? '📥 E-postaları İndirme' : '📥 Easy Email Downloads'}
+                desc={lang === 'tr' ? 'Önemli e-postaları .eml, PDF veya JSON formatında tek tıkla cihazınıza indirin.' : 'Save important emails to your device as PDF files, .eml text, or structured JSON data in one click.'}
               />
               <SaaSModuleCard
-                title={lang === 'tr' ? '👤 Anonim Kimlik & Şifre Üretici' : '👤 Fake Identity & Pass Gen'}
-                desc={lang === 'tr' ? 'Form doldururken ad, soyad ve 256-bit karmaşık parola önerileriyle anında anonim kalın.' : 'Generate realistic fake identities and strong passwords for instant signup forms.'}
+                title={lang === 'tr' ? '👤 Anonim Profil ve Şifreler' : '👤 Instant Identity & Pass Creator'}
+                desc={lang === 'tr' ? 'Hesap oluştururken formları rastgele isimler ve güçlü şifrelerle saniyeler içinde doldurun.' : 'Quickly generate realistic test profiles and uncrackable passwords whenever a signup form asks for them.'}
               />
             </div>
           </div>
@@ -202,7 +202,7 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[16px] md:text-[18px] font-bold text-white uppercase tracking-wider font-['Sora'] flex items-center gap-2">
                 <Globe className="w-5 h-5 text-red-500" />
-                {lang === 'tr' ? 'Yüksek Hacimli Geçici E-posta Hedef Sayfaları' : 'High-Volume Disposable Email Destinations'}
+                {lang === 'tr' ? 'Sık Kullanılan Platformlar İçin Özel Sayfalar' : 'Instant Email Guides for Popular Apps & Platforms'}
               </h2>
               <Link to="/services" className="text-xs text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1">
                 {lang === 'tr' ? 'Tüm Kataloğu Gör' : 'View Full Catalog'} →
@@ -210,22 +210,22 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
             </div>
             <p className="text-slate-400 text-xs md:text-sm mb-6 leading-relaxed">
               {lang === 'tr'
-                ? 'Popüler sosyal medya, yapay zeka, oyun ve dijital platformlar için özel olarak optimize edilmiş, anlık OTP doğrulama kalkanlı geçici e-posta sayfalarımız:'
-                : 'Programmatically optimized temporary mail hubs for high-volume searches across popular AI, social, gaming, and cloud platforms:'}
+                ? 'Favori uygulamanıza veya platformunuza kayıt olurken onay kodlarınızı anında almak için hazırladığımız özel sayfaları keşfedin:'
+                : 'Signing up for an app or game? Click below for tailored guides and instant OTP confirmation for top platforms:'}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {[
-                { slug: 'instagram', icon: '📸', title: 'Temp Mail for Instagram', descTr: 'Instagram 6-haneli OTP ve aktivasyon kodları', descEn: 'Instagram 6-digit OTP & account verification' },
-                { slug: 'chatgpt', icon: '🤖', title: 'Temp Mail for ChatGPT', descTr: 'ChatGPT & OpenAI API doğrulama mailleri', descEn: 'ChatGPT & OpenAI API developer signups' },
-                { slug: 'discord', icon: '🎮', title: 'Temp Mail for Discord', descTr: 'Discord sunucu ve bot doğrulama PIN kodları', descEn: 'Discord server & bot verification PINs' },
-                { slug: 'roblox', icon: '🎲', title: 'Temp Mail for Roblox', descTr: 'Roblox oyuncu hesapları ve güvenlik PIN kodları', descEn: 'Roblox gamer profiles & security PINs' },
-                { slug: 'telegram', icon: '✈️', title: 'Temp Mail for Telegram', descTr: 'Telegram Web & 2FA e-posta doğrulama', descEn: 'Telegram Web & 2FA email verification' },
-                { slug: 'netflix', icon: '🎬', title: 'Temp Mail for Netflix', descTr: 'Netflix yayın kaydı ve spam engelleme', descEn: 'Netflix streaming signup & spam barrier' },
-                { slug: 'spotify', icon: '🎵', title: 'Temp Mail for Spotify', descTr: 'Spotify Premium ve ücretsiz deneme aktivasyonları', descEn: 'Spotify Premium & trial activation links' },
-                { slug: 'tiktok', icon: '🎵', title: 'Temp Mail for TikTok', descTr: 'TikTok içerik ve yan hesap aktivasyonu', descEn: 'TikTok content & alt account activation' },
-                { slug: 'steam', icon: '🎮', title: 'Temp Mail for Steam', descTr: 'Steam Guard 5-karakter doğrulama kodları', descEn: 'Steam Guard 5-character security codes' },
-                { slug: 'amazon', icon: '🛒', title: 'Temp Mail for Amazon', descTr: 'Amazon alışveriş ve AWS deneme OTP kalkanı', descEn: 'Amazon order privacy & AWS trial OTP shield' },
-                { slug: 'linkedin', icon: '💼', title: 'Temp Mail for LinkedIn', descTr: 'LinkedIn profesyonel ağ ve şirket araştırma kalkanı', descEn: 'LinkedIn recruiter research & privacy shield' }
+                { slug: 'instagram', icon: '📸', title: 'Temp Mail for Instagram', descTr: 'Instagram doğrulama kodlarını anında alın', descEn: 'Receive 6-digit Instagram verification codes in seconds' },
+                { slug: 'chatgpt', icon: '🤖', title: 'Temp Mail for ChatGPT', descTr: 'ChatGPT ve OpenAI üyelik onayları', descEn: 'Instant verification for ChatGPT & OpenAI developer accounts' },
+                { slug: 'discord', icon: '🎮', title: 'Temp Mail for Discord', descTr: 'Discord sunucu ve bot doğrulama kodları', descEn: 'Get Discord server joins and bot verification PINs easily' },
+                { slug: 'roblox', icon: '🎲', title: 'Temp Mail for Roblox', descTr: 'Roblox hesap açma ve güvenlik kodları', descEn: 'Quick Roblox account signups & security PINs' },
+                { slug: 'telegram', icon: '✈️', title: 'Temp Mail for Telegram', descTr: 'Telegram Web ve 2FA giriş onayları', descEn: 'Telegram Web & 2FA email verification made easy' },
+                { slug: 'netflix', icon: '🎬', title: 'Temp Mail for Netflix', descTr: 'Netflix deneme sürümü ve üyelik onayları', descEn: 'Clean Netflix trial signups without inbox clutter' },
+                { slug: 'spotify', icon: '🎵', title: 'Temp Mail for Spotify', descTr: 'Spotify ücretsiz deneme aktivasyonları', descEn: 'Activate Spotify trials without giving up your main email' },
+                { slug: 'tiktok', icon: '🎵', title: 'Temp Mail for TikTok', descTr: 'TikTok yan hesap ve profil aktivasyonları', descEn: 'Create quick TikTok alt accounts smoothly' },
+                { slug: 'steam', icon: '🎮', title: 'Temp Mail for Steam', descTr: 'Steam Guard 5 haneli giriş kodları', descEn: 'Receive Steam Guard 5-character security codes instantly' },
+                { slug: 'amazon', icon: '🛒', title: 'Temp Mail for Amazon', descTr: 'Amazon ve AWS deneme hesabı onayları', descEn: 'Keep Amazon marketing & AWS trial notifications separate' },
+                { slug: 'linkedin', icon: '💼', title: 'Temp Mail for LinkedIn', descTr: 'LinkedIn hesabı ve araştırma kalkanı', descEn: 'Browse LinkedIn & connect privately without spam' }
               ].map(target => (
                 <Link
                   key={target.slug}
@@ -293,8 +293,8 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
           <div>
             <h2 className="text-[17px] font-bold text-white mb-6 uppercase tracking-wider font-['Sora']">{t.artUseTitle}</h2>
             <div className="space-y-4 mb-6">
-              <HowToStep step={1} label={lang === 'tr' ? 'MephistoMail\'i ziyaret edin' : 'Visit MephistoMail'} desc={t.artUseP1} />
-              <HowToStep step={2} label={lang === 'tr' ? 'Adresi kopyalayın ve kullanın' : 'Copy and use your address'} desc={t.artUseP2} />
+              <HowToStep step={1} label={lang === 'tr' ? 'MephistoMail\'i açın' : 'Open MephistoMail'} desc={t.artUseP1} />
+              <HowToStep step={2} label={lang === 'tr' ? 'Adresinizi kopyalayın ve kullanın' : 'Copy your ready address'} desc={t.artUseP2} />
             </div>
           </div>
 
@@ -344,16 +344,16 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
                   </tr>
                 </thead>
                 <tbody className="text-[12px]">
-                  <CompareRow feature={lang === 'tr' ? 'Anlık WebSocket Teslimi' : 'Real-time WebSocket'} me={true} m={false} g={false} t10={false} />
-                  <CompareRow feature={lang === 'tr' ? 'Sıfır Kayıt / RAM-only' : 'Zero-Log / RAM-only'} me={true} m={false} g={false} t10={false} />
-                  <CompareRow feature={lang === 'tr' ? 'Özel Adres Oluşturma' : 'Custom Addresses'} me={true} m={true} g={true} t10={false} />
-                  <CompareRow feature={lang === 'tr' ? 'Şifre Üretici' : 'Password Generator'} me={true} m={false} g={false} t10={false} />
-                  <CompareRow feature={lang === 'tr' ? 'QR Kod Transferi' : 'QR Code Transfer'} me={true} m={false} g={false} t10={false} />
-                  <CompareRow feature={lang === 'tr' ? '100 Eş Zamanlı Kutu' : '100 Simultaneous Inboxes'} me={true} m={false} g={false} t10={false} />
-                  <CompareRow feature={lang === 'tr' ? 'Ücretsiz (Reklamsız)' : 'Free (No Ads)'} me={true} m={false} g={true} t10={true} />
-                  <CompareRow feature={lang === 'tr' ? 'Çoklu Dil' : 'Multi-Language'} me={true} m={false} g={false} t10={true} />
-                  <CompareRow feature={lang === 'tr' ? 'PWA Desteği' : 'PWA Support'} me={true} m={false} g={false} t10={false} />
-                  <CompareRow feature={lang === 'tr' ? 'Otomatik Silme Zamanlayıcısı' : 'Auto-Delete Timer'} me={true} m={false} g={false} t10={true} />
+                  <CompareRow feature={lang === 'tr' ? 'Anında Mesaj Teslimatı' : 'Instant Email Arrival'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Sıfır Kayıt & Tam Gizlilik' : 'Zero Registration & Privacy First'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Özel Adres Seçimi' : 'Custom Email Names'} me={true} m={true} g={true} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Şifre Oluşturucu' : 'Password Creator Tool'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'QR İle Mobile Aktarım' : 'QR Mobile Sync'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Aynı Anda 100 Gelen Kutusu' : '100 Active Inboxes'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Tamamen Ücretsiz (Reklamsız)' : '100% Free & No Ads'} me={true} m={false} g={true} t10={true} />
+                  <CompareRow feature={lang === 'tr' ? 'Çoklu Dil Desteği' : 'Multi-Language Support'} me={true} m={false} g={false} t10={true} />
+                  <CompareRow feature={lang === 'tr' ? 'Mobil ve Masaüstü Uygulaması' : 'Mobile & Desktop App'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Otomatik Silme Sayacı' : 'Self-Destruct Timer'} me={true} m={false} g={false} t10={true} />
                 </tbody>
               </table>
             </div>
@@ -377,19 +377,19 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {(lang === 'tr' ? [
-              { name: 'Ahmet K.', role: 'Yazılım Geliştirici', text: 'Test otomasyonlarımda MephistoMail kullanıyorum. WebSocket ile anlık teslimat gerçekten çok hızlı, diğer servislerde 30 saniye beklerken burada 2 saniyede geliyor.', stars: 5 },
-              { name: 'Elif D.', role: 'Freelancer', text: 'Her gün onlarca siteye kayıt oluyorum. MephistoMail sayesinde gerçek adresime spam gelmiyor. 100 eş zamanlı hesap özelliği harika!', stars: 5 },
-              { name: 'Mert Y.', role: 'Öğrenci', text: 'Ücretsiz deneme abonelikleri için mükemmel. Kayıt olmadan anında sınırsız hesap açabiliyor olmak harika, tam aradığım şey.', stars: 5 },
-              { name: 'Zeynep A.', role: 'UX Tasarımcı', text: 'Arayüzü diğer temp mail servislerine göre çok daha modern ve kullanışlı. Karanlık tema gözleri yormuyor.', stars: 5 },
-              { name: 'Can B.', role: 'DevOps Mühendisi', text: 'CI/CD pipeline\'larımızda e-posta testleri için kullanıyoruz. RAM-only mimari gizlilik açısından güven veriyor.', stars: 5 },
-              { name: 'Selin T.', role: 'Dijital Pazarlamacı', text: 'Rakip analizi yapırken çok işime yarıyor. QR kod ile mobil transfer özelliği çok pratik.', stars: 4 },
+              { name: 'Ahmet K.', role: 'Yazılım Geliştirici', text: 'Projelerimi test ederken MephistoMail\'i sürekli kullanıyorum. Doğrulama kodları o kadar hızlı geliyor ki hiç vakit kaybetmiyorum!', stars: 5 },
+              { name: 'Elif D.', role: 'Freelancer', text: 'Her yeni siteye kaydolurken buradayım! Gerçek kutum bülten çöplüğüne dönmekten kurtuldu, arayüzü de çok pratik.', stars: 5 },
+              { name: 'Mert Y.', role: 'Öğrenci', text: 'Ücretsiz denemeleri ve yeni uygulamaları test etmek için birebir. Üye olma şartı olmaması harika bir kolaylık.', stars: 5 },
+              { name: 'Zeynep A.', role: 'UX Tasarımcı', text: 'Sade ve şık tasarımıyla diğer tüm servislerden ayrılıyor. Karanlık teması akşamları göz yormuyor.', stars: 5 },
+              { name: 'Can B.', role: 'DevOps Mühendisi', text: 'Geliştirici ekibimiz için harika bir yardımcı oldu. Kodlarımızda e-posta testlerini saniyeler içinde tamamlıyoruz.', stars: 5 },
+              { name: 'Selin T.', role: 'Dijital Pazarlamacı', text: 'Mobil aktarım özelliği harika çalışıyor! QR kodunu telefonumla tarayıp anında mobilden devam edebiliyorum.', stars: 4 },
             ] : [
-              { name: 'Alex M.', role: 'Software Engineer', text: 'I use MephistoMail for test automation. WebSocket delivery is incredibly fast — emails arrive in 2 seconds vs 30 seconds on other services.', stars: 5 },
-              { name: 'Sarah L.', role: 'Freelancer', text: 'I sign up to dozens of sites daily. MephistoMail keeps spam away from my real inbox. The 100 simultaneous accounts feature is amazing!', stars: 5 },
-              { name: 'James R.', role: 'Student', text: 'Perfect for free trial subscriptions. Being able to open unlimited accounts instantly without any registration is exactly what I needed.', stars: 5 },
-              { name: 'Emma W.', role: 'UX Designer', text: 'The UI is so much better than other temp mail services. Modern, clean dark theme that doesn\'t strain the eyes.', stars: 5 },
-              { name: 'David K.', role: 'DevOps Engineer', text: 'We use it for email testing in our CI/CD pipelines. The RAM-only architecture gives confidence in privacy.', stars: 5 },
-              { name: 'Lisa C.', role: 'Digital Marketer', text: 'Great for competitor analysis signups. The QR code mobile transfer feature is super practical.', stars: 4 },
+              { name: 'Alex M.', role: 'Software Engineer', text: 'I use MephistoMail whenever I test new apps. Verification codes arrive almost instantly—it\'s so smooth!', stars: 5 },
+              { name: 'Sarah L.', role: 'Freelancer', text: 'My personal email inbox is finally spam-free! I use MephistoMail for all new site signups and it works like a charm.', stars: 5 },
+              { name: 'James R.', role: 'Student', text: 'Hands down the easiest temp mail tool I\'ve used. No registration, no ads cluttering the screen—just instant email.', stars: 5 },
+              { name: 'Emma W.', role: 'UX Designer', text: 'The dark theme and modern design look awesome. It\'s clean, easy on the eyes, and super fast.', stars: 5 },
+              { name: 'David K.', role: 'DevOps Engineer', text: 'Great tool for software dev and quick tests. Creating multiple inboxes in one click saves me so much time.', stars: 5 },
+              { name: 'Lisa C.', role: 'Digital Marketer', text: 'The mobile QR sync is brilliant! I scan the barcode on my screen and I\'m instantly logged in on my phone.', stars: 4 },
             ]).map((review, i) => (
               <div key={i} className="bg-[#0a0a0c] border border-white/5 rounded-xl p-5 hover:border-red-500/10 transition-all duration-300">
                 <div className="flex items-center gap-1 mb-3">

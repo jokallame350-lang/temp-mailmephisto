@@ -165,17 +165,17 @@ const TenMinuteMailPage: React.FC<TenMinuteMailPageProps> = ({ lang }) => {
                     <div className="text-slate-400 text-sm space-y-4 leading-relaxed">
                         {lang === 'tr' ? (
                             <>
-                                <p>10 dakikalık mail (10 minute mail), kısa süreli çevrimiçi işlemler için mükemmel bir geçici e-posta çözümüdür. MephistoMail, hızlı ve güvenli 10 dakikalık kullan-at e-posta adresleri sunar. Kayıt gerektirmez, kişisel bilgi istemez ve e-postalarınızı RAM-only mimaride işler.</p>
-                                <p>Neden 10 dakikalık mail kullanmalısınız? Çünkü çoğu çevrimiçi kayıt işlemi 10 dakikadan kısa sürer. Bir web sitesine kaydolun, doğrulama kodunu alın ve devam edin — gerçek e-posta adresinizi hiçbir zaman riske atmadan. 10 minute mail, temp mail, disposable email veya throwaway email olarak da bilinen bu servis, çevrimiçi gizliliğinizi korumanın en hızlı yoludur.</p>
-                                <p>MephistoMail'in 10 dakikalık mail servisi, WebSocket teknolojisi sayesinde gelen e-postaları anlık olarak gösterir. Sayfayı yenilemenize gerek yoktur — yeni bir e-posta geldiği anda ekranınızda belirir. İster doğrulama kodu, ister onay linki, ister bildirim e-postası olsun, saniyeler içinde alırsınız.</p>
-                                <p>Geleneksel 10 minute mail servislerinden farklı olarak, MephistoMail aynı anda 100 adet geçici e-posta kutusu yönetmenize olanak tanır. Her biri bağımsız, güvenli ve tam anonim. Üstelik tüm hizmetlerimiz tamamen ücretsizdir — premium abonelik, gizli ücret veya sınırlama yoktur.</p>
+                                <p>10 dakikalık mail servisleri, kısa süreli tek kullanımlık dijital işlemler için özel olarak tasarlanmıştır. MephistoMail, e-posta trafiğini doğrudan uçucu RAM belleğe yönlendirir ve fiziksel depolama alanına hiçbir veri yazmaz.</p>
+                                <p>Web platformlarında hesap açarken veya tek seferlik doğrulama kodu alırken kişisel e-posta adresinizi paylaşmak, dijital izinizi reklam verenlere açmanıza neden olur. 10 dakikalık kullan-at adresler bu riski tamamen ortadan kaldırır.</p>
+                                <p>Gelişmiş WebSocket ve SSE (Server-Sent Events) protokollerimiz sayesinde gelen mailler tarayıcınız açıkken milisaniyeler içinde ekranda belirir. Manuel sayfa yenilemeye veya polling beklemelerine gerek kalmaz.</p>
+                                <p>Geleneksel servislerin aksine, MephistoMail tek bir tarayıcı sekmesinde 100 eş zamanlı posta kutusu yönetmenize imkan tanır. Oturum tamamlandığında bellek otomatik olarak temizlenir.</p>
                             </>
                         ) : (
                             <>
-                                <p>10 minute mail is a perfect temporary email solution for short-term online tasks. MephistoMail offers fast and secure 10-minute disposable email addresses. No registration required, no personal information asked, and your emails are processed in a RAM-only architecture.</p>
-                                <p>Why should you use 10 minute mail? Because most online registration processes take less than 10 minutes. Sign up for a website, receive the verification code, and move on — without ever risking your real email address. Also known as temp mail, disposable email, or throwaway email, this service is the fastest way to protect your online privacy.</p>
-                                <p>MephistoMail's 10 minute mail service shows incoming emails instantly thanks to WebSocket technology. You don't need to refresh the page — new emails appear on your screen the moment they arrive. Whether it's a verification code, confirmation link, or notification email, you'll receive it within seconds.</p>
-                                <p>Unlike traditional 10 minute mail services, MephistoMail allows you to manage up to 100 temporary mailboxes simultaneously. Each one is independent, secure, and fully anonymous. Plus, all our services are completely free — no premium subscription, hidden fees, or limitations.</p>
+                                <p>10 minute mail services are specifically engineered for short-lived digital interactions. MephistoMail routes incoming mail streams directly into volatile RAM memory, avoiding physical disk writes altogether.</p>
+                                <p>Exposing your primary email address during routine sign-ups allows data brokers to build persistent profiles. Disposable 10-minute handles decouple your real identity from online web services.</p>
+                                <p>Powered by low-latency WebSockets and Server-Sent Events (SSE), incoming messages land on your active screen in milliseconds without manual browser page reloads.</p>
+                                <p>Unlike legacy throwaway email platforms, MephistoMail allows seamless switching across up to 100 active mailboxes in a single browser tab. Memory is automatically flushed upon session termination.</p>
                             </>
                         )}
                     </div>

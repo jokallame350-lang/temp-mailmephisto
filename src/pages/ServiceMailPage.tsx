@@ -718,28 +718,6 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
 
         {/* Main SEO Content Article, SaaS Modules & Comparison Table */}
         <SEOContent lang={lang} />
-
-        {/* Cross-Links to other Services */}
-        <section className="border-t border-slate-800/80 pt-8">
-          <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
-            {isTr ? 'Diğer Popüler Servisler İçin Temp Mail' : 'Temp Mail for Other Popular Platforms'}
-          </h3>
-          <div className="flex flex-wrap gap-3">
-            {Object.values(SERVICES_MAP).map(item => (
-              <Link
-                key={item.id}
-                to={`/temp-mail-for-${item.id}`}
-                className={`px-4 py-2 rounded-xl text-xs font-medium border transition-all ${
-                  item.id === data.id
-                    ? 'bg-red-500/20 border-red-500/50 text-red-300'
-                    : 'bg-[#12121e] border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        </section>
       </main>
 
       <Footer lang={lang} />

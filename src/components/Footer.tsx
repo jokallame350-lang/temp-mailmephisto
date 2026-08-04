@@ -67,7 +67,7 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
         </div>
 
         {/* Main Footer Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 sm:gap-8 mb-8 sm:mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 sm:gap-8 mb-8 sm:mb-10">
           {/* Brand */}
           <div className="col-span-1 sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-3">
@@ -93,8 +93,18 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-white hover:border-white/20 transition-all"
                 aria-label="GitHub"
+                title="GitHub Repository"
               >
                 <Github size={14} />
+              </a>
+
+              <a
+                href="mailto:jokallame0@gmail.com"
+                className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-red-400 hover:border-red-500/20 transition-all"
+                aria-label="Contact Support Email"
+                title="jokallame0@gmail.com"
+              >
+                <Mail size={14} />
               </a>
 
               <a
@@ -193,9 +203,15 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/help" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
-                    <HelpCircle size={10} />
-                    FAQ
+                  <Link to="/tools" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Wrench size={10} />
+                    {lang === 'tr' ? 'Ücretsiz Araçlar' : 'Free Tools'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/disposable-checker" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Shield size={10} />
+                    {lang === 'tr' ? 'E-posta Denetleyici' : 'Email Checker'}
                   </Link>
                 </li>
               </ul>
@@ -216,6 +232,12 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                   </Link>
                 </li>
                 <li>
+                  <a href="mailto:jokallame0@gmail.com" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Mail size={10} />
+                    jokallame0@gmail.com
+                  </a>
+                </li>
+                <li>
                   <Link to="/api-docs" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
                     <Code2 size={10} />
                     API {lang === 'tr' ? 'Dokümantasyon' : 'Documentation'}
@@ -224,7 +246,7 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                 <li>
                   <a href="https://github.com/jokallame350-lang/temp-mailmephisto" target="_blank" rel="noopener noreferrer" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
                     <Github size={10} />
-                    GitHub
+                    GitHub Repository
                   </a>
                 </li>
               </ul>

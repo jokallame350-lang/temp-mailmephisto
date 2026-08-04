@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, Mail, Shield, Clock, Users, Globe, Lock, Zap, MessageCircle } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Mail, Shield, Clock, Users, Globe, Lock, Zap, MessageCircle, Github } from 'lucide-react';
 import { Language } from '../translations';
 import SEOPageMeta from '../components/SEOPageMeta';
 
@@ -14,7 +14,7 @@ const faqs = {
         { q: 'How do I create a temporary email?', a: 'Simply visit MephistoMail and a temporary email address is automatically generated for you. Click "Copy" to copy it and use it wherever you need.' },
         { q: 'How long does my temporary email last?', a: 'Your temporary email remains active as long as your browser session is open. You can also set auto-delete timers for individual accounts.' },
         { q: 'Can I receive OTP verification codes?', a: 'Yes! MephistoMail uses WebSocket technology for instant email delivery, making it perfect for receiving OTP codes, verification links, and confirmation emails.' },
-        { q: 'Is MephistoMail free?', a: 'Yes, MephistoMail is 100% free. You start with 3 free email credits. When credits run out, watch a short optional ad to earn 3 more. No premium plans, no hidden fees.' },
+        { q: 'Is MephistoMail free?', a: 'Yes, MephistoMail is 100% free with no ads, no registration, and no premium restrictions. Create unlimited temporary email addresses at zero cost.' },
         { q: 'Do you store my emails?', a: 'No. MephistoMail uses a RAM-only architecture — your emails are never written to disk. When your session ends, all data is permanently gone.' },
         { q: 'Can I use MephistoMail for Instagram/Twitter?', a: 'Yes, you can use MephistoMail to receive verification codes from social media platforms like Instagram, Twitter, Discord, and many more.' },
         { q: 'How many accounts can I create?', a: 'You can manage up to 100 temporary email accounts simultaneously. Each has its own inbox and can be managed independently.' },
@@ -30,7 +30,7 @@ const faqs = {
         { q: 'Geçici e-posta nasıl oluştururum?', a: 'MephistoMail\'i ziyaret ettiğinizde otomatik olarak bir geçici e-posta adresi oluşturulur. "Kopyala" butonuna tıklayarak adresi kopyalayın ve istediğiniz yerde kullanın.' },
         { q: 'Geçici e-postam ne kadar süre aktif kalır?', a: 'Geçici e-postanız tarayıcı oturumunuz açık olduğu sürece aktif kalır. Ayrıca hesaplar için otomatik silme zamanlayıcıları ayarlayabilirsiniz.' },
         { q: 'OTP doğrulama kodlarını alabilir miyim?', a: 'Evet! MephistoMail, anlık e-posta teslimatı için WebSocket teknolojisi kullanır — OTP kodları, doğrulama linkleri ve onay e-postaları saniyeler içinde gelir.' },
-        { q: 'MephistoMail ücretsiz mi?', a: 'Evet, MephistoMail %100 ücretsizdir. 3 ücretsiz e-posta hakkı ile başlarsınız. Haklar bittiğinde kısa bir isteğe bağlı reklam izleyerek 3 yeni hak kazanabilirsiniz. Premium plan yok, gizli ücret yok.' },
+        { q: 'MephistoMail ücretsiz mi?', a: 'Evet, MephistoMail %100 ücretsizdir; reklam, kayıt veya premium kısıtlama yoktur. Sıfır maliyetle sınırsız geçici e-posta adresi oluşturabilirsiniz.' },
         { q: 'E-postalarımı saklıyor musunuz?', a: 'Hayır. MephistoMail, RAM-only mimari kullanır — e-postalarınız asla diske yazılmaz. Oturumunuz sona erdiğinde tüm veriler kalıcı olarak silinir.' },
         { q: 'MephistoMail\'i Instagram/Twitter için kullanabilir miyim?', a: 'Evet, Instagram, Twitter, Discord ve birçok sosyal medya platformundan doğrulama kodları almak için MephistoMail\'i kullanabilirsiniz.' },
         { q: 'Kaç hesap oluşturabilirim?', a: 'Aynı anda 100 adete kadar geçici e-posta hesabı yönetebilirsiniz. Her birinin kendi gelen kutusu vardır ve bağımsız olarak yönetilebilir.' },
@@ -140,18 +140,25 @@ const HelpPage: React.FC<HelpPageProps> = ({ lang }) => {
                 </div>
             </section>
 
-            {/* Contact */}
+            {/* Contact & Open Source */}
             <section className="py-12 px-6 border-t border-white/5 text-center">
                 <MessageCircle size={24} className="text-red-400 mx-auto mb-3" />
                 <h3 className="text-lg font-bold mb-2">
                     {lang === 'tr' ? 'Hâlâ sorunuz mu var?' : 'Still have questions?'}
                 </h3>
                 <p className="text-slate-400 text-sm mb-4">
-                    {lang === 'tr' ? 'Bize e-posta gönderin, en kısa sürede yanıtlayalım.' : 'Send us an email and we\'ll respond as soon as possible.'}
+                    {lang === 'tr' ? 'Bize e-posta gönderin veya GitHub depomuzu ziyaret edin.' : 'Send us an email or visit our GitHub repository.'}
                 </p>
-                <a href="mailto:support@mephistomail.site" className="text-red-400 text-sm font-medium hover:underline">
-                    support@mephistomail.site
-                </a>
+                <div className="flex flex-wrap items-center justify-center gap-6">
+                    <a href="mailto:jokallame0@gmail.com" className="text-red-400 text-sm font-medium hover:underline flex items-center gap-1.5">
+                        <Mail size={16} />
+                        jokallame0@gmail.com
+                    </a>
+                    <a href="https://github.com/jokallame350-lang/temp-mailmephisto" target="_blank" rel="noopener noreferrer" className="text-purple-400 text-sm font-medium hover:underline flex items-center gap-1.5">
+                        <Github size={16} />
+                        GitHub Repository
+                    </a>
+                </div>
             </section>
 
             {/* CTA */}
