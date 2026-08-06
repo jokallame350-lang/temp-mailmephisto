@@ -1,5 +1,5 @@
 {
-  "name": "mephistomail",
+  "name": "@benmxrtt00/mephistomail",
   "version": "1.0.0",
   "description": "Official Node.js & TypeScript SDK for MephistoMail — Instant Disposable Temp Mail & AI OTP Extraction API",
   "main": "index.js",
