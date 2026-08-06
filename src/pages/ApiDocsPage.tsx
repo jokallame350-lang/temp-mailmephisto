@@ -303,11 +303,11 @@ const ApiDocsPage: React.FC<ApiDocsPageProps> = ({ lang }) => {
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-yellow-500/10 text-yellow-400">Node.js / TypeScript (NPM)</span>
-                                <span className="text-[10px] text-slate-400 font-mono">npm i mephistomail</span>
+                                <span className="text-[10px] text-slate-400 font-mono">npm i mephisto-tempmail</span>
                             </div>
-                            <CodeBlock language="bash" code={`npm install mephistomail`} />
+                            <CodeBlock language="bash" code={`npm install mephisto-tempmail`} />
                             <div className="mt-3">
-                                <CodeBlock language="javascript" code={`const MephistoMail = require('mephistomail');
+                                <CodeBlock language="javascript" code={`const MephistoMail = require('mephisto-tempmail');
 
 const mephisto = new MephistoMail();
 const inbox = await mephisto.createInbox();
