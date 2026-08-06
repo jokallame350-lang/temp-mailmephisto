@@ -17,6 +17,21 @@ export function useMailbox() {
     useEffect(() => {
         fetchDomains().catch(err => console.warn('Domain fetch failed:', err));
 
+        const params = new URLSearchParams(window.location.search);
+        const magicAddress = params.get('mailbox') || params.get('address');
+        if (magicAddress && magicAddress.includes('@')) {
+            const [username, domain] = magicAddress.split('@');
+            if (username && domain) {
+                createCustomMailbox(username.toLowerCase(), domain.toLowerCase(), 'guerrilla').then(box => {
+                    if (box && box.address && box.id !== 'error') {
+                        const newMailbox: Mailbox = { ...box, createdAt: Date.now() };
+                        setAccounts(prev => [newMailbox, ...prev.filter(a => a.address !== newMailbox.address)]);
+                        setActiveAccountId(newMailbox.id);
+                    }
+                }).catch(() => {});
+            }
+        }
+
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             try {
