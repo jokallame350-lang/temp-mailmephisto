@@ -299,51 +299,42 @@ const ApiDocsPage: React.FC<ApiDocsPageProps> = ({ lang }) => {
                     <p className="text-slate-400 text-sm mb-6">{txt.sdksDesc}</p>
 
                     <div className="grid gap-6 md:grid-cols-2">
-                        {/* Python Example */}
+                        {/* Node.js NPM Package */}
                         <div>
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-blue-500/10 text-blue-400">Python</span>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-yellow-500/10 text-yellow-400">Node.js / TypeScript (NPM)</span>
+                                <span className="text-[10px] text-slate-400 font-mono">npm i mephistomail</span>
                             </div>
-                            <CodeBlock language="python" code={`import mephistomail
+                            <CodeBlock language="bash" code={`npm install mephistomail`} />
+                            <div className="mt-3">
+                                <CodeBlock language="javascript" code={`const MephistoMail = require('mephistomail');
 
-# Create a temporary mailbox
-mailbox = mephistomail.create(ttl=3600)
-print(f"Email: {mailbox.address}")
+const mephisto = new MephistoMail();
+const inbox = await mephisto.createInbox();
 
-# Wait for an email
-email = mailbox.wait_for_email(timeout=60)
-print(f"From: {email.sender}")
-print(f"Subject: {email.subject}")
-
-# Extract OTP code
-otp = email.extract_otp()
-print(f"OTP: {otp}")
-
-# Cleanup
-mailbox.delete()`} />
+console.log(\`Temp Email: \${inbox.address}\`);
+const otpCode = await inbox.waitForOTP();
+console.log(\`Extracted OTP: \${otpCode}\`);`} />
+                            </div>
                         </div>
 
-                        {/* JavaScript Example */}
+                        {/* Python PyPI Package */}
                         <div>
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-yellow-500/10 text-yellow-400">JavaScript</span>
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-blue-500/10 text-blue-400">Python (PyPI)</span>
+                                <span className="text-[10px] text-slate-400 font-mono">pip install mephistomail</span>
                             </div>
-                            <CodeBlock language="javascript" code={`const MephistoMail = require('mephistomail');
+                            <CodeBlock language="bash" code={`pip install mephistomail`} />
+                            <div className="mt-3">
+                                <CodeBlock language="python" code={`from mephistomail import MephistoMail
 
-// Create a temporary mailbox
-const mailbox = await MephistoMail.create({ 
-  ttl: 3600 
-});
-console.log(\`Email: \${mailbox.address}\`);
+mephisto = MephistoMail()
+inbox = mephisto.create_inbox()
 
-// Wait for incoming email
-const email = await mailbox.waitForEmail({
-  timeout: 60000
-});
-console.log(\`OTP: \${email.extractOTP()}\`);
-
-// Cleanup
-await mailbox.delete();`} />
+print(f"Temp Email: {inbox.address}")
+otp_code = inbox.wait_for_otp()
+print(f"Extracted OTP: {otp_code}")`} />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,0 +1,31 @@
+{
+  "name": "mephistomail",
+  "version": "1.0.0",
+  "description": "Official Node.js & TypeScript SDK for MephistoMail — Instant Disposable Temp Mail & AI OTP Extraction API",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "keywords": [
+    "temp-mail",
+    "disposable-email",
+    "mephistomail",
+    "otp-extractor",
+    "e2e-testing",
+    "playwright",
+    "cypress",
+    "qa-automation",
+    "temporary-email"
+  ],
+  "author": "Mert Can Yildiz <jokallame0@gmail.com> (https://github.com/benmxrtt00)",
+  "license": "MIT",
+  "homepage": "https://mephistomail.site",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jokallame350-lang/temp-mailmephisto.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jokallame350-lang/temp-mailmephisto/issues"
+  }
+}
