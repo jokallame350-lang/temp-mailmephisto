@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
-import { translations, Language, LANGUAGES } from './translations'
+import { translations, Language } from './translations'
 
 // Lazy load pages for code splitting
 const BlogPage = lazy(() => import('./pages/BlogPage'));
@@ -15,6 +15,8 @@ const ContactPage = lazy(() => import('./pages/ContactPage'));
 const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage'));
 const ServiceMailPage = lazy(() => import('./pages/ServiceMailPage'));
 const DisposableCheckerPage = lazy(() => import('./pages/DisposableCheckerPage'));
+const BulkGeneratorPage = lazy(() => import('./pages/BulkGeneratorPage'));
+const BurnNotePage = lazy(() => import('./pages/BurnNotePage'));
 const ServicesCatalogPage = lazy(() => import('./pages/ServicesCatalogPage'));
 
 // Loading fallback
@@ -36,17 +38,24 @@ const ScrollToTop = () => {
 // Language hook
 const useLang = (): Language => {
   const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('mephisto_lang') as Language;
-    if (saved && LANGUAGES.some(l => l.code === saved)) return saved;
+    const saved = localStorage.getItem('mephisto_lang');
+    if (['tr', 'en', 'es', 'de', 'fr', 'it', 'pt', 'ru', 'ar'].includes(saved || '')) return saved as Language;
     const bl = navigator.language.toLowerCase();
-    const match = LANGUAGES.find(l => bl.startsWith(l.code));
-    return match ? match.code : 'en';
+    if (bl.startsWith('tr')) return 'tr';
+    if (bl.startsWith('es')) return 'es';
+    if (bl.startsWith('de')) return 'de';
+    if (bl.startsWith('fr')) return 'fr';
+    if (bl.startsWith('it')) return 'it';
+    if (bl.startsWith('pt')) return 'pt';
+    if (bl.startsWith('ru')) return 'ru';
+    if (bl.startsWith('ar')) return 'ar';
+    return 'en';
   });
 
   useEffect(() => {
     const handleStorage = () => {
       const saved = localStorage.getItem('mephisto_lang') as Language;
-      if (saved && LANGUAGES.some(l => l.code === saved)) {
+      if (saved && ['tr', 'en', 'es', 'de', 'fr', 'it', 'pt', 'ru', 'ar'].includes(saved)) {
         setLang(saved);
       }
     };
@@ -106,10 +115,14 @@ const AppRouter = () => {
           <Route path="/temp-mail-for-amazon" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-vinted" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-saas" element={<ServiceMailPage lang={lang} />} />
-          <Route path="/temp-mail-for-telegram" element={<ServiceMailPage lang={lang} />} />
-          <Route path="/temp-mail-for-linkedin" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-claude-ai" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-midjourney" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-facebook" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-reddit" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
+          <Route path="/bulk-generator" element={<BulkGeneratorPage lang={lang} />} />
+          <Route path="/burn-note" element={<BurnNotePage lang={lang} />} />
           {/* Catch-all: redirect to home */}
           <Route path="*" element={<App />} />
         </Routes>

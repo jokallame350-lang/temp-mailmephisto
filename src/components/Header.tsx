@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X, Github, Mail } from 'lucide-react';
-import { translations, Language, LANGUAGES } from '../translations';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X } from 'lucide-react';
+import { translations, Language } from '../translations';
 
 interface HeaderProps {
   accounts: Mailbox[];
@@ -117,6 +117,18 @@ const Header: React.FC<HeaderProps> = ({
           <span>🚀 {lang === 'tr' ? 'Servisler' : 'Services'}</span>
         </Link>
         <Link
+          to="/bulk-generator"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
+        >
+          <span>📦 {lang === 'tr' ? 'Toplu Mail' : 'Bulk Mail'}</span>
+        </Link>
+        <Link
+          to="/burn-note"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
+        >
+          <span>🔥 Burn Note</span>
+        </Link>
+        <Link
           to="/tools"
           className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/[0.06] transition-all flex items-center gap-1.5"
         >
@@ -141,28 +153,6 @@ const Header: React.FC<HeaderProps> = ({
             <Download className="w-4 h-4" />
           </button>
 
-          {/* GitHub Repository */}
-          <a
-            href="https://github.com/jokallame350-lang/temp-mailmephisto"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
-            title="GitHub Repository"
-            aria-label="GitHub Repository"
-          >
-            <Github className="w-4 h-4" />
-          </a>
-
-          {/* Support Email */}
-          <a
-            href="mailto:jokallame0@gmail.com"
-            className="p-1.5 sm:p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
-            title="Contact Support (jokallame0@gmail.com)"
-            aria-label="Contact Support"
-          >
-            <Mail className="w-4 h-4" />
-          </a>
-
           {/* PWA Install */}
           {pwaInstallable && (
             <button
@@ -185,40 +175,42 @@ const Header: React.FC<HeaderProps> = ({
               <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${langOpen ? 'rotate-180' : ''}`} />
             </button>
             {langOpen && (
-              <div className="absolute right-0 top-full mt-1 bg-[#0f1117] border border-white/10 rounded-xl shadow-2xl z-50 w-48 max-h-80 overflow-y-auto py-1 animate-in fade-in zoom-in-95 duration-150 custom-scrollbar">
-                {LANGUAGES.map(l => (
+              <div className="absolute right-0 top-full mt-1 bg-[#111] border border-white/10 rounded-lg shadow-xl z-50 min-w-[130px] py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                {([
+                  { code: 'en' as const, label: '🇬🇧 English' },
+                  { code: 'tr' as const, label: '🇹🇷 Türkçe' },
+                  { code: 'es' as const, label: '🇪🇸 Español' },
+                  { code: 'de' as const, label: '🇩🇪 Deutsch' },
+                  { code: 'fr' as const, label: '🇫🇷 Français' },
+                  { code: 'it' as const, label: '🇮🇹 Italiano' },
+                  { code: 'pt' as const, label: '🇵🇹 Português' },
+                  { code: 'ru' as const, label: '🇷🇺 Русский' },
+                  { code: 'ar' as const, label: '🇸🇦 العربية' },
+                ]).map(l => (
                   <button
                     key={l.code}
                     onClick={() => {
                       setLang(l.code);
-                      localStorage.setItem('mephisto_lang', l.code);
-                      window.dispatchEvent(new Event('mephisto-lang-change'));
                       setLangOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors min-h-[44px] flex items-center justify-between ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-300 hover:text-white hover:bg-white/5'}`}
+                    className={`w-full text-left px-3 py-2 text-[12px] transition-colors min-h-[44px] flex items-center ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
                   >
-                    <span className="flex items-center gap-2">
-                      <span>{l.flag}</span>
-                      <span>{l.nativeName}</span>
-                    </span>
-                    <span className="text-[10px] text-slate-500 uppercase">{l.code}</span>
+                    {l.label}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Tema Değiştirici (4 Profesyonel Tema) */}
+          {/* Tema Değiştirici */}
           {setTheme && (
             <button
               onClick={() => {
-                const themes = ['dark', 'cyberpunk', 'sapphire', 'light'];
-                const currentIndex = themes.indexOf(theme || 'dark');
-                const nextTheme = themes[(currentIndex + 1) % themes.length];
+                const nextTheme = theme === 'cyberpunk' ? 'light' : theme === 'light' ? 'dark' : 'cyberpunk';
                 setTheme(nextTheme);
               }}
               className="p-1.5 sm:p-2 text-slate-400 hover:text-orange-400 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 justify-center"
-              title={lang === 'tr' ? 'Tema Değiştir (Obsidian / Cyberpunk / Sapphire / Light)' : 'Switch Theme (Obsidian / Cyberpunk / Sapphire / Light)'}
+              title={lang === 'tr' ? 'Tema Değiştir (Dark / Cyberpunk / Light)' : 'Switch Theme (Dark / Cyberpunk / Light)'}
             >
               <Palette className="w-4 h-4 text-orange-500" />
             </button>
@@ -325,6 +317,22 @@ const Header: React.FC<HeaderProps> = ({
               <span>{lang === 'tr' ? 'Servisler' : 'Services'}</span>
             </Link>
             <Link
+              to="/bulk-generator"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">📦</span>
+              <span>{lang === 'tr' ? 'Toplu Mail' : 'Bulk Mail'}</span>
+            </Link>
+            <Link
+              to="/burn-note"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
+            >
+              <span className="text-base">🔥</span>
+              <span>Burn Note</span>
+            </Link>
+            <Link
               to="/tools"
               onClick={() => setMobileMenuOpen(false)}
               className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
@@ -340,24 +348,6 @@ const Header: React.FC<HeaderProps> = ({
               <span className="text-base">📖</span>
               <span>Blog</span>
             </Link>
-            <a
-              href="https://github.com/jokallame350-lang/temp-mailmephisto"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
-            >
-              <Github className="w-4 h-4 text-purple-400" />
-              <span>GitHub Repository</span>
-            </a>
-            <a
-              href="mailto:jokallame0@gmail.com"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 min-h-[44px]"
-            >
-              <Mail className="w-4 h-4 text-red-400" />
-              <span>jokallame0@gmail.com</span>
-            </a>
           </nav>
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Mailbox } from '../types';
 import { generateMailbox, createCustomMailbox, fetchDomains, storeCredentials, onTokenRefresh } from '../services/mailService';
+
 const STORAGE_KEY = 'nexus_accounts_v5';
 const MAX_ACTIVE_ACCOUNTS = 100;
 
@@ -13,57 +14,155 @@ export function useMailbox() {
 
     const activeAccount = accounts.find(a => a.id === activeAccountId) || null;
 
-    // İlk yüklemede localStorage'dan hesapları geri yükle
-    useEffect(() => {
-        fetchDomains().catch(err => console.warn('Domain fetch failed:', err));
+    // Magic URL oluşturucu helper
+    const getMagicUrl = useCallback((address?: string) => {
+        const targetAddress = address || activeAccount?.address;
+        if (!targetAddress || typeof window === 'undefined') return '';
+        const url = new URL(window.location.href);
+        url.searchParams.set('mailbox', targetAddress);
+        return url.toString();
+    }, [activeAccount?.address]);
 
-        const params = new URLSearchParams(window.location.search);
-        const magicAddress = params.get('mailbox') || params.get('address');
-        if (magicAddress && magicAddress.includes('@')) {
-            const [username, domain] = magicAddress.split('@');
-            if (username && domain) {
-                createCustomMailbox(username.toLowerCase(), domain.toLowerCase(), 'guerrilla').then(box => {
-                    if (box && box.address && box.id !== 'error') {
-                        const newMailbox: Mailbox = { ...box, createdAt: Date.now() };
-                        setAccounts(prev => [newMailbox, ...prev.filter(a => a.address !== newMailbox.address)]);
-                        setActiveAccountId(newMailbox.id);
-                    }
-                }).catch(() => {});
-            }
+    const createQuickAccount = useCallback(async (skipCreditCheck: boolean = false) => {
+        if (isCreatingRef.current || accounts.length >= MAX_ACTIVE_ACCOUNTS) {
+            return { success: false, reason: accounts.length >= MAX_ACTIVE_ACCOUNTS ? 'capacity' : 'busy' };
         }
 
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
+        isCreatingRef.current = true;
+        setIsLoadingAccount(true);
+
+        try {
+            const newMailbox: Mailbox = { ...await generateMailbox(), createdAt: Date.now() };
+            if (!newMailbox || !newMailbox.address || newMailbox.id === 'error') {
+                throw new Error('Connection failed');
+            }
+            // Store credentials for token refresh
+            if (newMailbox.password) {
+                storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
+            }
+            setAccounts(prev => [newMailbox, ...prev]);
+            setActiveAccountId(newMailbox.id);
+            return { success: true };
+        } catch (e) {
+            console.error('Account creation failed:', e);
+            return { success: false, reason: 'error' };
+        } finally {
+            setIsLoadingAccount(false);
+            isCreatingRef.current = false;
+        }
+    }, [accounts.length]);
+
+    // İlk yüklemede localStorage'dan hesapları ve URL param'dan mailbox'ı geri yükle
+    useEffect(() => {
+        const initMailbox = async () => {
+            let domainMap: Record<string, string> = {};
             try {
-                const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    const now = Date.now();
-                    const valid = parsed.filter((a: Mailbox) => {
-                        if (!a.createdAt) return true;
-                        return now - a.createdAt < 24 * 60 * 60 * 1000;
-                    });
-                    if (valid.length > 0) {
-                        setAccounts(valid);
-                        setActiveAccountId(valid[0].id);
-                        isFirstLoadRef.current = false;
-                        // Re-store credentials for token refresh
-                        valid.forEach((a: Mailbox) => {
+                const domainRes = await fetchDomains();
+                domainMap = domainRes?.domainProviderMap || {};
+            } catch (err) {
+                console.warn('Domain fetch failed:', err);
+            }
+
+            const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+            const targetMailbox = urlParams?.get('mailbox')?.trim();
+
+            const saved = localStorage.getItem(STORAGE_KEY);
+            let validAccounts: Mailbox[] = [];
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        const now = Date.now();
+                        validAccounts = parsed.filter((a: Mailbox) => {
+                            if (!a.createdAt) return true;
+                            return now - a.createdAt < 24 * 60 * 60 * 1000;
+                        });
+                        validAccounts.forEach((a: Mailbox) => {
                             if (a.password && a.id && a.address) {
                                 storeCredentials(a.id, a.address, a.password);
                             }
                         });
-                        if (valid.length !== parsed.length) {
-                            localStorage.setItem(STORAGE_KEY, JSON.stringify(valid));
+                    }
+                } catch { /* parse error */ }
+            }
+
+            // URL param ile gelen ?mailbox=xyz@domain.com adresini geri yükle veya oluştur
+            if (targetMailbox && targetMailbox.includes('@')) {
+                const existing = validAccounts.find(a => a.address.toLowerCase() === targetMailbox.toLowerCase());
+                if (existing) {
+                    setAccounts(validAccounts);
+                    setActiveAccountId(existing.id);
+                    isFirstLoadRef.current = false;
+                    return;
+                } else {
+                    const parts = targetMailbox.split('@');
+                    const username = parts[0];
+                    const domain = parts.slice(1).join('@');
+                    if (username && domain) {
+                        setIsLoadingAccount(true);
+                        try {
+                            const provider = domainMap[domain] || 'guerrilla';
+                            const newMailbox = await createCustomMailbox(username, domain, provider);
+                            const mailboxWithDate: Mailbox = { ...newMailbox, createdAt: Date.now() };
+                            if (newMailbox.password) {
+                                storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
+                            }
+                            const updated = [mailboxWithDate, ...validAccounts];
+                            setAccounts(updated);
+                            setActiveAccountId(mailboxWithDate.id);
+                            localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+                        } catch (err) {
+                            console.error('Failed to restore URL mailbox:', err);
+                            if (validAccounts.length > 0) {
+                                setAccounts(validAccounts);
+                                setActiveAccountId(validAccounts[0].id);
+                            } else {
+                                await createQuickAccount(true);
+                            }
+                        } finally {
+                            setIsLoadingAccount(false);
+                            isFirstLoadRef.current = false;
                         }
                         return;
                     }
                 }
-            } catch { /* parse error */ }
-        }
-        // Hiç hesap yoksa yeni oluştur (ilk kullanım — ücretsiz)
-        createQuickAccount(true);
+            }
+
+            if (validAccounts.length > 0) {
+                setAccounts(validAccounts);
+                setActiveAccountId(validAccounts[0].id);
+                isFirstLoadRef.current = false;
+                if (validAccounts.length !== (saved ? JSON.parse(saved).length : 0)) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(validAccounts));
+                }
+                return;
+            }
+
+            // Hiç hesap yoksa yeni oluştur (ilk kullanım — ücretsiz)
+            await createQuickAccount(true);
+            isFirstLoadRef.current = false;
+        };
+
+        initMailbox();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Aktif e-posta değiştikçe tarayıcı URL param'ını (?mailbox=xyz@domain.com) senkronize et
+    useEffect(() => {
+        if (typeof window === 'undefined' || isFirstLoadRef.current) return;
+        const url = new URL(window.location.href);
+        if (activeAccount?.address) {
+            if (url.searchParams.get('mailbox') !== activeAccount.address) {
+                url.searchParams.set('mailbox', activeAccount.address);
+                window.history.replaceState(null, '', url.toString());
+            }
+        } else {
+            if (url.searchParams.has('mailbox')) {
+                url.searchParams.delete('mailbox');
+                window.history.replaceState(null, '', url.toString());
+            }
+        }
+    }, [activeAccount?.address]);
 
     // Token refresh listener — update token in accounts when auto-refreshed
     useEffect(() => {
@@ -116,35 +215,6 @@ export function useMailbox() {
         return () => clearInterval(interval);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeAccountId]);
-
-    const createQuickAccount = useCallback(async (skipCreditCheck: boolean = false) => {
-        if (isCreatingRef.current || accounts.length >= MAX_ACTIVE_ACCOUNTS) {
-            return { success: false, reason: accounts.length >= MAX_ACTIVE_ACCOUNTS ? 'capacity' : 'busy' };
-        }
-
-        isCreatingRef.current = true;
-        setIsLoadingAccount(true);
-
-        try {
-            const newMailbox: Mailbox = { ...await generateMailbox(), createdAt: Date.now() };
-            if (!newMailbox || !newMailbox.address || newMailbox.id === 'error') {
-                throw new Error('Connection failed');
-            }
-            // Store credentials for token refresh
-            if (newMailbox.password) {
-                storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
-            }
-            setAccounts(prev => [newMailbox, ...prev]);
-            setActiveAccountId(newMailbox.id);
-            return { success: true };
-        } catch (e) {
-            console.error('Account creation failed:', e);
-            return { success: false, reason: 'error' };
-        } finally {
-            setIsLoadingAccount(false);
-            isCreatingRef.current = false;
-        }
-    }, [accounts.length]);
 
     const handleCreateCustom = useCallback(async (username: string, domain: string, apiBase: string) => {
         setIsLoadingAccount(true);
@@ -216,6 +286,8 @@ export function useMailbox() {
         setAutoDelete,
         bulkCopyAddresses,
         addCustomAccount,
+        getMagicUrl,
         MAX_ACTIVE_ACCOUNTS,
     };
 }
+

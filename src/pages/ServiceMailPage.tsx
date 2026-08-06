@@ -444,136 +444,344 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       { q: 'Can I reply to marketplace messages?', a: 'Yes! Use our Outbound Mail feature to send anonymous replies directly.' }
     ]
   },
-  telegram: {
-    id: 'telegram',
-    name: 'Telegram',
-    badge: '✈️ Messaging & Web App',
-    color: 'from-sky-500 to-blue-600',
-    titleTr: 'Telegram İçin Geçici Mail - Anonim Web & Uygulama Doğrulama',
-    titleEn: 'Temp Mail for Telegram Web & App Account Verification',
-    descriptionTr: 'Telegram web kayıtları, bot entegrasyonları ve kanal doğrulama e-postaları için hızlı kullan-at e-posta oluşturun.',
-    descriptionEn: 'Generate instant temporary email handles for Telegram web logins, bot testing, and channel admin verification with zero logs.',
+  'claude-ai': {
+    id: 'claude-ai',
+    name: 'Claude AI & Anthropic',
+    badge: '🤖 AI Tools',
+    color: 'from-amber-700 to-orange-700',
+    titleTr: 'Claude AI İçin Geçici Mail (Temp Mail) - Anthropic Hesap Açma',
+    titleEn: 'Temp Mail for Claude AI & Anthropic - Instant Verification',
+    descriptionTr: 'Claude AI, Anthropic Console ve AI geliştirici hesapları için anında kullan-at e-posta adresi oluşturun. OTP kodlarını saniyeler içinde alın.',
+    descriptionEn: 'Generate instant disposable email handles for Claude AI, Anthropic Console, and LLM testing accounts without exposing your primary inbox.',
     whyTr: [
-      'Telegram bot ve mini-app testlerinde kişisel gelen kutunuzu koruyun.',
-      'E-posta ile 2-Adımlı Doğrulama (2FA) sıfırlama kodlarını 1-3 saniyede alın.',
-      'Sınırsız sayıda geçici adres oluşturarak Telegram projelerinizi anonim yönetin.'
+      'Anthropic ve Claude AI kayıtlarında kişisel e-posta adresinizi gizleyin.',
+      'Çoklu AI test ve geliştirici hesaplarını spam riski olmadan yönetin.',
+      'Doğrulama mailindeki onay butonunu akıllı link tespitiyle anında tıklayın.'
     ],
     whyEn: [
-      'Keep your main email address hidden when testing Telegram bots and WebApps.',
-      'Receive 2-step verification reset OTP codes in under 3 seconds.',
-      'Spin up unlimited disposable addresses with zero tracking or logging.'
+      'Keep your primary email private when registering for Claude AI and Anthropic.',
+      'Create multiple developer & prompting sandbox accounts seamlessly.',
+      'Extract verification links instantly with zero log overhead.'
     ],
     faqsTr: [
-      { q: 'Telegram 2FA e-posta onay kodu gelir mi?', a: 'Evet! Telegram e-posta doğrulama ve 2FA kodları WebSocket altyapımızla 1-3 saniye içinde görünür.' }
+      { q: 'Claude AI doğrulama maili hemen geliyor mu?', a: 'Evet, Anthropic onay mailleri 1-3 saniyede MephistoMail kutunuza yansır.' }
     ],
     faqsEn: [
-      { q: 'Can I receive Telegram 2FA verification emails?', a: 'Yes! Telegram login and security verification emails land in your inbox within 1 to 3 seconds.' }
+      { q: 'Does Claude AI send verification emails immediately?', a: 'Yes! Anthropic confirmation links land in your inbox within 1 to 3 seconds.' }
+    ]
+  },
+  midjourney: {
+    id: 'midjourney',
+    name: 'Midjourney & AI Art',
+    badge: '🎨 AI Image Generators',
+    color: 'from-purple-600 to-indigo-700',
+    titleTr: 'Midjourney İçin Geçici Mail - Ücretsiz Görsel Üretim Hesapları',
+    titleEn: 'Temp Mail for Midjourney - Free AI Image Account Generator',
+    descriptionTr: 'Midjourney, Discord ve AI görsel üretim araçları için anonim e-posta adresi edinin. Kişisel mailinizi vermeden yeni hesaplar açın.',
+    descriptionEn: 'Generate volatile temporary email addresses for Midjourney and Discord AI generation channels without spam.',
+    whyTr: [
+      'Midjourney ve Discord AI bot kayıtlarında kişisel gelen kutunuzu koruyun.',
+      'Yeni AI görsel deneme hesaplarını saniyeler içinde doğrulayın.',
+      'Spam ve pazarlama duyurularını otomatik engelleyin.'
+    ],
+    whyEn: [
+      'Shield your main inbox from AI art platform promotional blasts.',
+      'Verify new Midjourney test profiles in under 3 seconds.',
+      'RAM-only volatile storage deletes all records on session close.'
+    ],
+    faqsTr: [
+      { q: 'Midjourney doğrulama kodu çalışıyor mu?', a: 'Evet, Discord ve Midjourney üzerinden gelen 6 haneli pinler anında ekranda görünür.' }
+    ],
+    faqsEn: [
+      { q: 'Does Midjourney OTP verification work?', a: 'Yes! Verification PINs arrive live on your screen in real time.' }
+    ]
+  },
+  canva: {
+    id: 'canva',
+    name: 'Canva & Graphic Design',
+    badge: '🎨 Design & Video',
+    color: 'from-cyan-500 to-teal-600',
+    titleTr: 'Canva Pro & Tasarım Araçları İçin Geçici Mail',
+    titleEn: 'Temp Mail for Canva Pro & Graphic Design Tool Sign-ups',
+    descriptionTr: 'Canva, Figma ve grafik tasarım araçlarına kayıt olurken kişisel e-postanızı gizli tutun. Ücretsiz deneme üyeliklerini anında başlatın.',
+    descriptionEn: 'Create instant temporary emails for Canva, Figma, and design platform sign-ups without clogged inboxes.',
+    whyTr: [
+      'Canva ücretsiz deneme ve tasarım indirmelerinde spam maillerden kurtulun.',
+      'Tasarım şablonlarını spamsız anında indirin.',
+      'Auto-Verify kalkanı ile onay linkini otomatik aktifleştirin.'
+    ],
+    whyEn: [
+      'Avoid endless design updates in your personal inbox.',
+      'Download graphic assets and templates anonymously.',
+      'Background Auto-Verify engine processes activation link handshakes.'
+    ],
+    faqsTr: [
+      { q: 'Canva doğrulama linki hemen gelir mi?', a: 'Evet, Canva aktivasyon linkleri 1-3 saniyede kutunuza düşer.' }
+    ],
+    faqsEn: [
+      { q: 'How fast do Canva confirmation emails land?', a: 'Confirmation links arrive within 1 to 3 seconds.' }
+    ]
+  },
+  epicgames: {
+    id: 'epicgames',
+    name: 'Epic Games Store',
+    badge: '🎮 Gaming & Store',
+    color: 'from-[#2a2a2a] to-[#121212]',
+    titleTr: 'Epic Games İçin Geçici E-posta - Anında 2FA & Kod Alın',
+    titleEn: 'Temp Mail for Epic Games Store - Instant 2FA & Account Generator',
+    descriptionTr: 'Epic Games Store ücretsiz oyun talepleri, alt hesaplar ve 2FA güvenlik kodları için kullan-at mail adresi edinin.',
+    descriptionEn: 'Generate instant temporary email addresses for Epic Games free game claims, alt profiles, and 2FA codes.',
+    whyTr: [
+      'Epic Games ücretsiz oyun ve hediyelerini ana mailinizi vermeden toplayın.',
+      '2FA güvenlik kodlarını 2 saniyede ekranınızda görüntüleyin.',
+      'Sınırsız oyun içi test hesabı açın.'
+    ],
+    whyEn: [
+      'Claim weekly Epic Games Store free games without inbox clutter.',
+      'Receive 2FA security codes in sub-3 seconds.',
+      'Isolate secondary gaming handles from your primary identity.'
+    ],
+    faqsTr: [
+      { q: 'Epic Games 2FA mailleri düşüyor mu?', a: 'Evet, Epic Games güvenlik kodları ve 2FA mailleri 1-3 saniyede canlı kutunuza yansır.' }
+    ],
+    faqsEn: [
+      { q: 'Do Epic Games 2FA security codes arrive quickly?', a: 'Yes, 2FA codes land live on screen in 1 to 3 seconds.' }
+    ]
+  },
+  twitch: {
+    id: 'twitch',
+    name: 'Twitch Drops & Live',
+    badge: '📺 Streaming & Drops',
+    color: 'from-purple-700 to-violet-900',
+    titleTr: 'Twitch Yayın & Drop Ödülleri İçin Geçici E-posta',
+    titleEn: 'Temp Mail for Twitch Drops, Live Streams & Alt Profiles',
+    descriptionTr: 'Twitch yayın hesapları, Drop ödül toplamaları ve sohbet hesapları için anonim geçici e-posta oluşturun.',
+    descriptionEn: 'Claim Twitch Drop rewards and create streamer alt handles with zero inbox risk.',
+    whyTr: [
+      'Twitch Drop ganimetlerini asıl e-postanızı bağlamadan toplayın.',
+      'Sohbet ve topluluk yan hesaplarını hızlıca açın.',
+      'Pazarlama maillerini otomatik çöp kutusuna yollayın.'
+    ],
+    whyEn: [
+      'Collect Twitch Drop game loot safely.',
+      'Quickly launch secondary stream community handles.',
+      'Prevent promo spam from filling your personal inbox.'
+    ],
+    faqsTr: [
+      { q: 'Twitch onay kodunu hemen alabilir miyim?', a: 'Evet, Twitch 6 haneli doğrulama pinleri anında ekranda görünür.' }
+    ],
+    faqsEn: [
+      { q: 'Can I get Twitch verification PINs right away?', a: 'Yes, 6-digit Twitch security PINs arrive in sub-3 seconds.' }
     ]
   },
   tiktok: {
     id: 'tiktok',
-    name: 'TikTok',
+    name: 'TikTok Creator & Ads',
     badge: '🎵 Social Media & Video',
-    color: 'from-neutral-900 to-rose-600',
-    titleTr: 'TikTok İçin Geçici E-posta - Anonim Profil Kaydı',
-    titleEn: 'Temp Mail for TikTok - Anonymous Profile Registration',
-    descriptionTr: 'TikTok yan hesapları veya içerik test profilleri açarken kişisel e-posta adresinizi vermeyin. Doğrulama kodunu anında alın.',
-    descriptionEn: 'Create secondary TikTok accounts for content testing or personal privacy without sharing your primary email.',
+    color: 'from-pink-500 to-cyan-500',
+    titleTr: 'TikTok İçin Geçici Mail - Anonim Profil & Reklam Hesabı',
+    titleEn: 'Temp Mail for TikTok Creator & Business Ad Accounts',
+    descriptionTr: 'TikTok yan hesapları, Reklam Yöneticisi testleri ve içerik üretici profilleri için geçici mail adresi oluşturun.',
+    descriptionEn: 'Create secondary TikTok profiles and Ad Manager testing handles without personal inbox exposure.',
     whyTr: [
-      'Kişisel e-postanızı TikTok reklam ve bildirim bombardımanından koruyun.',
-      '6 haneli TikTok aktivasyon kodunu anında Toast bildirimi ile kopyalayın.',
-      'İşiniz bittiğinde sekmeyi kapatın, tüm izler silinsin.'
+      'TikTok İşletme ve Reklam Yöneticisi hesaplarını spamsız test edin.',
+      '6 haneli TikTok giriş ve kayıt OTP kodlarını 2 saniyede kopyalayın.',
+      'Kişisel verilerinizi sosyal medya veri madencilerinden gizleyin.'
     ],
     whyEn: [
-      'Prevent TikTok marketing emails and daily alerts from cluttering your primary inbox.',
-      'Instantly view and copy 6-digit TikTok verification codes.',
-      'Close your tab to purge all temporary inbox data permanently from RAM.'
+      'Test TikTok Ad Manager features without linking main work emails.',
+      'Copy 6-digit TikTok auth codes in 2 seconds.',
+      'Keep your main identity detached from social media algorithms.'
     ],
     faqsTr: [
-      { q: 'TikTok geçici e-postaya doğrulama kodu gönderiyor mu?', a: 'Evet, MephistoMail temiz ve güncel domain yapısı sayesinde TikTok doğrulama kodlarını sorunsuz teslim eder.' }
+      { q: 'TikTok doğrulama kodu ne kadar sürede gelir?', a: 'TikTok onay mailleri 1-3 saniye içinde canlı bildirimle ekranınıza ulaşır.' }
     ],
     faqsEn: [
-      { q: 'Does TikTok send verification codes to temporary emails?', a: 'Yes, MephistoMail rotated domain architecture handles TikTok OTP verification smoothly.' }
+      { q: 'How fast do TikTok verification codes arrive?', a: 'TikTok OTP emails land on your screen in 1 to 3 seconds.' }
     ]
   },
   steam: {
     id: 'steam',
-    name: 'Steam',
-    badge: '🎮 PC Gaming',
-    color: 'from-blue-700 to-slate-900',
-    titleTr: 'Steam İçin Geçici E-posta - Oyun Hesabı Doğrulama',
-    titleEn: 'Temp Mail for Steam - Instant Game Account Verification',
-    descriptionTr: 'Steam hesap kayıtları, Guard e-posta kodları ve yan hesaplar için kullan-at mail adresi edinin.',
-    descriptionEn: 'Get instant disposable email handles for Steam Guard codes, secondary gaming profiles, and developer testing.',
+    name: 'Steam Gaming',
+    badge: '🎮 Steam Guard & Gaming',
+    color: 'from-[#171a21] to-[#1b2838]',
+    titleTr: 'Steam İçin Geçici Mail - Steam Guard & Yan Oyun Hesapları',
+    titleEn: 'Temp Mail for Steam Guard & Gaming Alt Accounts',
+    descriptionTr: 'Steam Guard doğrulama kodları, takas onayları ve oyun içi alt profiller için anonim kullan-at e-posta edinin.',
+    descriptionEn: 'Get instant temporary email addresses for Steam Guard verification, trade confirms, and gaming alt accounts.',
     whyTr: [
-      'Steam Guard 5 karakterli doğrulama kodlarını 2 saniyede alın.',
-      'İkinci oyun hesaplarınızı ana e-postanızdan tamamen yalıtın.',
-      'Oyun indirim ve bülten maillerinin ana kutunuza düşmesini engelleyin.'
+      'Steam Guard 5 haneli güvenlik kodlarını 2 saniyede alın.',
+      'Yan oyun ve smurf hesaplarınızı ana mailinizden ayırın.',
+      'Veri sızıntılarında Steam kimliğinizi koruyun.'
     ],
     whyEn: [
-      'Receive 5-character Steam Guard authorization codes within 2 seconds.',
-      'Isolate secondary gaming alt accounts from your main personal email.',
-      'Protect your inbox from relentless store sale spam.'
+      'Fetch 5-character Steam Guard auth codes in 2 seconds.',
+      'Isolate smurf and alt gaming handles from work/personal email.',
+      'Maintain strict zero-log security across sessions.'
     ],
     faqsTr: [
-      { q: 'Steam Guard kodları ne kadar hızlı geliyor?', a: 'Real-time WebSocket ve SSE altyapımız sayesinde Steam Guard mailleri 1-3 saniyede ekranınıza yansır.' }
+      { q: 'Steam Guard e-posta kodları çalışıyor mu?', a: 'Evet, Steam Guard güvenlik kodları anında otomatik tespit edilir ve öne çıkarılır.' }
     ],
     faqsEn: [
-      { q: 'How fast do Steam Guard codes arrive?', a: 'Powered by SSE real-time streaming, Steam Guard emails arrive in 1 to 3 seconds.' }
+      { q: 'Does Steam Guard email OTP work?', a: 'Yes! Steam Guard codes are extracted automatically upon arrival.' }
+    ]
+  },
+  github: {
+    id: 'github',
+    name: 'GitHub & Developer Accounts',
+    badge: '💻 Developer Platform',
+    color: 'from-slate-700 to-slate-900',
+    titleTr: 'GitHub İçin Geçici Mail - Geliştirici & Test Hesapları',
+    titleEn: 'Temp Mail for GitHub - Developer & CI/CD Testing Accounts',
+    descriptionTr: 'GitHub, GitLab ve Bitbucket organizasyon testlerinde şirket adresinizi koruyun. Anonim geliştirici hesapları oluşturun.',
+    descriptionEn: 'Protect your professional developer email during GitHub organization testing, bot creation, and CI/CD runs.',
+    whyTr: [
+      'CI/CD ve bot hesaplarında şirket e-posta kutunuzu kirletmeyin.',
+      'GitHub 2FA ve doğrulama kodlarını anında kopyalayın.',
+      'Açık kaynak ve test projelerinde gizli kalın.'
+    ],
+    whyEn: [
+      'Keep your work email clean when testing automated bots and repos.',
+      'Copy GitHub 2FA codes in sub-3 seconds.',
+      'Zero-disk RAM storage ensures total privacy.'
+    ],
+    faqsTr: [
+      { q: 'GitHub üyelik mailleri düşüyor mu?', a: 'Evet, GitHub doğrulama ve OTP mailleri 1-3 saniyede kutunuza yansır.' }
+    ],
+    faqsEn: [
+      { q: 'Do GitHub activation emails arrive live?', a: 'Yes, GitHub OTPs and confirmation links arrive in 1 to 3 seconds.' }
     ]
   },
   amazon: {
     id: 'amazon',
-    name: 'Amazon',
+    name: 'Amazon & AWS Free Tier',
     badge: '🛒 Shopping & Cloud',
     color: 'from-amber-500 to-orange-600',
-    titleTr: 'Amazon İçin Geçici Mail - Alışveriş & AWS Deneme Kalkanı',
-    titleEn: 'Temp Mail for Amazon - Shopping & AWS Trial Shield',
-    descriptionTr: 'Amazon hesap kayıtları, AWS test hesapları ve indirim bildirimleri için anonim geçici e-posta adresi oluşturun.',
-    descriptionEn: 'Generate disposable email addresses for Amazon registrations, AWS free tier testing, and order notifications without tracking.',
+    titleTr: 'Amazon Prime & AWS İçin Geçici Mail Generator',
+    titleEn: 'Temp Mail for Amazon Prime & AWS Free Tier Accounts',
+    descriptionTr: 'Amazon alışveriş, Prime video denemeleri ve AWS bulut testleri için spamsız kullan-at e-posta üretin.',
+    descriptionEn: 'Generate disposable email addresses for Amazon shopping claims, Prime Video trials, and AWS sandbox environments.',
     whyTr: [
-      'Amazon pazarlama ve ürün öneri e-postalarından ana adresinizi koruyun.',
-      'AWS geliştirici deneme hesaplarında temiz kullan-at adres kullanın.',
-      'Doğrulama OTP kodlarını anında görüntüleyin.'
+      'Amazon reklam ve pazarlama duyurularından ana mailinizi koruyun.',
+      'AWS bulut test ortamları için geçici geliştirici mailleri kullanın.',
+      'OTP onay kodlarını anında kopyalayın.'
     ],
     whyEn: [
-      'Shield your primary inbox from endless Amazon marketing and recommendation emails.',
-      'Use clean temporary addresses for AWS developer sandbox testing.',
-      'Extract Amazon OTP security codes instantly.'
+      'Shield your primary inbox from constant promotional emails.',
+      'Use volatile handles for AWS sandbox developer testing.',
+      'Instantly extract Amazon OTP security codes.'
     ],
     faqsTr: [
-      { q: 'Amazon OTP doğrulama kodu düşüyor mu?', a: 'Evet, Amazon kayıt ve 6 haneli OTP mailleri 1-3 saniye içinde canlı kutunuzda gösterilir.' }
+      { q: 'Amazon OTP kodu hemen geliyor mu?', a: 'Evet, Amazon 6 haneli güvenlik kodları 1-3 saniyede ekrana gelir.' }
     ],
     faqsEn: [
-      { q: 'Can I receive Amazon OTP verification codes?', a: 'Yes, Amazon OTP security codes land live on your screen in 1 to 3 seconds.' }
+      { q: 'Does Amazon send the OTP code instantly?', a: 'Yes, 6-digit Amazon OTPs land on your screen within seconds.' }
     ]
   },
-  linkedin: {
-    id: 'linkedin',
-    name: 'LinkedIn',
-    badge: '💼 Professional Network',
-    color: 'from-blue-600 to-cyan-700',
-    titleTr: 'LinkedIn İçin Geçici E-posta - Profesyonel Gizlilik Kalkanı',
-    titleEn: 'Temp Mail for LinkedIn - Professional Privacy Shield',
-    descriptionTr: 'LinkedIn araştırmaları, iş arama ve şirket analizi yaparken kişisel veya kurumsal e-posta adresinizi gizli tutun.',
-    descriptionEn: 'Protect your career inbox while conducting company research, recruiters outreach testing, or setting up secondary LinkedIn profiles.',
+  vinted: {
+    id: 'vinted',
+    name: 'Vinted Shopping',
+    badge: '👗 Second-Hand Fashion',
+    color: 'from-teal-600 to-emerald-700',
+    titleTr: 'Vinted İkinci El Alışveriş İçin Geçici E-posta',
+    titleEn: 'Temp Mail for Vinted Marketplace & Seller Accounts',
+    descriptionTr: 'Vinted ikinci el kıyafet ve alışveriş platformunda alıcı/satıcılarla gizli kalın. Pazarlama spamlerinden korunun.',
+    descriptionEn: 'Keep your personal email safe while shopping and selling on Vinted second-hand marketplace.',
     whyTr: [
-      'Kurumsal veya kişisel e-postanızı spamlardan ve takipçilerden uzak tutun.',
-      'LinkedIn PIN ve aktivasyon e-postalarını anında alın.',
-      'Hesap açılışında tam anonimlik sağlayın.'
+      'Satıcı ve alıcı bildirimleri için gerçek e-postanızı vermeyin.',
+      'Vinted hesap onay maillerini 2 saniyede alın.',
+      'Tek tıkla adresi imha edin.'
     ],
     whyEn: [
-      'Keep your corporate or primary email protected from recruiter spam list brokers.',
-      'Receive LinkedIn security PINs and activation links instantly.',
-      'Ensure complete identity isolation for research tasks.'
+      'Prevent buyer/seller spam from flooding your personal inbox.',
+      'Receive Vinted activation codes in under 3 seconds.',
+      'Destroy temporary handles with one click.'
     ],
     faqsTr: [
-      { q: 'LinkedIn onay maili MephistoMail\'e gelir mi?', a: 'Evet, LinkedIn aktivasyon ve PIN e-postaları 1-3 saniye içerisinde gelen kutunuzda görüntülenir.' }
+      { q: 'Vinted onay maili düşüyor mu?', a: 'Evet, Vinted aktivasyon linkleri anında canlı gelen kutunuza yansır.' }
     ],
     faqsEn: [
-      { q: 'Do LinkedIn verification emails work with MephistoMail?', a: 'Yes, LinkedIn security PINs and account confirmation links land in seconds.' }
+      { q: 'Do Vinted confirmation links arrive fast?', a: 'Yes, activation links appear in your live inbox in 1-3 seconds.' }
     ]
   },
+  saas: {
+    id: 'saas',
+    name: 'SaaS Platforms & B2B Apps',
+    badge: '🚀 B2B & Software Tools',
+    color: 'from-blue-600 to-indigo-800',
+    titleTr: 'SaaS Platformları & B2B Yazılımlar İçin Geçici Mail',
+    titleEn: 'Temp Mail for SaaS Platforms, B2B Apps & Software Demos',
+    descriptionTr: 'SaaS ürün demoları, B2B yazılım denemeleri ve web seminerleri için satış aramaları (sales call) ve spam maillerden korunun.',
+    descriptionEn: 'Test SaaS demos, software trials, and webinar sign-ups without getting hounded by sales reps.',
+    whyTr: [
+      'Satış ekiplerinin (SDR) telefon ve e-posta takibinden kurtulun.',
+      'Yazılım demolarını anında anonim test edin.',
+      'Auto-Verify ile üyelik linklerini otomatik aktifleştirin.'
+    ],
+    whyEn: [
+      'Avoid unwanted sales follow-ups and SDR cadence drips.',
+      'Evaluate software tools anonymously in seconds.',
+      'Auto-Verify engine handles activation link handshakes automatically.'
+    ],
+    faqsTr: [
+      { q: 'SaaS aktivasyon mailleri çalışır mı?', a: 'Evet, B2B platformların e-posta doğrulama adımlarını 1-3 saniyede geçersiniz.' }
+    ],
+    faqsEn: [
+      { q: 'Do SaaS activation links work reliably?', a: 'Yes! B2B platform activation emails arrive in 1 to 3 seconds.' }
+    ]
+  },
+  facebook: {
+    id: 'facebook',
+    name: 'Facebook / Meta',
+    badge: '👥 Social & Meta Accounts',
+    color: 'from-blue-700 to-sky-700',
+    titleTr: 'Facebook İçin Geçici Mail - Anonim Profil & Reklam Testleri',
+    titleEn: 'Temp Mail for Facebook - Meta Alt Profiles & Ad Account Testing',
+    descriptionTr: 'Facebook yan hesapları, Meta Business Manager testleri ve gruplar için kendi e-postanızı riske atmadan kullan-at mail adresi edinin.',
+    descriptionEn: 'Create secondary Facebook profiles and test Meta Business Manager workflows without risking your personal identity.',
+    whyTr: [
+      'Meta reklam ve işletme testlerinde ana e-postanızı gizleyin.',
+      'Facebook 6 haneli güvenlik kodlarını 2 saniyede kopyalayın.',
+      'Sosyal medya veri madenciliğinden korunun.'
+    ],
+    whyEn: [
+      'Protect your primary email during Meta Business testing.',
+      'Copy 6-digit Facebook verification codes instantly.',
+      'Shield your identity from data harvesting.'
+    ],
+    faqsTr: [
+      { q: 'Facebook doğrulama kodunu alabilir miyim?', a: 'Evet, Facebook e-posta onay kodları 1-3 saniyede ekranda belirir.' }
+    ],
+    faqsEn: [
+      { q: 'Will Facebook verification codes land in my inbox?', a: 'Yes! Confirmation PINs land live on your screen in sub-3 seconds.' }
+    ]
+  },
+  reddit: {
+    id: 'reddit',
+    name: 'Reddit Alt Profiles',
+    badge: '🤖 Community & Forum',
+    color: 'from-orange-600 to-red-600',
+    titleTr: 'Reddit Yan Hesaplar (Alt Profiles) İçin Geçici E-posta',
+    titleEn: 'Temp Mail for Reddit Alt Profiles & Anonymous Browsing',
+    descriptionTr: 'Reddit yan hesapları (throwaway alt accounts) ve anonim topluluk katılımları için kullan-at e-posta oluşturun.',
+    descriptionEn: 'Create Reddit throwaway alt profiles and join communities anonymously without sharing your primary email address.',
+    whyTr: [
+      'Reddit throwaway hesaplarınızı asıl kimliğinizden ayrı tutun.',
+      'E-posta doğrulama linklerini 2 saniyede tıklayın.',
+      'Spam ve topluluk bildirimlerinden korunun.'
+    ],
+    whyEn: [
+      'Keep throwaway Reddit accounts completely isolated from your real identity.',
+      'Click confirmation links in 2 seconds.',
+      'Prevent community digest emails from clogging your primary inbox.'
+    ],
+    faqsTr: [
+      { q: 'Reddit onay linki hemen geliyor mu?', a: 'Evet, Reddit üyelik mailleri 1-3 saniyede kutunuza düşer.' }
+    ],
+    faqsEn: [
+      { q: 'Does Reddit send activation links fast?', a: 'Yes, activation emails land in your live inbox in 1 to 3 seconds.' }
+    ]
+  }
 };
 
 export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
@@ -718,6 +926,28 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
 
         {/* Main SEO Content Article, SaaS Modules & Comparison Table */}
         <SEOContent lang={lang} />
+
+        {/* Cross-Links to other Services */}
+        <section className="border-t border-slate-800/80 pt-8">
+          <h3 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider">
+            {isTr ? 'Diğer Popüler Servisler İçin Temp Mail' : 'Temp Mail for Other Popular Platforms'}
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {Object.values(SERVICES_MAP).map(item => (
+              <Link
+                key={item.id}
+                to={`/temp-mail-for-${item.id}`}
+                className={`px-4 py-2 rounded-xl text-xs font-medium border transition-all ${
+                  item.id === data.id
+                    ? 'bg-red-500/20 border-red-500/50 text-red-300'
+                    : 'bg-[#12121e] border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        </section>
       </main>
 
       <Footer lang={lang} />

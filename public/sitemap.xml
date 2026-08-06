@@ -32,56 +32,21 @@
   <!-- Programmatic Service SEO Pages (25 Routes) -->
   <url>
     <loc>https://mephistomail.site/temp-mail-for-discord</loc>
-    <lastmod>2026-08-06</lastmod>
+    <lastmod>2026-07-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://mephistomail.site/temp-mail-for-chatgpt</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://mephistomail.site/temp-mail-for-claude-ai</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://mephistomail.site/temp-mail-for-midjourney</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://mephistomail.site/temp-mail-for-canva</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://mephistomail.site/temp-mail-for-epicgames</loc>
-    <lastmod>2026-08-06</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://mephistomail.site/temp-mail-for-twitch</loc>
-    <lastmod>2026-08-06</lastmod>
+    <lastmod>2026-07-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://mephistomail.site/temp-mail-for-instagram</loc>
-    <lastmod>2026-08-06</lastmod>
+    <lastmod>2026-07-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -241,14 +206,28 @@
   </url>
 
   <url>
-    <loc>https://mephistomail.site/temp-mail-for-telegram</loc>
+    <loc>https://mephistomail.site/temp-mail-for-claude-ai</loc>
     <lastmod>2026-07-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://mephistomail.site/temp-mail-for-linkedin</loc>
+    <loc>https://mephistomail.site/temp-mail-for-midjourney</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://mephistomail.site/temp-mail-for-facebook</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://mephistomail.site/temp-mail-for-reddit</loc>
     <lastmod>2026-07-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -281,6 +260,22 @@
   <!-- Disposable Email Checker Tool -->
   <url>
     <loc>https://mephistomail.site/disposable-email-checker</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Bulk Generator Tool -->
+  <url>
+    <loc>https://mephistomail.site/bulk-generator</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Burn Note Tool -->
+  <url>
+    <loc>https://mephistomail.site/burn-note</loc>
     <lastmod>2026-07-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, ShieldCheck, Share2, Bookmark, ExternalLink } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -38,18 +38,21 @@ interface AddressBarProps {
   onForwarding?: () => void;
   onShareDrop?: () => void;
   onExtendTimer?: () => void;
+  onOpenCustomDomain?: () => void;
   onOpenCompose?: () => void;
+  autoVerifyEnabled?: boolean;
+  onToggleAutoVerify?: () => void;
+  onCopyMagicUrl?: () => void;
 }
 
 const AddressBar: React.FC<AddressBarProps> = ({
   mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete,
-  progress, lang, onCreateCustom, onIdentity, onForwarding, onShareDrop,
-  onOpenCompose
+  progress, lang, onCreateCustom, onIdentity, onShareDrop,
+  onOpenCustomDomain, autoVerifyEnabled, onToggleAutoVerify, onCopyMagicUrl
 }) => {
   const t = translations[lang];
   const [copied, setCopied] = useState(false);
-  const [shareCopied, setShareCopied] = useState(false);
-  const [showBookmarkTip, setShowBookmarkTip] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
   // Geri sayım zamanlayıcısı
@@ -75,37 +78,21 @@ const AddressBar: React.FC<AddressBarProps> = ({
     }
   };
 
-  const handleShareBookmark = async () => {
-    if (!mailbox?.address) return;
+  const handleCopyMagicUrl = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!mailbox?.address || typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('mailbox', mailbox.address);
+    const magicUrl = url.toString();
 
-    const shareData = {
-      title: 'MephistoMail - Temp Mail',
-      text: lang === 'tr' 
-        ? `Geçici e-posta adresim: ${mailbox.address}` 
-        : `My temporary email address: ${mailbox.address}`,
-      url: window.location.href,
-    };
-
-    let shared = false;
-    if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
-      try {
-        await navigator.share(shareData);
-        shared = true;
-      } catch {
-        // User cancelled native share
-      }
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(magicUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     }
 
-    if (!shared) {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-      } catch {
-        // Fallback
-      }
-      setShareCopied(true);
-      setShowBookmarkTip(true);
-      setTimeout(() => setShareCopied(false), 3000);
-      setTimeout(() => setShowBookmarkTip(false), 6000);
+    if (onCopyMagicUrl) {
+      onCopyMagicUrl();
     }
   };
 
@@ -152,8 +139,8 @@ const AddressBar: React.FC<AddressBarProps> = ({
             )}
           </div>
 
-          {/* Kopyala Rozeti + Geri Sayım */}
-          <div className="pr-2 sm:pr-4 pl-1 sm:pl-2 flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+          {/* Kopyala Rozeti + Magic Share + Geri Sayım */}
+          <div className="pr-2 sm:pr-4 pl-1 sm:pl-2 flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
             {remainingMs !== null && (
               <div className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5 ${remainingMs < 3600000 ? 'animate-pulse' : ''}`}
                 title={lang === 'tr' ? 'Hesap süresi' : 'Account expires in'}
@@ -164,6 +151,14 @@ const AddressBar: React.FC<AddressBarProps> = ({
                 </span>
               </div>
             )}
+            <button
+              type="button"
+              onClick={handleCopyMagicUrl}
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-orange-500/20 text-slate-400 hover:text-orange-400 transition-colors"
+              title={lang === 'tr' ? 'Direkt Mailbox URL Paylaş (?mailbox=...)' : 'Share Direct Mailbox URL (?mailbox=...)'}
+            >
+              {copiedLink ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
+            </button>
             <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-1.5 sm:px-2 py-1 rounded bg-white/5 transition-colors whitespace-nowrap ${copied ? 'text-green-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
               {copied ? t.copied : t.copy}
             </span>
@@ -178,17 +173,9 @@ const AddressBar: React.FC<AddressBarProps> = ({
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
             <span>{t.copy}</span>
           </button>
-          <button 
-            onClick={handleShareBookmark} 
-            className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-orange-500/15 via-amber-500/15 to-orange-500/15 text-orange-400 hover:text-white hover:from-orange-500/30 hover:to-amber-500/30 border border-orange-500/30 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-md shadow-orange-500/10 active:scale-95 min-h-[44px] min-w-[44px]"
-            title={lang === 'tr' ? 'Mail Adresini Kaydet & Paylaş (Ctrl+D)' : 'Share & Bookmark Mailbox (Ctrl+D)'}
-          >
-            {shareCopied ? (
-              <Check className="w-4 h-4 text-green-400" />
-            ) : (
-              <Bookmark className="w-4 h-4 text-orange-400" />
-            )}
-            <span>{shareCopied ? (lang === 'tr' ? 'Kopyalandı!' : 'Link Copied!') : (lang === 'tr' ? 'Kaydet / Paylaş' : 'Bookmark & Share')}</span>
+          <button onClick={handleCopyMagicUrl} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-orange-500/30 hover:border-orange-500/60 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]" title={lang === 'tr' ? 'Direkt Mailbox Bağlantısını (Magic URL) Kopyala / Paylaş' : 'Copy / Share Magic Direct Mailbox URL'}>
+            {copiedLink ? <Check className="w-4 h-4 text-green-500" /> : <Link className="w-4 h-4 text-orange-400" />}
+            <span className={copiedLink ? 'text-green-500' : 'text-orange-400'}>{copiedLink ? (lang === 'tr' ? 'Link Kopyalandı' : 'Link Copied') : (lang === 'tr' ? 'Magic URL' : 'Share Link')}</span>
           </button>
           <button onClick={onRefresh} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -208,27 +195,24 @@ const AddressBar: React.FC<AddressBarProps> = ({
           </button>
         </div>
 
-        {/* BOOKMARK / SHARE FEEDBACK BANNER */}
-        {showBookmarkTip && (
-          <div className="w-full max-w-lg bg-[#0d1017] border border-orange-500/40 rounded-xl p-3 shadow-xl flex items-center justify-between gap-3 text-xs animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-2 text-slate-200">
-              <Bookmark className="w-4 h-4 text-orange-400 shrink-0" />
-              <span>
-                {lang === 'tr'
-                  ? '★ Adres bağlantısı kopyalandı! Tekrar erişim için Ctrl+D (veya Cmd+D) basarak tarayıcınıza kaydedin.'
-                  : '★ Address link copied! Press Ctrl+D (or Cmd+D) to bookmark MephistoMail for repeat visits.'}
-              </span>
-            </div>
-            <button onClick={() => setShowBookmarkTip(false)} className="text-slate-400 hover:text-white font-bold px-1.5 py-0.5 rounded text-xs shrink-0 cursor-pointer">
-              ✕
-            </button>
-          </div>
-        )}
-
         {/* EKSTRA ARAÇLAR */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full mt-2 pt-3 border-t border-white/5 relative">
           <span className="absolute -top-[9px] bg-[#050505] px-2 text-[10px] font-black tracking-widest text-slate-500 uppercase">{lang === 'tr' ? 'Araçlar & Güvenlik' : 'Tools & Security'}</span>
           
+          {onOpenCustomDomain && (
+            <button onClick={onOpenCustomDomain} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl font-bold text-[11px] transition-all shadow-sm min-h-[44px]" title={lang === 'tr' ? 'Kendi Alan Adını Bağla' : 'Bring Your Own Domain'}>
+              <Globe className="w-3.5 h-3.5 text-purple-400" />
+              <span>{lang === 'tr' ? 'Kendi Domainin' : 'Custom Domain'}</span>
+            </button>
+          )}
+
+          {onToggleAutoVerify && (
+            <button onClick={onToggleAutoVerify} className={`flex items-center justify-center gap-1.5 px-3.5 py-2 border rounded-xl font-bold text-[11px] transition-all shadow-sm min-h-[44px] ${autoVerifyEnabled ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-amber-500/10' : 'bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/10'}`} title={lang === 'tr' ? 'Otomatik Doğrulama (Auto-Verify)' : 'Auto Verification Link Clicker'}>
+              <Zap className={`w-3.5 h-3.5 ${autoVerifyEnabled ? 'text-amber-400 animate-pulse' : 'text-slate-400'}`} />
+              <span>Auto-Verify {autoVerifyEnabled ? '[AÇIK]' : '[KAPALI]'}</span>
+            </button>
+          )}
+
           {onIdentity && (
             <button onClick={onIdentity} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>
               <UserCheck className="w-3.5 h-3.5" />
@@ -241,14 +225,14 @@ const AddressBar: React.FC<AddressBarProps> = ({
               <span>Drop Link</span>
             </button>
           )}
-          <button 
-            onClick={handleShareBookmark} 
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/30 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" 
-            title={lang === 'tr' ? 'Adresi Paylaş / Favorilere Ekle' : 'Share / Bookmark Mailbox'}
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>{lang === 'tr' ? 'Paylaş / Kaydet' : 'Share / Bookmark'}</span>
-          </button>
+          <a href="/bulk-generator" className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]">
+            <Layers className="w-3.5 h-3.5" />
+            <span>{lang === 'tr' ? 'Toplu Mail' : 'Bulk Temp'}</span>
+          </a>
+          <a href="/burn-note" className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]">
+            <Flame className="w-3.5 h-3.5" />
+            <span>{lang === 'tr' ? 'Burn Note' : 'Burn Note'}</span>
+          </a>
           <div className="flex items-center justify-center gap-1 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 font-bold text-[10px] min-h-[44px]" title="Domain Health Risk Score: 100% Clean">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Risk: %0 (Temiz)</span>

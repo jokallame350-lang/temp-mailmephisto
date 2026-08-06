@@ -16,130 +16,28 @@
     overflow-x: hidden;
   }
 
-  :root {
-    --bg-primary: #050505;
-    --card-bg: rgba(15, 17, 21, 0.7);
-    --border-color: rgba(255, 255, 255, 0.08);
-    --accent-primary: #f97316;
-    --accent-glow: rgba(249, 115, 22, 0.25);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-  }
-
   body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+    background-color: #050505;
+    color: #e2e8f0;
     background-image:
       radial-gradient(at 0% 0%, hsla(24, 85%, 25%, 0.15) 0px, transparent 50%),
       radial-gradient(at 100% 0%, hsla(24, 85%, 25%, 0.1) 0px, transparent 50%);
     background-attachment: fixed;
-    font-family: 'Plus Jakarta Sans', 'Outfit', 'Sora', system-ui, sans-serif;
+    font-family: 'Sora', system-ui, -apple-system, sans-serif;
   }
 
-  /* Theme 1: Obsidian Dark (Default) */
-  body.theme-dark {
-    --bg-primary: #050505;
-    --card-bg: rgba(15, 17, 21, 0.75);
-    --border-color: rgba(255, 255, 255, 0.08);
-    --accent-primary: #f97316;
-    --accent-glow: rgba(249, 115, 22, 0.25);
-  }
-
-  /* Theme 2: Cyberpunk Neon */
   body.theme-cyberpunk {
-    --bg-primary: #060913;
-    --card-bg: rgba(15, 23, 42, 0.8);
-    --border-color: rgba(6, 182, 212, 0.2);
-    --accent-primary: #06b6d4;
-    --accent-glow: rgba(6, 182, 212, 0.3);
+    background-color: #060913;
     background-image:
       radial-gradient(at 0% 0%, hsla(280, 85%, 35%, 0.25) 0px, transparent 50%),
       radial-gradient(at 100% 0%, hsla(190, 90%, 35%, 0.25) 0px, transparent 50%);
   }
 
-  /* Theme 3: Midnight Sapphire */
-  body.theme-sapphire {
-    --bg-primary: #0a0e1a;
-    --card-bg: rgba(15, 23, 42, 0.85);
-    --border-color: rgba(59, 130, 246, 0.2);
-    --accent-primary: #3b82f6;
-    --accent-glow: rgba(59, 130, 246, 0.3);
-    background-image:
-      radial-gradient(at 0% 0%, hsla(217, 91%, 35%, 0.25) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(160, 84%, 30%, 0.2) 0px, transparent 50%);
-  }
-
-  /* Theme 4: Clean Snow Light */
   body.theme-light {
-    --bg-primary: #f8fafc;
-    --card-bg: #ffffff;
-    --border-color: rgba(0, 0, 0, 0.08);
-    --accent-primary: #ea580c;
-    --accent-glow: rgba(234, 88, 12, 0.15);
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
+    background-color: #0f172a;
     background-image:
-      radial-gradient(at 0% 0%, hsla(210, 80%, 90%, 0.5) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(24, 90%, 90%, 0.4) 0px, transparent 50%);
-  }
-
-  /* ===== THEME COMPONENT OVERRIDES ===== */
-  body.theme-light header {
-    background-color: rgba(255, 255, 255, 0.92) !important;
-    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
-    color: #0f172a !important;
-  }
-  body.theme-light header span,
-  body.theme-light header a,
-  body.theme-light header button {
-    color: #1e293b !important;
-  }
-  body.theme-light .glass-panel,
-  body.theme-light .bg-\[\#0a0a0c\],
-  body.theme-light .bg-\[\#0f1115\],
-  body.theme-light .bg-\[\#0e0e11\],
-  body.theme-light .bg-\[\#111\] {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06) !important;
-  }
-  body.theme-light .text-white {
-    color: #0f172a !important;
-  }
-  body.theme-light .text-slate-200,
-  body.theme-light .text-slate-300,
-  body.theme-light .text-slate-400 {
-    color: #334155 !important;
-  }
-  body.theme-light .text-slate-500,
-  body.theme-light .text-slate-600 {
-    color: #64748b !important;
-  }
-  body.theme-light input,
-  body.theme-light select,
-  body.theme-light textarea {
-    background-color: #f1f5f9 !important;
-    color: #0f172a !important;
-    border-color: #cbd5e1 !important;
-  }
-
-  /* Cyberpunk Theme Accent Overrides */
-  body.theme-cyberpunk header {
-    background-color: rgba(6, 9, 19, 0.95) !important;
-    border-bottom-color: rgba(6, 182, 212, 0.25) !important;
-  }
-  body.theme-cyberpunk .hero-gradient-text {
-    background-image: linear-gradient(to right, #06b6d4, #a855f7, #06b6d4) !important;
-  }
-
-  /* Sapphire Theme Accent Overrides */
-  body.theme-sapphire header {
-    background-color: rgba(10, 14, 26, 0.95) !important;
-    border-bottom-color: rgba(59, 130, 246, 0.25) !important;
-  }
-  body.theme-sapphire .hero-gradient-text {
-    background-image: linear-gradient(to right, #3b82f6, #10b981, #3b82f6) !important;
+      radial-gradient(at 0% 0%, hsla(210, 80%, 25%, 0.3) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(220, 80%, 20%, 0.3) 0px, transparent 50%);
   }
 
   /* Focus indicators (WCAG 2.1 AA) */
@@ -797,22 +695,6 @@ body {
   50% {
     box-shadow: 0 0 30px rgba(249, 115, 22, 0.35), inset 0 0 20px rgba(249, 115, 22, 0.15);
   }
-}
-
-/* Custom Scrollbar for 30 Languages Dropdown & UI Lists */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(249, 115, 22, 0.3);
-  border-radius: 8px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(249, 115, 22, 0.6);
 }
 
 .cyber-card {

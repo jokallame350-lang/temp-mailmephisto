@@ -9,7 +9,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SEOHead from './components/SEOHead';
 import SkipNavigation from './components/SkipNavigation';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
-import PWAPromptBadge from './components/PWAPromptBadge';
 import { useMailbox } from './hooks/useMailbox';
 import { useEmails } from './hooks/useEmails';
 import { Terminal, Loader2, Sparkles, ShieldCheck, ArrowDown } from 'lucide-react';
@@ -30,6 +29,7 @@ const IdentityModal = lazy(() => import('./components/IdentityModal'));
 const ForwardingModal = lazy(() => import('./components/ForwardingModal'));
 const ShareDropModal = lazy(() => import('./components/ShareDropModal'));
 const ExtensionInstallModal = lazy(() => import('./components/ExtensionInstallModal'));
+const CustomDomainModal = lazy(() => import('./components/CustomDomainModal'));
 const ComposeModal = lazy(() => import('./components/ComposeModal'));
 
 // OTP kodunu subject'ten çıkar (toast için)
@@ -59,6 +59,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
     updateAccountLabel,
     setAutoDelete,
     bulkCopyAddresses,
+    addCustomAccount,
     MAX_ACTIVE_ACCOUNTS,
   } = useMailbox();
 
@@ -66,7 +67,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
 
   useEffect(() => {
     localStorage.setItem('mephisto_theme', theme);
-    document.body.className = `theme-${theme}`;
+    document.body.className = theme === 'cyberpunk' ? 'theme-cyberpunk' : theme === 'light' ? 'theme-light' : '';
   }, [theme]);
 
   // Toast bildirimleri (useEmails'den önce tanımlanmalı, callback olarak geçilecek)
@@ -80,6 +81,33 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
 
   const dismissToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const [autoVerifyEnabled, setAutoVerifyEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('mephisto_auto_verify') !== 'false';
+  });
+
+  const toggleAutoVerify = useCallback(() => {
+    setAutoVerifyEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem('mephisto_auto_verify', String(next));
+      const toastMsg: ToastData = {
+        id: Date.now().toString(),
+        from: next ? '⚡ Otomatik Doğrulama Aktif' : 'Otomatik Doğrulama Kapalı',
+        subject: next ? 'Gelen üyelik onay linkleri arka planda otomatik tıklanacak.' : 'Otomatik tıklama modu kapatıldı.',
+      };
+      setToasts(p => [toastMsg, ...p].slice(0, 5));
+      return next;
+    });
+  }, []);
+
+  const handleAutoVerifySuccess = useCallback((urlLabel: string) => {
+    const toastMsg: ToastData = {
+      id: Date.now().toString(),
+      from: '⚡ Otomatik Doğrulandı!',
+      subject: `"${urlLabel}" aktivasyon bağlantısı başarıyla tetiklendi.`,
+    };
+    setToasts(p => [toastMsg, ...p].slice(0, 5));
   }, []);
 
   const {
@@ -99,10 +127,11 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
     handleDeleteEmail,
     handleDeleteAllEmails,
     incrementAccountStat,
-  } = useEmails(activeAccount, addToast);
+  } = useEmails(activeAccount, addToast, autoVerifyEnabled, handleAutoVerifySuccess);
 
   // Modallar
   const [showCustomModal, setShowCustomModal] = useState(false);
+  const [showCustomDomainModal, setShowCustomDomainModal] = useState(false);
   const [showComposeModal, setShowComposeModal] = useState(false);
   const [composeInitialData, setComposeInitialData] = useState<ComposeMailData | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -204,6 +233,22 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
     setLang(prev => langOrder[(langOrder.indexOf(prev) + 1) % langOrder.length]);
   }, []);
 
+  const handleAddCustomDomain = useCallback((domain: string, username: string) => {
+    const fullAddress = `${username}@${domain}`;
+    const newBox: Mailbox = {
+      id: `custom_${Date.now()}`,
+      address: fullAddress,
+      apiBase: 'mail_tm',
+      isCustomDomain: true,
+      customDomainName: domain,
+      createdAt: Date.now(),
+      label: 'Custom Domain',
+      labelColor: '#a855f7',
+    };
+    addCustomAccount(newBox);
+    addToast('🌐 Kendi Domainin Bağlandı!', `${fullAddress} adresi başarıyla oluşturuldu.`);
+  }, [addCustomAccount, addToast]);
+
   return (
     <ErrorBoundary>
       <div className={hideHeroBanner ? "w-full flex flex-col font-['Sora'] text-slate-200 relative" : "min-h-screen flex flex-col font-['Sora'] bg-[#050505] text-slate-200 overflow-x-hidden relative"}>
@@ -263,6 +308,14 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
           {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={() => setShowForwardingModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
           {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
           {showExtensionModal && <ExtensionInstallModal isOpen={showExtensionModal} onClose={() => setShowExtensionModal(false)} lang={lang} />}
+          {showCustomDomainModal && (
+            <CustomDomainModal
+              isOpen={showCustomDomainModal}
+              onClose={() => setShowCustomDomainModal(false)}
+              onAddCustomDomain={handleAddCustomDomain}
+              lang={lang}
+            />
+          )}
         </Suspense>
 
         <main id="main-content" className={hideHeroBanner ? "w-full flex flex-col items-center justify-start gap-4 z-10" : "flex-grow flex flex-col items-center justify-start pt-[72px] sm:pt-20 md:pt-24 px-3 md:px-4 gap-4 sm:gap-6 md:gap-8 w-full max-w-7xl mx-auto z-10"} role="main">
@@ -319,6 +372,9 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                 onIdentity={() => setShowIdentityModal(true)}
                 onForwarding={() => setShowForwardingModal(true)}
                 onShareDrop={() => setShowShareDropModal(true)}
+                onOpenCustomDomain={() => setShowCustomDomainModal(true)}
+                autoVerifyEnabled={autoVerifyEnabled}
+                onToggleAutoVerify={toggleAutoVerify}
               />
             )}
 
@@ -385,9 +441,6 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
 
           {!hideSEOContent && <SEOContent lang={lang} />}
         </main>
-
-        {/* Floating PWA Quick-Prompt Badge */}
-        <PWAPromptBadge lang={lang} />
 
         {!hideFooter && <Footer lang={lang} />}
       </div>
