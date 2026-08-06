@@ -38,6 +38,31 @@ export function useEmails(
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Listen for instant 1-second Test OTP demo events
+    useEffect(() => {
+        const handleTestOTP = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            if (customEvent.detail) {
+                const fromStr = typeof customEvent.detail.from === 'string' ? customEvent.detail.from : 'security@verify-service.com';
+                const newEmail: EmailSummary = {
+                    id: customEvent.detail.id,
+                    from: fromStr,
+                    subject: customEvent.detail.subject,
+                    intro: customEvent.detail.body || '🔐 Your Verification Code: 849201',
+                    seen: false,
+                    createdAt: new Date().toISOString(),
+                    aiCategory: 'Verification',
+                };
+                setEmails(prev => [newEmail, ...prev]);
+                if (onNewEmail) {
+                    onNewEmail(fromStr, newEmail.subject);
+                }
+            }
+        };
+        window.addEventListener('mephisto-test-otp', handleTestOTP);
+        return () => window.removeEventListener('mephisto-test-otp', handleTestOTP);
+    }, [onNewEmail]);
     const [stats, setStats] = useState<AppStats>(() => {
         try { return JSON.parse(localStorage.getItem(STATS_KEY) || '') || defaultStats; }
         catch { return defaultStats; }

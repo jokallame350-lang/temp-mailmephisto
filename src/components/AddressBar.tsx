@@ -219,6 +219,29 @@ const AddressBar: React.FC<AddressBarProps> = ({
               <span>{lang === 'tr' ? 'Kimlik' : 'Identity'}</span>
             </button>
           )}
+          <button 
+            onClick={() => {
+              if (mailbox?.address) {
+                window.dispatchEvent(new CustomEvent('mephisto-test-otp', { 
+                  detail: { 
+                    id: 'test_' + Date.now(), 
+                    from: 'security@verify-service.com', 
+                    subject: lang === 'tr' ? '🔐 Doğrulama Kodunuz: 849-201' : '🔐 Your Verification Code: 849-201', 
+                    body: lang === 'tr' 
+                      ? 'Merhaba! MephistoMail test doğrulaması başarılı. Güvenlik kodunuz: 849201' 
+                      : 'Hello! MephistoMail test verification successful. Your security PIN is: 849201',
+                    date: new Date().toLocaleTimeString() 
+                  } 
+                }));
+                alert(lang === 'tr' ? '⚡ Test OTP E-postası Gönderildi! Aşağıdaki e-posta kutunuzu kontrol edin.' : '⚡ Test OTP Sent! Check your inbox below.');
+              }
+            }} 
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:text-white hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-500/30 rounded-xl font-bold text-[11px] transition-all min-h-[44px] shadow-sm animate-pulse" 
+            title={lang === 'tr' ? '1 Saniyede Canlı Test OTP E-postası Gönder' : 'Send 1-Second Instant Test OTP Email'}
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>{lang === 'tr' ? '⚡ Test OTP Gönder' : '⚡ Test OTP Demo'}</span>
+          </button>
           {onShareDrop && (
             <button onClick={onShareDrop} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>
               <SendToBack className="w-3.5 h-3.5" />
