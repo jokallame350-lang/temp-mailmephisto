@@ -89,7 +89,8 @@ const AppRouter = () => {
           <Route path="/api-docs" element={<ApiDocsPage lang={lang} />} />
           <Route path="/services" element={<ServicesCatalogPage lang={lang} />} />
           <Route path="/kullanim-alanlari" element={<ServicesCatalogPage lang={lang} />} />
-          {/* 25 Targeted Service & Use-Case Landing Pages */}
+          <Route path="/temp-mail-for-students" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/edu-temp-mail" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-classifieds" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-discounts" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-free-trials" element={<ServiceMailPage lang={lang} />} />

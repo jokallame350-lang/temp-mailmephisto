@@ -28,6 +28,34 @@ interface ServiceData {
 }
 
 const SERVICES_MAP: Record<string, ServiceData> = {
+  students: {
+    id: 'students',
+    name: 'Student Perks & .EDU Hub',
+    badge: '🎓 Student & Developer Perks',
+    color: 'from-blue-600 to-indigo-600',
+    titleTr: 'Öğrenci İndirimleri & .EDU Mail Rehberi - GitHub Pack, Notion, Spotify & JetBrains',
+    titleEn: 'Student Perks & .EDU Mail Guide - GitHub Student Pack, Notion, Spotify & JetBrains',
+    descriptionTr: 'Öğrenciler ve yazılımcılar için GitHub Student Developer Pack, Notion Plus, Figma Pro, JetBrains ve Spotify öğrenci indirimlerini doğrulama rehberi.',
+    descriptionEn: 'Verification guide and student discount hub for GitHub Student Developer Pack, Notion Plus, Figma Pro, JetBrains, and Spotify Student.',
+    whyTr: [
+      'GitHub Student Developer Pack ($200+ Değerinde Copilot ve Azure Kredisi) doğrulama rehberi.',
+      'Notion Plus, Figma Pro ve JetBrains Ultimate öğrenci lisanslarını anında aktifleştirin.',
+      'Kişisel e-posta kutunuzu öğrenci bültenleri ve kampanya spamlerinden koruyun.'
+    ],
+    whyEn: [
+      'GitHub Student Developer Pack ($200+ Value with Copilot & Azure Credits) guide.',
+      'Instantly activate Notion Plus, Figma Pro, and JetBrains Ultimate student licenses.',
+      'Protect your main inbox from student newsletter spam and marketing drips.'
+    ],
+    faqsTr: [
+      { q: '.EDU mail ile GitHub Student Pack nasıl doğrulanır?', a: 'Üniversiteniz tarafından verilen resmi .edu adresinizi veya partner alan adını doğrulama ekranına girerek gelen 6 haneli kodu saniyeler içinde MephistoMail kutunuzdan kopyalayabilirsiniz.' },
+      { q: 'Özel üniversite alan adımı MephistoMail üzerinde kullanabilir miyim?', a: 'Evet! Sitemizdeki "Özel Domain" özelliğini kullanarak kendi alan adınızı saniyeler içinde bağlayabilir ve maillerinizi alabilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'How to verify GitHub Student Pack with a student email?', a: 'Enter your university email address or partner domain on the student portal and copy the 6-digit OTP code directly from MephistoMail.' },
+      { q: 'Can I use my custom university domain with MephistoMail?', a: 'Yes! Using our Custom Domain feature, you can connect any domain name to receive temp emails.' }
+    ]
+  },
   discord: {
     id: 'discord',
     name: 'Discord',
