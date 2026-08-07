@@ -118,6 +118,12 @@ const AppRouter = () => {
           <Route path="/temp-mail-for-saas" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-claude-ai" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-midjourney" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-vpn" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-ai-art" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-freelancers" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-crypto" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-disney-plus" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-workspaces" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-facebook" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-reddit" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
