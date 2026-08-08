@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -81,7 +81,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
   const handleCopyMagicUrl = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!mailbox?.address || typeof window === 'undefined') return;
-    const url = new URL(window.location.href);
+    const url = new URL(window.location.origin);
     url.searchParams.set('mailbox', mailbox.address);
     const magicUrl = url.toString();
 
@@ -94,6 +94,63 @@ const AddressBar: React.FC<AddressBarProps> = ({
     if (onCopyMagicUrl) {
       onCopyMagicUrl();
     }
+  };
+
+  const handleTestOtpTrigger = () => {
+    if (!mailbox?.address) return;
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    window.dispatchEvent(new CustomEvent('mephisto-test-otp', {
+      detail: {
+        id: 'test_' + Date.now(),
+        from: 'security@verify-service.com',
+        subject: lang === 'tr' ? `🔐 Doğrulama Kodunuz: ${otpCode}` : `🔐 Your Verification Code: ${otpCode}`,
+        body: lang === 'tr'
+          ? `Merhaba! MephistoMail canlı test doğrulaması başarılı. Güvenlik OTP kodunuz: ${otpCode}`
+          : `Hello! MephistoMail live test verification successful. Your security PIN is: ${otpCode}`,
+        date: new Date().toLocaleTimeString()
+      }
+    }));
+    alert(lang === 'tr' ? `⚡ Test OTP (${otpCode}) Gönderildi! Aşağıdaki gelen kutunuzu kontrol edin.` : `⚡ Test OTP (${otpCode}) Sent! Check your inbox below.`);
+  };
+
+  const exportMailboxTxt = () => {
+    if (!mailbox?.address) return;
+    const magicUrl = typeof window !== 'undefined' ? `${window.location.origin}/?mailbox=${encodeURIComponent(mailbox.address)}` : '';
+    const content = [
+      `========================================`,
+      `MEPHISTOMAIL - MAILBOX EXPORT (TXT)`,
+      `========================================`,
+      `Mailbox Address: ${mailbox.address}`,
+      `Magic Share URL: ${magicUrl}`,
+      `Created At:      ${mailbox.createdAt ? new Date(mailbox.createdAt).toLocaleString() : 'N/A'}`,
+      `Domain:          ${mailbox.address.split('@')[1] || ''}`,
+      `Auto Delete:     ${mailbox.autoDeleteMinutes ? `${mailbox.autoDeleteMinutes} mins` : 'Disabled'}`,
+      `========================================`
+    ].join('\n');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mailbox_${mailbox.address.split('@')[0]}_export.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportMailboxCsv = () => {
+    if (!mailbox?.address) return;
+    const magicUrl = typeof window !== 'undefined' ? `${window.location.origin}/?mailbox=${encodeURIComponent(mailbox.address)}` : '';
+    const headers = 'Address,MagicURL,CreatedAt,Domain,AutoDeleteMinutes\n';
+    const row = `"${mailbox.address}","${magicUrl}","${mailbox.createdAt ? new Date(mailbox.createdAt).toISOString() : ''}","${mailbox.address.split('@')[1] || ''}","${mailbox.autoDeleteMinutes || 0}"\n`;
+    const content = headers + row;
+
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mailbox_${mailbox.address.split('@')[0]}_export.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -154,10 +211,10 @@ const AddressBar: React.FC<AddressBarProps> = ({
             <button
               type="button"
               onClick={handleCopyMagicUrl}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-orange-500/20 text-slate-400 hover:text-orange-400 transition-colors"
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-orange-500/20 text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-1"
               title={lang === 'tr' ? 'Direkt Mailbox URL Paylaş (?mailbox=...)' : 'Share Direct Mailbox URL (?mailbox=...)'}
             >
-              {copiedLink ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
+              {copiedLink ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4 text-orange-400" />}
             </button>
             <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-widest px-1.5 sm:px-2 py-1 rounded bg-white/5 transition-colors whitespace-nowrap ${copied ? 'text-green-500' : 'text-slate-400 group-hover:text-slate-300'}`}>
               {copied ? t.copied : t.copy}
@@ -173,9 +230,9 @@ const AddressBar: React.FC<AddressBarProps> = ({
             {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
             <span>{t.copy}</span>
           </button>
-          <button onClick={handleCopyMagicUrl} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-orange-500/30 hover:border-orange-500/60 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]" title={lang === 'tr' ? 'Direkt Mailbox Bağlantısını (Magic URL) Kopyala / Paylaş' : 'Copy / Share Magic Direct Mailbox URL'}>
+          <button onClick={handleCopyMagicUrl} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-orange-500/30 hover:border-orange-500/60 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]" title={lang === 'tr' ? '1-Tık Magic URL Bağlantısını (?mailbox=...) Kopyala' : '1-Click Magic URL (?mailbox=...) Copy'}>
             {copiedLink ? <Check className="w-4 h-4 text-green-500" /> : <Link className="w-4 h-4 text-orange-400" />}
-            <span className={copiedLink ? 'text-green-500' : 'text-orange-400'}>{copiedLink ? (lang === 'tr' ? 'Link Kopyalandı' : 'Link Copied') : (lang === 'tr' ? 'Magic URL' : 'Share Link')}</span>
+            <span className={copiedLink ? 'text-green-500' : 'text-orange-400'}>{copiedLink ? (lang === 'tr' ? 'Magic URL Kopyalandı' : 'Magic URL Copied') : (lang === 'tr' ? 'Magic URL (?mailbox=)' : 'Magic URL (?mailbox=)')}</span>
           </button>
           <button onClick={onRefresh} className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2.5 bg-[#111] text-slate-200 hover:bg-[#1a1a1a] border border-white/10 rounded-full font-bold text-[11px] sm:text-xs md:text-sm transition-all shadow-sm hover:shadow active:scale-95 min-h-[44px] min-w-[44px]">
             <RefreshCw className={`w-4 h-4 text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -220,27 +277,28 @@ const AddressBar: React.FC<AddressBarProps> = ({
             </button>
           )}
           <button 
-            onClick={() => {
-              if (mailbox?.address) {
-                window.dispatchEvent(new CustomEvent('mephisto-test-otp', { 
-                  detail: { 
-                    id: 'test_' + Date.now(), 
-                    from: 'security@verify-service.com', 
-                    subject: lang === 'tr' ? '🔐 Doğrulama Kodunuz: 849-201' : '🔐 Your Verification Code: 849-201', 
-                    body: lang === 'tr' 
-                      ? 'Merhaba! MephistoMail test doğrulaması başarılı. Güvenlik kodunuz: 849201' 
-                      : 'Hello! MephistoMail test verification successful. Your security PIN is: 849201',
-                    date: new Date().toLocaleTimeString() 
-                  } 
-                }));
-                alert(lang === 'tr' ? '⚡ Test OTP E-postası Gönderildi! Aşağıdaki e-posta kutunuzu kontrol edin.' : '⚡ Test OTP Sent! Check your inbox below.');
-              }
-            }} 
+            onClick={handleTestOtpTrigger} 
             className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:text-white hover:from-amber-500/40 hover:to-orange-500/40 border border-amber-500/30 rounded-xl font-bold text-[11px] transition-all min-h-[44px] shadow-sm animate-pulse" 
             title={lang === 'tr' ? '1 Saniyede Canlı Test OTP E-postası Gönder' : 'Send 1-Second Instant Test OTP Email'}
           >
             <Zap className="w-3.5 h-3.5 text-amber-400" />
             <span>{lang === 'tr' ? '⚡ Test OTP Gönder' : '⚡ Test OTP Demo'}</span>
+          </button>
+          <button
+            onClick={exportMailboxTxt}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]"
+            title={lang === 'tr' ? 'Posta Kutusu Detaylarını TXT Olarak İndir' : 'Export Mailbox Details as TXT'}
+          >
+            <FileText className="w-3.5 h-3.5 text-blue-400" />
+            <span>{lang === 'tr' ? 'TXT Dışa Aktar' : 'Export TXT'}</span>
+          </button>
+          <button
+            onClick={exportMailboxCsv}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]"
+            title={lang === 'tr' ? 'Posta Kutusu Detaylarını CSV Olarak İndir' : 'Export Mailbox Details as CSV'}
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{lang === 'tr' ? 'CSV Dışa Aktar' : 'Export CSV'}</span>
           </button>
           {onShareDrop && (
             <button onClick={onShareDrop} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" title={lang === 'tr' ? 'Güvenli Dosya Al' : 'Secure Drop Link'}>

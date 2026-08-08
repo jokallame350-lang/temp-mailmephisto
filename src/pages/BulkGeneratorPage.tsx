@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Layers, Copy, Check, RefreshCw } from 'lucide-react';
+import { Layers, Copy, Check, RefreshCw, Link as LinkIcon, FileText, FileSpreadsheet, Zap, ExternalLink } from 'lucide-react';
 import { fetchDomains } from '../services/mailService';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -17,10 +17,13 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
   const [generatedEmails, setGeneratedEmails] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedMagic, setCopiedMagic] = useState(false);
+  const [copiedSingleIndex, setCopiedSingleIndex] = useState<number | null>(null);
 
   const handleGenerateBulk = async () => {
     setLoading(true);
     setCopied(false);
+    setCopiedMagic(false);
     try {
       const data = await fetchDomains();
       const domainList = data.domains.length > 0 ? data.domains : ['web-library.net', 'dollicons.com'];
@@ -49,6 +52,72 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
     navigator.clipboard.writeText(generatedEmails.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyAllMagicLinks = () => {
+    if (generatedEmails.length === 0) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const magicLinks = generatedEmails.map(e => `${origin}/?mailbox=${encodeURIComponent(e)}`).join('\n');
+    navigator.clipboard.writeText(magicLinks);
+    setCopiedMagic(true);
+    setTimeout(() => setCopiedMagic(false), 2000);
+  };
+
+  const handleExportTxt = () => {
+    if (generatedEmails.length === 0) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const lines = generatedEmails.map((email, i) => `${i + 1}. ${email} | Magic URL: ${origin}/?mailbox=${encodeURIComponent(email)}`);
+    const content = [
+      `========================================`,
+      `MEPHISTOMAIL - BULK GENERATED MAILBOXES`,
+      `Total: ${generatedEmails.length} addresses`,
+      `Generated Date: ${new Date().toLocaleString()}`,
+      `========================================`,
+      ...lines
+    ].join('\n');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bulk_emails_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCsv = () => {
+    if (generatedEmails.length === 0) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const headers = 'Index,Email,MagicURL,Domain\n';
+    const rows = generatedEmails.map((email, i) => {
+      const domain = email.split('@')[1] || '';
+      const magicUrl = `${origin}/?mailbox=${encodeURIComponent(email)}`;
+      return `${i + 1},"${email}","${magicUrl}","${domain}"`;
+    }).join('\n');
+
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bulk_emails_${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleTestOtpForEmail = (email: string) => {
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    window.dispatchEvent(new CustomEvent('mephisto-test-otp', {
+      detail: {
+        id: 'test_' + Date.now(),
+        from: 'security@verify-service.com',
+        subject: lang === 'tr' ? `🔐 Doğrulama Kodunuz: ${otpCode}` : `🔐 Your Verification Code: ${otpCode}`,
+        body: lang === 'tr'
+          ? `Merhaba! (${email}) MephistoMail canlı test doğrulaması başarılı. Güvenlik OTP kodunuz: ${otpCode}`
+          : `Hello! (${email}) MephistoMail live test verification successful. Your security PIN is: ${otpCode}`,
+        date: new Date().toLocaleTimeString()
+      }
+    }));
+    alert(lang === 'tr' ? `⚡ ${email} için Test OTP (${otpCode}) Gönderildi!` : `⚡ Test OTP (${otpCode}) Sent for ${email}!`);
   };
 
   return (
@@ -121,34 +190,93 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
         {/* Generated List */}
         {generatedEmails.length > 0 && (
           <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 max-w-2xl mx-auto animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                 {generatedEmails.length} {lang === 'tr' ? 'Üretilen Adres' : 'Generated Addresses'}
               </span>
-              <button
-                onClick={handleCopyAll}
-                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-black text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-green-500/20"
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'OK!' : (lang === 'tr' ? 'Tümünü Kopyala' : 'Copy All')}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleCopyAll}
+                  className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-black text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-green-500/20"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? 'OK!' : (lang === 'tr' ? 'Tümünü Kopyala' : 'Copy All')}
+                </button>
+                <button
+                  onClick={handleCopyAllMagicLinks}
+                  className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 border border-orange-500/30 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all active:scale-95"
+                  title={lang === 'tr' ? 'Tüm 1-Tık Magic URL Bağlantılarını (?mailbox=...) Kopyala' : 'Copy All 1-Click Magic URLs (?mailbox=...)'}
+                >
+                  {copiedMagic ? <Check className="w-3.5 h-3.5 text-green-400" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                  {copiedMagic ? (lang === 'tr' ? 'Kopyalandı' : 'Copied') : (lang === 'tr' ? 'Magic URL-ler' : 'All Magic URLs')}
+                </button>
+                <button
+                  onClick={handleExportTxt}
+                  className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all active:scale-95"
+                  title={lang === 'tr' ? 'Adresleri TXT Dosyası Olarak İndir' : 'Export Addresses as TXT File'}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>TXT</span>
+                </button>
+                <button
+                  onClick={handleExportCsv}
+                  className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all active:scale-95"
+                  title={lang === 'tr' ? 'Adresleri CSV Dosyası Olarak İndir' : 'Export Addresses as CSV File'}
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>CSV</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1">
-              {generatedEmails.map((email, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-black/50 border border-white/5 rounded-xl text-xs font-mono">
-                  <span className="text-slate-200 font-bold">{email}</span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(email);
-                    }}
-                    className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
-                    title="Copy address"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+              {generatedEmails.map((email, idx) => {
+                const magicUrl = `/?mailbox=${encodeURIComponent(email)}`;
+                return (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-black/50 border border-white/5 rounded-xl text-xs font-mono gap-2">
+                    <span className="text-slate-200 font-bold truncate flex-1">{email}</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          const fullMagic = typeof window !== 'undefined' ? `${window.location.origin}/?mailbox=${encodeURIComponent(email)}` : magicUrl;
+                          navigator.clipboard.writeText(fullMagic);
+                          setCopiedSingleIndex(idx);
+                          setTimeout(() => setCopiedSingleIndex(null), 1500);
+                        }}
+                        className="p-1.5 hover:bg-orange-500/20 text-orange-400 rounded-lg transition-colors flex items-center gap-1 text-[10px] border border-orange-500/20"
+                        title={lang === 'tr' ? '1-Tık Magic URL Kopyala' : 'Copy 1-Click Magic URL'}
+                      >
+                        {copiedSingleIndex === idx ? <Check className="w-3.5 h-3.5 text-green-400" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                        <span className="hidden sm:inline">Magic URL</span>
+                      </button>
+                      <button
+                        onClick={() => handleTestOtpForEmail(email)}
+                        className="p-1.5 hover:bg-amber-500/20 text-amber-400 rounded-lg transition-colors flex items-center gap-1 text-[10px] border border-amber-500/20"
+                        title={lang === 'tr' ? 'Test OTP Gönder' : 'Send Test OTP Demo'}
+                      >
+                        <Zap className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="hidden sm:inline">OTP</span>
+                      </button>
+                      <Link
+                        to={magicUrl}
+                        className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                        title={lang === 'tr' ? 'Posta Kutularda Aç' : 'Open Inbox'}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(email);
+                        }}
+                        className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                        title="Copy email address"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -160,3 +288,4 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
 };
 
 export default BulkGeneratorPage;
+

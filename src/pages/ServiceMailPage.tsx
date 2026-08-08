@@ -14,6 +14,7 @@ interface ServiceMailPageProps {
 
 interface ServiceData {
   id: string;
+  route?: string;
   name: string;
   badge: string;
   color: string;
@@ -809,13 +810,362 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     faqsEn: [
       { q: 'Does Reddit send activation links fast?', a: 'Yes, activation emails land in your live inbox in 1 to 3 seconds.' }
     ]
+  },
+  'temp-mail-with-password': {
+    id: 'temp-mail-with-password',
+    route: '/temp-mail-with-password',
+    name: 'Temp Mail With Password',
+    badge: '🔐 Password Protected Mail',
+    color: 'from-red-600 to-amber-600',
+    titleTr: 'Şifreli Geçici E-posta Generator (Temp Mail with Password) - Güvenli Kullan-At Mail',
+    titleEn: 'Temp Mail With Password Generator - Secure Protected Disposable Email',
+    descriptionTr: 'Şifre korumalı ve güvenli geçici e-posta adresi oluşturun. İki faktörlü doğrulama, özel şifreleme ve gizli e-posta kutusu erişimi.',
+    descriptionEn: 'Generate password-protected temporary email addresses. Secure your disposable inbox with custom passwords, instant access, and end-to-end privacy.',
+    whyTr: [
+      'Gelen kutunuzu başkalarının erişimine karşı özel şifre ile koruyun.',
+      'Hassas doğrulama kodlarını ve hesap erişim bilgilerini güvenle saklayın.',
+      'Tek kullanımlık adresi dilediğiniz an şifrenizle tekrar açın veya imha edin.'
+    ],
+    whyEn: [
+      'Protect your disposable inbox from unauthorized access using custom passwords.',
+      'Securely receive sensitive OTP verification codes and credential emails.',
+      'Re-access your private temp inbox anytime or destroy it instantly with zero trace.'
+    ],
+    faqsTr: [
+      { q: 'Şifreli geçici e-posta nasıl çalışır?', a: 'Oluşturduğunuz adrese özel belirlediğiniz şifre ile sadece siz erişebilirsiniz. Mail kutusu RAM bellekte şifreli tutulur.' },
+      { q: 'Şifremi unutursam ne olur?', a: 'Gizlilik ve sıfır-log politikamız gereği şifreler veritabanına kaydedilmez. Adresi yenileyerek yeni şifreli mail açabilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'How does password-protected temp mail work?', a: 'Only you can access the inbox using your custom password. The mailbox is kept encrypted in volatile RAM.' },
+      { q: 'What if I lose my password?', a: 'Due to our strict zero-log privacy policy, passwords are never stored on servers. Simply generate a new protected handle.' }
+    ]
+  },
+  'with-password': {
+    id: 'temp-mail-with-password',
+    route: '/temp-mail-with-password',
+    name: 'Temp Mail With Password',
+    badge: '🔐 Password Protected Mail',
+    color: 'from-red-600 to-amber-600',
+    titleTr: 'Şifreli Geçici E-posta Generator (Temp Mail with Password) - Güvenli Kullan-At Mail',
+    titleEn: 'Temp Mail With Password Generator - Secure Protected Disposable Email',
+    descriptionTr: 'Şifre korumalı ve güvenli geçici e-posta adresi oluşturun. İki faktörlü doğrulama, özel şifreleme ve gizli e-posta kutusu erişimi.',
+    descriptionEn: 'Generate password-protected temporary email addresses. Secure your disposable inbox with custom passwords, instant access, and end-to-end privacy.',
+    whyTr: [
+      'Gelen kutunuzu başkalarının erişimine karşı özel şifre ile koruyun.',
+      'Hassas doğrulama kodlarını ve hesap erişim bilgilerini güvenle saklayın.',
+      'Tek kullanımlık adresi dilediğiniz an şifrenizle tekrar açın veya imha edin.'
+    ],
+    whyEn: [
+      'Protect your disposable inbox from unauthorized access using custom passwords.',
+      'Securely receive sensitive OTP verification codes and credential emails.',
+      'Re-access your private temp inbox anytime or destroy it instantly with zero trace.'
+    ],
+    faqsTr: [
+      { q: 'Şifreli geçici e-posta nasıl çalışır?', a: 'Oluşturduğunuz adrese özel belirlediğiniz şifre ile sadece siz erişebilirsiniz. Mail kutusu RAM bellekte şifreli tutulur.' },
+      { q: 'Şifremi unutursam ne olur?', a: 'Gizlilik ve sıfır-log politikamız gereği şifreler veritabanına kaydedilmez. Adresi yenileyerek yeni şifreli mail açabilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'How does password-protected temp mail work?', a: 'Only you can access the inbox using your custom password. The mailbox is kept encrypted in volatile RAM.' },
+      { q: 'What if I lose my password?', a: 'Due to our strict zero-log privacy policy, passwords are never stored on servers. Simply generate a new protected handle.' }
+    ]
+  },
+  'custom-temp-mail-generator': {
+    id: 'custom-temp-mail-generator',
+    route: '/custom-temp-mail-generator',
+    name: 'Custom Temp Mail Generator',
+    badge: '⚙️ Custom Username & Domain',
+    color: 'from-indigo-600 to-cyan-600',
+    titleTr: 'Özel Kullanıcı Adlı Geçici Mail Generator (Custom Temp Mail)',
+    titleEn: 'Custom Temp Mail Generator - Create Custom Username & Domain Email',
+    descriptionTr: 'Kendi seçtiğiniz kullanıcı adı ve domain ile özel geçici e-posta adresi oluşturun. İstediğiniz isimle kullan-at mail adresi edinin.',
+    descriptionEn: 'Generate custom temporary email addresses with your choice of username and domain name. Instant setup with zero signup required.',
+    whyTr: [
+      'İstediğiniz özel kullanıcı adını (örn: ahmet-test, dev-testing) anında tanımlayın.',
+      'Kendi özel alan adınızı (Custom Domain) saniyeler içinde bağlayın.',
+      'Rastgele harfler yerine kurumsal ve akılda kalıcı takma adlar kullanın.'
+    ],
+    whyEn: [
+      'Instantly claim custom prefixes and usernames (e.g. dev-user, qa-test) on demand.',
+      'Connect your own custom domain name for professional testing handles.',
+      'Avoid awkward random strings and use branded or memorable alias prefixes.'
+    ],
+    faqsTr: [
+      { q: 'İstediğim kullanıcı adını seçebilir miyim?', a: 'Evet! Özel Kullanıcı Adı kutusuna istediğiniz kelimeyi yazarak anında adres oluşturabilirsiniz.' },
+      { q: 'Kendi domainimi kullanabilir miyim?', a: 'Evet, MephistoMail Özel Domain özelliği sayesinde kendi alan adınızı ekleyebilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'Can I pick any username prefix I want?', a: 'Yes! Simply type your desired prefix in the Custom Address field to generate it instantly.' },
+      { q: 'Can I use my own domain with this tool?', a: 'Yes, MephistoMail supports custom domain binding for unlimited personalized handles.' }
+    ]
+  },
+  'custom-generator': {
+    id: 'custom-temp-mail-generator',
+    route: '/custom-temp-mail-generator',
+    name: 'Custom Temp Mail Generator',
+    badge: '⚙️ Custom Username & Domain',
+    color: 'from-indigo-600 to-cyan-600',
+    titleTr: 'Özel Kullanıcı Adlı Geçici Mail Generator (Custom Temp Mail)',
+    titleEn: 'Custom Temp Mail Generator - Create Custom Username & Domain Email',
+    descriptionTr: 'Kendi seçtiğiniz kullanıcı adı ve domain ile özel geçici e-posta adresi oluşturun. İstediğiniz isimle kullan-at mail adresi edinin.',
+    descriptionEn: 'Generate custom temporary email addresses with your choice of username and domain name. Instant setup with zero signup required.',
+    whyTr: [
+      'İstediğiniz özel kullanıcı adını (örn: ahmet-test, dev-testing) anında tanımlayın.',
+      'Kendi özel alan adınızı (Custom Domain) saniyeler içinde bağlayın.',
+      'Rastgele harfler yerine kurumsal ve akılda kalıcı takma adlar kullanın.'
+    ],
+    whyEn: [
+      'Instantly claim custom prefixes and usernames (e.g. dev-user, qa-test) on demand.',
+      'Connect your own custom domain name for professional testing handles.',
+      'Avoid awkward random strings and use branded or memorable alias prefixes.'
+    ],
+    faqsTr: [
+      { q: 'İstediğim kullanıcı adını seçebilir miyim?', a: 'Evet! Özel Kullanıcı Adı kutusuna istediğiniz kelimeyi yazarak anında adres oluşturabilirsiniz.' },
+      { q: 'Kendi domainimi kullanabilir miyim?', a: 'Evet, MephistoMail Özel Domain özelliği sayesinde kendi alan adınızı ekleyebilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'Can I pick any username prefix I want?', a: 'Yes! Simply type your desired prefix in the Custom Address field to generate it instantly.' },
+      { q: 'Can I use my own domain with this tool?', a: 'Yes, MephistoMail supports custom domain binding for unlimited personalized handles.' }
+    ]
+  },
+  '1-second-temp-mail': {
+    id: '1-second-temp-mail',
+    route: '/1-second-temp-mail',
+    name: '1 Second Temp Mail',
+    badge: '⚡ Ultra-Fast 1-Second Mail',
+    color: 'from-yellow-500 to-red-600',
+    titleTr: '1 Saniyede Geçici E-posta Oluştur (1 Second Temp Mail) - Işık Hızında',
+    titleEn: '1 Second Temp Mail Generator - Instant Ultra-Fast Disposable Email',
+    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında WebSocket ve SSE canlı posta kutusu.',
+    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time WebSocket delivery, and sub-second OTP arrival.',
+    whyTr: [
+      'Tek tıkla 1 saniyeden kısa sürede hazır e-posta adresi alın.',
+      'Gelen e-postaları ve OTP kodlarını canlı WebSocket altyapısı ile anında görün.',
+      'Zaman kaybetmeden form doğrulamalarını ve hızlı kayıtları tamamlayın.'
+    ],
+    whyEn: [
+      'Get a fully operational disposable address in under 1000 milliseconds.',
+      'View incoming emails and security OTPs in real-time via persistent WebSockets.',
+      'Bypass slow sign-up forms and verify accounts with zero latency.'
+    ],
+    faqsTr: [
+      { q: '1 saniyede mail gerçekten hazır oluyor mu?', a: 'Evet! Sayfa yüklendiği anda istemci tarafında RAM tabanlı e-posta adresi anında üretilir.' },
+      { q: 'Gelen mailler kaç saniyede düşer?', a: 'Server-Sent Events (SSE) teknolojimiz sayesinde gelen mailler 1 saniyeden kısa sürede bildirim olarak gelir.' }
+    ],
+    faqsEn: [
+      { q: 'Is the email handle really generated in 1 second?', a: 'Yes! Client-side RAM handle generation prepares your address immediately upon page load.' },
+      { q: 'How fast do emails arrive?', a: 'Our Real-Time SSE engine delivers incoming messages and OTP codes in sub-second speed.' }
+    ]
+  },
+  '1-second': {
+    id: '1-second-temp-mail',
+    route: '/1-second-temp-mail',
+    name: '1 Second Temp Mail',
+    badge: '⚡ Ultra-Fast 1-Second Mail',
+    color: 'from-yellow-500 to-red-600',
+    titleTr: '1 Saniyede Geçici E-posta Oluştur (1 Second Temp Mail) - Işık Hızında',
+    titleEn: '1 Second Temp Mail Generator - Instant Ultra-Fast Disposable Email',
+    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında WebSocket ve SSE canlı posta kutusu.',
+    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time WebSocket delivery, and sub-second OTP arrival.',
+    whyTr: [
+      'Tek tıkla 1 saniyeden kısa sürede hazır e-posta adresi alın.',
+      'Gelen e-postaları ve OTP kodlarını canlı WebSocket altyapısı ile anında görün.',
+      'Zaman kaybetmeden form doğrulamalarını ve hızlı kayıtları tamamlayın.'
+    ],
+    whyEn: [
+      'Get a fully operational disposable address in under 1000 milliseconds.',
+      'View incoming emails and security OTPs in real-time via persistent WebSockets.',
+      'Bypass slow sign-up forms and verify accounts with zero latency.'
+    ],
+    faqsTr: [
+      { q: '1 saniyede mail gerçekten hazır oluyor mu?', a: 'Evet! Sayfa yüklendiği anda istemci tarafında RAM tabanlı e-posta adresi anında üretilir.' },
+      { q: 'Gelen mailler kaç saniyede düşer?', a: 'Server-Sent Events (SSE) teknolojimiz sayesinde gelen mailler 1 saniyeden kısa sürede bildirim olarak gelir.' }
+    ],
+    faqsEn: [
+      { q: 'Is the email handle really generated in 1 second?', a: 'Yes! Client-side RAM handle generation prepares your address immediately upon page load.' },
+      { q: 'How fast do emails arrive?', a: 'Our Real-Time SSE engine delivers incoming messages and OTP codes in sub-second speed.' }
+    ]
+  },
+  'steam-guard': {
+    id: 'steam-guard',
+    route: '/temp-mail-for-steam-guard',
+    name: 'Steam Guard Verification',
+    badge: '🛡️ Steam Guard & Security',
+    color: 'from-slate-800 to-blue-900',
+    titleTr: 'Steam Guard İçin Geçici E-posta (Temp Mail for Steam Guard) - OTP Kod Alın',
+    titleEn: 'Temp Mail for Steam Guard - Instant Steam Verification & OTP Code',
+    descriptionTr: 'Steam Guard 5 haneli güvenlik kodları, hesap kurtarma ve takas onayları için kullan-at e-posta adresi edinin.',
+    descriptionEn: 'Get instant disposable emails for Steam Guard 5-character security codes, account verifications, and trade confirmations.',
+    whyTr: [
+      'Steam Guard 5 haneli doğrulama kodlarını 1-3 saniyede anında ekranda görün.',
+      'Yan oyun ve smurf Steam hesaplarınızı kişisel e-posta adresinizden tamamen ayırın.',
+      'Veri sızıntılarında Steam hesabınızın çalınmasını ve spam maillerini önleyin.'
+    ],
+    whyEn: [
+      'Fetch 5-character Steam Guard auth PINs in real-time within 1 to 3 seconds.',
+      'Keep secondary gaming and smurf accounts detached from your main personal email.',
+      'Protect your main Steam identity from credential stuffing and phishing attacks.'
+    ],
+    faqsTr: [
+      { q: 'Steam Guard doğrulama kodu otomatik tespit ediliyor mu?', a: 'Evet! Akıllı OTP motorumuz Steam Guard 5 haneli kodunu tespit edip kopyalama butonu ile sunar.' },
+      { q: 'Steam bu mailleri kabul ediyor mu?', a: 'Evet, düzenli yenilenen temiz alan adlarımız Steam Guard doğrulamalarıyla %100 uyumludur.' }
+    ],
+    faqsEn: [
+      { q: 'Is the Steam Guard code automatically highlighted?', a: 'Yes! Our Smart OTP extractor catches 5-character Steam codes and provides a one-click copy button.' },
+      { q: 'Does Steam accept MephistoMail addresses?', a: 'Yes, our regularly rotated fresh domain pool passes Steam email verification effortlessly.' }
+    ]
+  },
+  'canva-pro': {
+    id: 'canva-pro',
+    route: '/temp-mail-for-canva-pro',
+    name: 'Canva Pro Free Trial',
+    badge: '🎨 Canva Pro & Design',
+    color: 'from-cyan-600 to-blue-600',
+    titleTr: 'Canva Pro Ücretsiz Deneme İçin Geçici Mail (Temp Mail for Canva Pro)',
+    titleEn: 'Temp Mail for Canva Pro - Free Trial Sign-up & Verification Email',
+    descriptionTr: 'Canva Pro 30 günlük ücretsiz deneme ve tasarım platformu üyelikleri için kişisel mailinizi vermeden kullan-at e-posta edinin.',
+    descriptionEn: 'Start 30-day Canva Pro free trials and graphic design tool registrations without cluttering your primary inbox with promotional emails.',
+    whyTr: [
+      'Canva Pro ücretsiz deneme süresini kişisel e-postanızı riske atmadan başlatın.',
+      'Gelen doğrulama bağlantısını Auto-Verify kalkanı ile otomatik aktifleştirin.',
+      'Tasarım projelerinizi tamamlayın ve pazarlama spamlerinden korunun.'
+    ],
+    whyEn: [
+      'Activate Canva Pro trials without exposing your primary email to marketing drips.',
+      'Auto-Verify engine clicks incoming Canva verification links automatically.',
+      'Download high-res graphic assets anonymously with zero registration friction.'
+    ],
+    faqsTr: [
+      { q: 'Canva Pro onay linki ne kadar sürede düşer?', a: 'Canva onay mailleri 1-3 saniyede kutunuza düşer ve onay düğmesi otomatik öne çıkarılır.' },
+      { q: 'Canva Pro deneme süresi bitince spam gelir mi?', a: 'Hayır, geçici e-posta adresi imha edildiği için kişisel mailinize hiçbir spam ulaşamaz.' }
+    ],
+    faqsEn: [
+      { q: 'How fast does the Canva Pro confirmation email arrive?', a: 'Canva activation emails land in 1 to 3 seconds with highlighted action buttons.' },
+      { q: 'Will I get spam after the trial ends?', a: 'No, because the temporary mailbox is volatile, your real inbox stays 100% spam-free.' }
+    ]
+  },
+  'claude-3-5': {
+    id: 'claude-3-5',
+    route: '/temp-mail-for-claude-3-5',
+    name: 'Claude 3.5 Sonnet & Anthropic',
+    badge: '🤖 Claude 3.5 & Anthropic',
+    color: 'from-amber-600 to-orange-700',
+    titleTr: 'Claude 3.5 Sonnet İçin Geçici Mail (Temp Mail for Claude 3.5) - Anthropic AI',
+    titleEn: 'Temp Mail for Claude 3.5 Sonnet - Anthropic AI Account Verification',
+    descriptionTr: 'Claude 3.5 Sonnet, Anthropic Console ve Claude Pro denemeleri için anında geçici mail adresi oluşturun. Kod ve onay linklerini saniyeler içinde alın.',
+    descriptionEn: 'Create instant temporary email addresses for Claude 3.5 Sonnet, Anthropic Console, and LLM developer sign-ups with sub-3s delivery.',
+    whyTr: [
+      'Claude 3.5 Sonnet ve Anthropic API kayıtlarında kişisel e-posta adresinizi koruyun.',
+      'Farklı AI geliştirme ve istem (prompting) testleri için çoklu hesaplar açın.',
+      'Gelen e-posta doğrulama kodunu veya linkini tek tıkla kopyalayın.'
+    ],
+    whyEn: [
+      'Shield your work email when registering for Claude 3.5 Sonnet and Anthropic console.',
+      'Spin up multiple testing and prompt engineering sandbox accounts seamlessly.',
+      'Extract verification OTPs and confirmation links instantly in real-time.'
+    ],
+    faqsTr: [
+      { q: 'Claude 3.5 doğrulama e-postası çalışıyor mu?', a: 'Evet, Anthropic ve Claude 3.5 onay mailleri 1-3 saniyede ekranınıza gelir.' },
+      { q: 'Claude API hesabı için kullanabilir miyim?', a: 'Evet, API geliştirici hesaplarının e-posta doğrulama aşaması için idealdir.' }
+    ],
+    faqsEn: [
+      { q: 'Does Claude 3.5 verification work with temp mail?', a: 'Yes! Anthropic verification messages arrive live on your screen in 1 to 3 seconds.' },
+      { q: 'Can I use this for Claude API console registration?', a: 'Absolutely. It is built for developer sandbox creation without cluttering work inboxes.' }
+    ]
+  },
+  'midjourney-v6': {
+    id: 'midjourney-v6',
+    route: '/temp-mail-for-midjourney-v6',
+    name: 'Midjourney v6 & Discord AI',
+    badge: '🎨 Midjourney v6 AI Art',
+    color: 'from-purple-700 to-indigo-800',
+    titleTr: 'Midjourney v6 İçin Geçici Mail (Temp Mail for Midjourney v6) - AI Görsel',
+    titleEn: 'Temp Mail for Midjourney v6 - Free AI Image Generation Accounts',
+    descriptionTr: 'Midjourney v6, Discord bot kanalları ve yapay zeka görsel üreticileri için anonim e-posta adresi edinin. Spam almadan görsel üretin.',
+    descriptionEn: 'Generate temporary email addresses for Midjourney v6 and Discord AI art channels without risking personal email privacy.',
+    whyTr: [
+      'Midjourney v6 ve Discord AI kayıtlarında kişisel mailinizi vermeden anonim kalın.',
+      'Yeni AI görsel üretimi deneme hesaplarını saniyeler içinde doğrulayın.',
+      'Spam ve duyuru bombardımanını otomatik engelleyin.'
+    ],
+    whyEn: [
+      'Keep your personal inbox detached from AI art platform marketing blasts.',
+      'Verify new Midjourney v6 prompt testing accounts in sub-3 seconds.',
+      'RAM-only volatile storage deletes all records on browser close.'
+    ],
+    faqsTr: [
+      { q: 'Midjourney v6 doğrulama maili ne zaman düşer?', a: 'Discord ve Midjourney v6 doğrulama kodları 1-3 saniye içinde bildirime düşer.' },
+      { q: 'Midjourney web sürümünü destekliyor mu?', a: 'Evet, hem Midjourney web platformu hem Discord bot doğrulamaları ile tam uyumludur.' }
+    ],
+    faqsEn: [
+      { q: 'How fast do Midjourney v6 confirmation emails land?', a: 'Verification codes and links land in your live inbox within 1 to 3 seconds.' },
+      { q: 'Is it compatible with both Midjourney web and Discord?', a: 'Yes! It handles email verifications from both Midjourney Web and Discord integration.' }
+    ]
+  },
+  'disposable-mail-for-developer-testing': {
+    id: 'disposable-mail-for-developer-testing',
+    route: '/disposable-mail-for-developer-testing',
+    name: 'Developer & QA Testing Mail',
+    badge: '🧪 Dev & QA Automation',
+    color: 'from-emerald-700 to-teal-900',
+    titleTr: 'Geliştirici & QA Testleri İçin Kullan-At E-posta (Disposable Mail for Developer Testing)',
+    titleEn: 'Disposable Mail for Developer Testing - QA Automation & API Testing',
+    descriptionTr: 'Yazılım geliştiriciler ve QA otomasyon mühendisleri için kullan-at e-posta servisi. Cypress, Playwright, Selenium ve REST API entegrasyonu.',
+    descriptionEn: 'Disposable email service built for software developers & QA automation engineers. Full Cypress, Playwright, Selenium, and REST API support.',
+    whyTr: [
+      'Cypress, Playwright ve Selenium test otomasyonlarında temiz e-posta kutuları kullanın.',
+      'REST API ve Webhook entegrasyonu ile e-posta içeriklerine programatik erişin.',
+      'Gelen e-postaları raw JSON veya .eml formatında dışa aktarıp doğrulayın.'
+    ],
+    whyEn: [
+      'Integrate ephemeral email boxes into Cypress, Playwright, and Selenium CI/CD pipelines.',
+      'Access incoming email payloads programmatically via REST API and Webhooks.',
+      'Export raw JSON and .eml email sources for automated assertions and validation.'
+    ],
+    faqsTr: [
+      { q: 'Otomasyon testleri için API var mı?', a: 'Evet, /api-docs sayfamızdan REST API entegrasyon rehberine ulaşabilirsiniz.' },
+      { q: 'Webhook bildirimi alabilir miyim?', a: 'Evet! Mail geldiğinde belirttiğiniz URL\'e anında Webhook HTTP POST isteği gönderilir.' }
+    ],
+    faqsEn: [
+      { q: 'Is there an API available for automated test suites?', a: 'Yes! Check out our /api-docs endpoint for comprehensive REST API documentation.' },
+      { q: 'Can I receive Webhook notifications on incoming mail?', a: 'Yes, webhooks fire instant HTTP POST payloads to your test listener when mail arrives.' }
+    ]
+  },
+  'developer-testing': {
+    id: 'disposable-mail-for-developer-testing',
+    route: '/disposable-mail-for-developer-testing',
+    name: 'Developer & QA Testing Mail',
+    badge: '🧪 Dev & QA Automation',
+    color: 'from-emerald-700 to-teal-900',
+    titleTr: 'Geliştirici & QA Testleri İçin Kullan-At E-posta (Disposable Mail for Developer Testing)',
+    titleEn: 'Disposable Mail for Developer Testing - QA Automation & API Testing',
+    descriptionTr: 'Yazılım geliştiriciler ve QA otomasyon mühendisleri için kullan-at e-posta servisi. Cypress, Playwright, Selenium ve REST API entegrasyonu.',
+    descriptionEn: 'Disposable email service built for software developers & QA automation engineers. Full Cypress, Playwright, Selenium, and REST API support.',
+    whyTr: [
+      'Cypress, Playwright ve Selenium test otomasyonlarında temiz e-posta kutuları kullanın.',
+      'REST API ve Webhook entegrasyonu ile e-posta içeriklerine programatik erişin.',
+      'Gelen e-postaları raw JSON veya .eml formatında dışa aktarıp doğrulayın.'
+    ],
+    whyEn: [
+      'Integrate ephemeral email boxes into Cypress, Playwright, and Selenium CI/CD pipelines.',
+      'Access incoming email payloads programmatically via REST API and Webhooks.',
+      'Export raw JSON and .eml email sources for automated assertions and validation.'
+    ],
+    faqsTr: [
+      { q: 'Otomasyon testleri için API var mı?', a: 'Evet, /api-docs sayfamızdan REST API entegrasyon rehberine ulaşabilirsiniz.' },
+      { q: 'Webhook bildirimi alabilir miyim?', a: 'Evet! Mail geldiğinde belirttiğiniz URL\'e anında Webhook HTTP POST isteği gönderilir.' }
+    ],
+    faqsEn: [
+      { q: 'Is there an API available for automated test suites?', a: 'Yes! Check out our /api-docs endpoint for comprehensive REST API documentation.' },
+      { q: 'Can I receive Webhook notifications on incoming mail?', a: 'Yes, webhooks fire instant HTTP POST payloads to your test listener when mail arrives.' }
+    ]
   }
 };
 
 export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
   const location = useLocation();
-  const rawSlug = location.pathname.replace(/^\/temp-mail-for-?/, '').toLowerCase();
-  const data = SERVICES_MAP[rawSlug] || SERVICES_MAP.classifieds;
+  const pathKey = location.pathname.replace(/^\//, '').toLowerCase();
+  const strippedSlug = pathKey.replace(/^temp-mail-for-/, '');
+  const data = SERVICES_MAP[pathKey] || SERVICES_MAP[strippedSlug] || SERVICES_MAP.classifieds;
 
   const isTr = lang === 'tr';
   const title = isTr ? data.titleTr : data.titleEn;
@@ -848,6 +1198,10 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
       }))
     });
   }, [title, faqs]);
+
+  const uniqueServices = Array.from(
+    new Map(Object.values(SERVICES_MAP).map(item => [item.id, item])).values()
+  );
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col font-sans selection:bg-red-500/30 selection:text-red-300">
@@ -961,19 +1315,22 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
             {isTr ? 'Diğer Popüler Servisler İçin Temp Mail' : 'Temp Mail for Other Popular Platforms'}
           </h3>
           <div className="flex flex-wrap gap-3">
-            {Object.values(SERVICES_MAP).map(item => (
-              <Link
-                key={item.id}
-                to={`/temp-mail-for-${item.id}`}
-                className={`px-4 py-2 rounded-xl text-xs font-medium border transition-all ${
-                  item.id === data.id
-                    ? 'bg-red-500/20 border-red-500/50 text-red-300'
-                    : 'bg-[#12121e] border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {uniqueServices.map(item => {
+              const targetRoute = item.route || `/temp-mail-for-${item.id}`;
+              return (
+                <Link
+                  key={item.id}
+                  to={targetRoute}
+                  className={`px-4 py-2 rounded-xl text-xs font-medium border transition-all ${
+                    item.id === data.id
+                      ? 'bg-red-500/20 border-red-500/50 text-red-300'
+                      : 'bg-[#12121e] border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
         </section>
       </main>

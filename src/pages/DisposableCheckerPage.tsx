@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';
-import { ShieldCheck, AlertTriangle, CheckCircle, Search, RefreshCw, Lock, Server, FileText } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, CheckCircle, Search, RefreshCw, Lock, Server, FileText, Link as LinkIcon, ExternalLink, Zap, FileSpreadsheet, Download, Check } from 'lucide-react';
 
 interface DisposableCheckerPageProps {
   lang: Language;
@@ -31,6 +32,7 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
   const [inputEmail, setInputEmail] = useState('');
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [copiedMagic, setCopiedMagic] = useState(false);
 
   const isTr = lang === 'tr';
 
@@ -39,6 +41,7 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
     if (!inputEmail.trim()) return;
 
     setIsAnalyzing(true);
+    setCopiedMagic(false);
     setTimeout(() => {
       const email = inputEmail.trim().toLowerCase();
       const parts = email.split('@');
@@ -65,6 +68,74 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
       });
       setIsAnalyzing(false);
     }, 400);
+  };
+
+  const handleCopyMagicLink = (email: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const magicUrl = `${origin}/?mailbox=${encodeURIComponent(email)}`;
+    navigator.clipboard.writeText(magicUrl);
+    setCopiedMagic(true);
+    setTimeout(() => setCopiedMagic(false), 2000);
+  };
+
+  const handleTestOtp = (email: string) => {
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    window.dispatchEvent(new CustomEvent('mephisto-test-otp', {
+      detail: {
+        id: 'test_' + Date.now(),
+        from: 'security@verify-service.com',
+        subject: isTr ? `🔐 Doğrulama Kodunuz: ${otpCode}` : `🔐 Your Verification Code: ${otpCode}`,
+        body: isTr
+          ? `Merhaba! (${email}) MephistoMail canlı test doğrulaması başarılı. Güvenlik OTP kodunuz: ${otpCode}`
+          : `Hello! (${email}) MephistoMail live test verification successful. Your security PIN is: ${otpCode}`,
+        date: new Date().toLocaleTimeString()
+      }
+    }));
+    alert(isTr ? `⚡ ${email} adresi için Test OTP (${otpCode}) Gönderildi!` : `⚡ Test OTP (${otpCode}) Sent for ${email}!`);
+  };
+
+  const handleExportTxt = () => {
+    if (!result) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const magicUrl = `${origin}/?mailbox=${encodeURIComponent(result.email)}`;
+    const content = [
+      `========================================`,
+      `MEPHISTOMAIL - DISPOSABLE EMAIL ANALYSIS REPORT`,
+      `========================================`,
+      `Target Email:    ${result.email}`,
+      `Domain:          ${result.domain}`,
+      `Is Disposable:   ${result.isDisposable ? 'YES (Disposable Burner Email)' : 'NO (Standard Domain)'}`,
+      `Risk Score:      ${result.riskScore}%`,
+      `MX Status:       ${result.mxStatus}`,
+      `Recommendation:  ${result.recommendation}`,
+      `Magic Share URL: ${magicUrl}`,
+      `Checked Date:    ${new Date().toLocaleString()}`,
+      `========================================`
+    ].join('\n');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `email_check_${result.domain}_report.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCsv = () => {
+    if (!result) return;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const magicUrl = `${origin}/?mailbox=${encodeURIComponent(result.email)}`;
+    const headers = 'Email,Domain,IsDisposable,RiskScore,MXStatus,Recommendation,MagicURL,CheckedDate\n';
+    const row = `"${result.email}","${result.domain}","${result.isDisposable ? 'true' : 'false'}","${result.riskScore}%","${result.mxStatus}","${result.recommendation.replace(/"/g, '""')}","${magicUrl}","${new Date().toISOString()}"\n`;
+
+    const blob = new Blob([headers + row], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `email_check_${result.domain}_report.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -132,7 +203,7 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
                   <span className="text-xs text-slate-400 block">{isTr ? 'İncelenen E-posta' : 'Target Email'}</span>
                   <span className="text-base font-semibold text-white font-mono">{result.email}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {result.isDisposable ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/30">
                       <AlertTriangle className="w-3.5 h-3.5" />
@@ -144,6 +215,53 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
                       <span>{isTr ? 'STANDART E-POSTA' : 'LEGITIMATE DOMAIN'}</span>
                     </span>
                   )}
+                </div>
+              </div>
+
+              {/* Utility Tools Action Bar for Analysis */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#0a0a0f]/80 border border-slate-800">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{isTr ? 'İnteraktif Araçlar:' : 'Interactive Utilities:'}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleCopyMagicLink(result.email)}
+                    className="px-3 py-1.5 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 border border-orange-500/30 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
+                    title={isTr ? '1-Tık Magic URL Bağlantısını Kopyala' : 'Copy 1-Click Magic URL'}
+                  >
+                    {copiedMagic ? <Check className="w-3.5 h-3.5 text-green-400" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                    <span>{copiedMagic ? (isTr ? 'Kopyalandı' : 'Copied') : (isTr ? '1-Tık Magic URL' : 'Magic URL (?mailbox=)')}</span>
+                  </button>
+                  <button
+                    onClick={() => handleTestOtp(result.email)}
+                    className="px-3 py-1.5 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
+                    title={isTr ? 'Test OTP Gönder' : 'Trigger Test OTP Demo'}
+                  >
+                    <Zap className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{isTr ? 'Test OTP Demo' : 'Test OTP Demo'}</span>
+                  </button>
+                  <Link
+                    to={`/?mailbox=${encodeURIComponent(result.email)}`}
+                    className="px-3 py-1.5 bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
+                    title={isTr ? 'Posta Kutularda Aç' : 'Open in Inbox'}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>{isTr ? 'Kutuyu Aç' : 'Open Inbox'}</span>
+                  </Link>
+                  <button
+                    onClick={handleExportTxt}
+                    className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
+                    title={isTr ? 'Raporu TXT İndir' : 'Export TXT Report'}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>TXT</span>
+                  </button>
+                  <button
+                    onClick={handleExportCsv}
+                    className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all"
+                    title={isTr ? 'Raporu CSV İndir' : 'Export CSV Report'}
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    <span>CSV</span>
+                  </button>
                 </div>
               </div>
 
@@ -182,3 +300,4 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
 };
 
 export default DisposableCheckerPage;
+

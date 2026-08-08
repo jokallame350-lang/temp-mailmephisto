@@ -126,6 +126,14 @@ const AppRouter = () => {
           <Route path="/temp-mail-for-workspaces" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-facebook" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-reddit" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-with-password" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/custom-temp-mail-generator" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/1-second-temp-mail" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-steam-guard" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-canva-pro" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-claude-3-5" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-midjourney-v6" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/disposable-mail-for-developer-testing" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
           <Route path="/bulk-generator" element={<BulkGeneratorPage lang={lang} />} />

@@ -1,7 +1,7 @@
-# MephistoMail - Temp Mail Service
-# https://mephistomail.site
+# MephistoMail - Technical SEO & Performance Optimized robots.txt
+# Canonical Domain: https://mephistomail.site
 
-# Allow all major search engines full access
+# Major Search Engine Crawlers
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 1
@@ -34,7 +34,10 @@ Allow: /
 User-agent: LinkedInBot
 Allow: /
 
-# Block aggressive scrapers
+User-agent: Applebot
+Allow: /
+
+# Block aggressive SEO scrapers
 User-agent: AhrefsBot
 Disallow: /
 
@@ -50,13 +53,13 @@ Disallow: /
 User-agent: BLEXBot
 Disallow: /
 
-# Default rule for all others
+# Default Rule for All Other Crawlers
 User-agent: *
 Allow: /
 Crawl-delay: 3
 
-# Sitemap
+# Sitemap Declaration
 Sitemap: https://mephistomail.site/sitemap.xml
 
-# Host
+# Canonical Host Specification
 Host: https://mephistomail.site
