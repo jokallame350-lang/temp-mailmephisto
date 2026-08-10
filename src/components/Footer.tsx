@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { translations, Language } from '../translations';
 import LegalModal from './LegalModal';
-import { Mail, Shield, Clock, Wrench, BookOpen, HelpCircle, FileText, Scale, Code2, MessageSquare, Github, Twitter, Heart, Send, CheckCircle, Zap } from 'lucide-react';
+import { Mail, Shield, Clock, Wrench, BookOpen, HelpCircle, FileText, Scale, Code2, MessageSquare, Github, Twitter, Heart, Send, CheckCircle, Zap, Download } from 'lucide-react';
 
 interface FooterProps {
   lang: Language;
@@ -106,6 +106,17 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
               >
                 <Heart size={14} />
               </a>
+
+              <a
+                href="https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-slate-500 hover:text-orange-400 hover:border-orange-500/20 transition-all"
+                aria-label="Chrome Web Store"
+                title={lang === 'tr' ? 'Chrome Web Store\'da mevcuttur' : 'Available on Chrome Web Store'}
+              >
+                <Download size={14} />
+              </a>
             </div>
           </div>
 
@@ -139,6 +150,17 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                     <Shield size={10} />
                     {lang === 'tr' ? 'E-posta Denetleyici' : 'Email Checker'}
                   </Link>
+                </li>
+                <li>
+                  <a
+                    href="https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-500 text-[11px] hover:text-orange-400 transition-colors flex items-center gap-1.5"
+                  >
+                    <Download size={10} />
+                    {lang === 'tr' ? 'Chrome Eklentisi' : 'Chrome Extension'}
+                  </a>
                 </li>
               </ul>
             </nav>

@@ -1,6 +1,6 @@
 import React from 'react';
-import { X, DownloadCloud, FileArchive, ShieldAlert, Cpu } from 'lucide-react';
-import { Language, translations } from '../translations';
+import { X, FileArchive, ShieldCheck, ExternalLink, Cpu, Chrome, CheckCircle2 } from 'lucide-react';
+import { Language } from '../translations';
 
 interface ExtensionInstallModalProps {
     isOpen: boolean;
@@ -10,7 +10,7 @@ interface ExtensionInstallModalProps {
 
 const ExtensionInstallModal: React.FC<ExtensionInstallModalProps> = ({ isOpen, onClose, lang }) => {
     if (!isOpen) return null;
-    const t = translations[lang];
+    const CHROME_STORE_URL = 'https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob';
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -24,17 +24,18 @@ const ExtensionInstallModal: React.FC<ExtensionInstallModalProps> = ({ isOpen, o
             <div className="relative bg-[#111] border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-red-500/10 to-transparent">
+                <div className="flex items-center justify-between p-4 border-b border-white/10 bg-gradient-to-r from-orange-500/10 via-red-500/10 to-transparent">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                            <ShieldAlert className="w-5 h-5 text-red-500" />
+                        <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                            <Chrome className="w-5 h-5 text-orange-400" />
                         </div>
                         <div>
                             <h2 className="text-white font-bold leading-tight">
-                                {lang === 'tr' ? 'MephistoMail Eklentisi (Sideload)' : 'MephistoMail Extension (Sideload)'}
+                                {lang === 'tr' ? 'MephistoMail Chrome Eklentisi' : 'MephistoMail Chrome Extension'}
                             </h2>
-                            <p className="text-[11px] text-red-400 font-medium">
-                                {lang === 'tr' ? 'Maksimum gizlilik için mağaza dışı sürüm' : 'Non-store version for maximum privacy'}
+                            <p className="text-[11px] text-green-400 font-medium flex items-center gap-1">
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                {lang === 'tr' ? 'Resmi Chrome Web Store Sürümü' : 'Official Chrome Web Store Version'}
                             </p>
                         </div>
                     </div>
@@ -48,68 +49,86 @@ const ExtensionInstallModal: React.FC<ExtensionInstallModalProps> = ({ isOpen, o
 
                 {/* Content */}
                 <div className="p-5 space-y-6">
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-slate-300 leading-relaxed">
                         {lang === 'tr'
-                            ? 'Chrome Mağazası Google tarafından katı bir şekilde izlendiği için eklentimizi açık kaynak kodlu olarak (Sideload) paylaşıyoruz. Tek yapmanız gereken üç adımı takip etmek:'
-                            : 'Since the Chrome Web Store is strictly monitored by Google, we provide our open-source extension as a sideload. Just follow these three simple steps:'}
+                            ? 'MephistoMail Chrome eklentisini doğrudan Chrome Web Store üzerinden tek tıkla tarayıcınıza yükleyebilir, kayıt formlarında anında kullan at e-posta oluşturabilirsiniz.'
+                            : 'Install the MephistoMail Chrome extension directly from the Chrome Web Store in one click to generate disposable email addresses instantly on registration forms.'}
                     </p>
 
-                    <div className="space-y-4">
-                        {/* Step 1 */}
-                        <div className="flex gap-4">
-                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-red-500 font-black shrink-0">1</div>
-                            <div>
-                                <h3 className="text-white font-bold text-sm flex items-center gap-2 mb-1">
-                                    <DownloadCloud className="w-4 h-4 text-slate-400" />
-                                    {lang === 'tr' ? 'ZIP Olarak İndir' : 'Download ZIP'}
-                                </h3>
-                                <p className="text-xs text-slate-400 mb-2">
-                                    {lang === 'tr' ? 'Aşağıdaki butona tıklayarak kaynak kodları bilgisayarınıza indirin.' : 'Click the button below to download the source code to your computer.'}
-                                </p>
-                                <a
-                                    href="https://github.com/jokallame350-lang/temp-mailmephisto/archive/refs/heads/main.zip"
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold text-white transition-colors"
-                                >
-                                    <FileArchive className="w-4 h-4" />
-                                    mephistomail-main.zip
-                                </a>
-                            </div>
+                    {/* Primary Direct Install CTA */}
+                    <div className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/30 rounded-xl p-4 flex flex-col items-center text-center space-y-3">
+                        <div className="flex items-center justify-center gap-2">
+                            <Chrome className="w-6 h-6 text-orange-400" />
+                            <span className="text-white font-bold text-base">
+                                {lang === 'tr' ? 'Doğrudan Chrome Mağazasından Yükleyin' : 'Direct Install from Chrome Web Store'}
+                            </span>
                         </div>
+                        <p className="text-xs text-slate-300 max-w-sm">
+                            {lang === 'tr'
+                                ? 'Tek tıkla otomatik kurulum. Güncellemeler otomatik olarak tarayıcınıza gelir.'
+                                : 'One-click automatic installation. Updates are delivered automatically to your browser.'}
+                        </p>
+                        <a
+                            href={CHROME_STORE_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-orange-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2.5"
+                        >
+                            <Chrome className="w-4 h-4" />
+                            <span>{lang === 'tr' ? 'Chrome Web Store\'da Aç & Yükle' : 'Open in Chrome Web Store'}</span>
+                            <ExternalLink className="w-4 h-4 opacity-80" />
+                        </a>
+                    </div>
 
-                        {/* Step 2 */}
-                        <div className="flex gap-4">
-                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-orange-500 font-black shrink-0">2</div>
-                            <div>
-                                <h3 className="text-white font-bold text-sm mb-1">
-                                    {lang === 'tr' ? 'Klasöre Çıkart' : 'Extract the Folder'}
-                                </h3>
-                                <p className="text-xs text-slate-400">
-                                    {lang === 'tr' ? 'İndiğiniz ZIP dosyasını dışarı aktarın. İçerisindeki ' : 'Extract the downloaded ZIP. Inside, you will find a '}
-                                    <code className="text-orange-400 bg-orange-400/10 px-1 py-0.5 rounded">extension</code>
-                                    {lang === 'tr' ? ' klasörünü bulun.' : ' folder.'}
-                                </p>
+                    {/* Features List */}
+                    <div className="space-y-2 pt-1 border-t border-white/5">
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                            {lang === 'tr' ? 'Eklenti Özellikleri' : 'Extension Features'}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                                <span>{lang === 'tr' ? 'Tek Tıkla Mail Oluşturma' : 'One-Click Email Generation'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                                <span>{lang === 'tr' ? 'Form Otomatik Doldurma' : 'Auto-Fill Form Fields'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                                <span>{lang === 'tr' ? 'Anlık Gelen Kutusu Bildirimi' : 'Instant Inbox Notifications'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                                <span>{lang === 'tr' ? 'Sıfır Kayıt & Gizlilik Garantisi' : 'Zero Logs & Privacy First'}</span>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Step 3 */}
-                        <div className="flex gap-4">
-                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-green-500 font-black shrink-0">3</div>
-                            <div>
-                                <h3 className="text-white font-bold text-sm flex items-center gap-2 mb-1">
-                                    <Cpu className="w-4 h-4 text-slate-400" />
-                                    {lang === 'tr' ? 'Tarayıcıya Yükle' : 'Load in Browser'}
-                                </h3>
-                                <p className="text-xs text-slate-400">
-                                    {lang === 'tr' ? 'Yeni bir sekmede ' : 'Open a new tab and go to '}
-                                    <code className="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded select-all cursor-pointer">chrome://extensions</code>
-                                    {lang === 'tr' ? ' adresine gidin. Sağ üstteki ' : '. Enable the '}
-                                    <span className="font-bold text-white">{lang === 'tr' ? 'Geliştirici Modunu ' : 'Developer Mode'}</span>
-                                    {lang === 'tr' ? 'açın ve çıkarttığınız ' : ' at the top right, and '}
-                                    <code className="text-orange-400">extension</code>
-                                    {lang === 'tr' ? ' klasörünü sayfanın içine sürükleyip bırakın!' : ' drag and drop the extension folder into the page!'}
-                                </p>
-                            </div>
+                    {/* Fallback Option: Developer Source Code Sideload */}
+                    <div className="pt-3 border-t border-white/10 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+                                <Cpu className="w-3.5 h-3.5 text-slate-400" />
+                                {lang === 'tr' ? 'Alternatif: Manuel (Sideload) Kurulum' : 'Alternative: Manual (Sideload) Install'}
+                            </h3>
                         </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                            {lang === 'tr'
+                                ? 'Geliştiriciler veya açık kaynak kodunu kendisi derlemek isteyenler GitHub repository üzerindeki '
+                                : 'For developers or users who prefer building from source, download the '}
+                            <code className="text-orange-400 bg-orange-400/10 px-1 py-0.5 rounded text-[10px]">extension</code>
+                            {lang === 'tr' ? ' klasörünü ' : ' folder and load it via '}
+                            <code className="font-mono text-green-400 bg-green-400/10 px-1 py-0.5 rounded text-[10px]">chrome://extensions</code>
+                            {lang === 'tr' ? ' üzerinden yükleyebilir.' : '.'}
+                        </p>
+                        <a
+                            href="https://github.com/jokallame350-lang/temp-mailmephisto/archive/refs/heads/main.zip"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-slate-300 hover:text-white transition-colors"
+                        >
+                            <FileArchive className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{lang === 'tr' ? 'Kaynak Kod ZIP İndir (GitHub)' : 'Download Source ZIP (GitHub)'}</span>
+                        </a>
                     </div>
                 </div>
             </div>

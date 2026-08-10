@@ -145,13 +145,21 @@ const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
         <div className="flex items-center gap-0.5 sm:gap-1">
           {/* Extension Download */}
-          <button
-            onClick={onOpenExtension}
+          <a
+            href="https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              if (onOpenExtension) {
+                e.preventDefault();
+                onOpenExtension();
+              }
+            }}
             className="p-1.5 sm:p-2 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-lg transition-all min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
-            title={lang === 'tr' ? 'Chrome Eklentisini İndir' : 'Download Chrome Extension'}
+            title={lang === 'tr' ? 'Chrome Eklentisini Yükle' : 'Install Chrome Extension'}
           >
             <Download className="w-4 h-4" />
-          </button>
+          </a>
 
           {/* PWA Install */}
           {pwaInstallable && (
