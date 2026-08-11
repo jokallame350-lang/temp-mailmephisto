@@ -31,6 +31,7 @@ const ShareDropModal = lazy(() => import('./components/ShareDropModal'));
 const ExtensionInstallModal = lazy(() => import('./components/ExtensionInstallModal'));
 const CustomDomainModal = lazy(() => import('./components/CustomDomainModal'));
 const ComposeModal = lazy(() => import('./components/ComposeModal'));
+import VipUpgradeModal from './components/VipUpgradeModal';
 
 // OTP kodunu subject'ten çıkar (toast için)
 const extractOTPCode = (subject: string): string | null => {
@@ -143,6 +144,8 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
   const [showForwardingModal, setShowForwardingModal] = useState(false);
   const [showShareDropModal, setShowShareDropModal] = useState(false);
   const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [showVipModal, setShowVipModal] = useState(false);
+  const [isVip, setIsVip] = useState(() => localStorage.getItem('mephisto_vip_active') === 'true');
   const [limitModal, setLimitModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'daily' | 'capacity'; }>({ isOpen: false, title: '', message: '', type: 'daily' });
 
   const [lang, setLang] = useState<Language>(() => {
@@ -292,11 +295,14 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
             onOpenStats={() => setShowStatsModal(true)}
             onOpenFilters={() => setShowNotifFilterModal(true)}
             onOpenLabels={() => setShowAliasModal(true)}
+            onOpenVip={() => setShowVipModal(true)}
+            isVip={isVip}
           />
         )}
 
         {/* Modals */}
         <Suspense fallback={null}>
+          <VipUpgradeModal isOpen={showVipModal} onClose={() => setShowVipModal(false)} lang={lang} isVip={isVip} setIsVip={setIsVip} />
           {showCustomModal && <CustomAddressModal isOpen={showCustomModal} onClose={() => setShowCustomModal(false)} onCreate={handleCreateCustom} lang={lang} />}
           {showQRModal && <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} email={activeAccount?.address || ''} lang={lang} />}
           {showPassModal && <PasswordGenModal isOpen={showPassModal} onClose={() => setShowPassModal(false)} lang={lang} />}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X } from 'lucide-react';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X, Crown } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 interface HeaderProps {
@@ -19,12 +19,14 @@ interface HeaderProps {
   onOpenStats?: () => void;
   onOpenFilters?: () => void;
   onOpenLabels?: () => void;
+  onOpenVip?: () => void;
+  isVip?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
   accounts, currentAccount, onSwitchAccount, onDeleteAccount,
   lang, setLang, theme, setTheme, onOpenQR, onOpenPass, onOpenExtension,
-  onOpenStats, onOpenFilters, onOpenLabels
+  onOpenStats, onOpenFilters, onOpenLabels, onOpenVip, isVip = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -144,6 +146,20 @@ const Header: React.FC<HeaderProps> = ({
 
       <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
         <div className="flex items-center gap-0.5 sm:gap-1">
+          {/* VIP Supporter Upgrade Button */}
+          <button
+            onClick={onOpenVip}
+            className={`p-1.5 sm:p-2 rounded-lg transition-all flex items-center gap-1 text-xs font-bold ${
+              isVip
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20'
+                : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
+            }`}
+            title={isVip ? '👑 VIP Supporter Active' : '👑 Upgrade to VIP / Redeem Key'}
+          >
+            <Crown className="w-4 h-4 text-amber-400 animate-pulse" />
+            <span className="hidden md:inline">{isVip ? 'VIP' : 'VIP'}</span>
+          </button>
+
           {/* Extension Download */}
           <a
             href="https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob"
