@@ -244,6 +244,12 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
             <nav aria-label={lang === 'tr' ? 'Şirket bağlantıları' : 'Company links'}>
               <ul className="space-y-2">
                 <li>
+                  <Link to="/about" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Shield size={10} />
+                    {lang === 'tr' ? 'Hakkımızda' : 'About Us'}
+                  </Link>
+                </li>
+                <li>
                   <Link to="/contact" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
                     <MessageSquare size={10} />
                     {lang === 'tr' ? 'İletişim' : 'Contact'}
@@ -273,22 +279,31 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
             <nav aria-label={lang === 'tr' ? 'Yasal bağlantılar' : 'Legal links'}>
               <ul className="space-y-2">
                 <li>
-                  <button
-                    onClick={() => setModalType('privacy')}
+                  <Link
+                    to="/privacy"
                     className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5"
                   >
                     <FileText size={10} />
                     {t.footerPrivacy}
-                  </button>
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={() => setModalType('terms')}
+                  <Link
+                    to="/terms"
                     className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5"
                   >
                     <Scale size={10} />
                     {t.footerTerms}
-                  </button>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/cookies"
+                    className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5"
+                  >
+                    <FileText size={10} />
+                    {lang === 'tr' ? 'Çerez Politikası' : 'Cookie Policy'}
+                  </Link>
                 </li>
               </ul>
             </nav>

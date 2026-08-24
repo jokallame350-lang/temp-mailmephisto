@@ -18,6 +18,10 @@ const DisposableCheckerPage = lazy(() => import('./pages/DisposableCheckerPage')
 const BulkGeneratorPage = lazy(() => import('./pages/BulkGeneratorPage'));
 const BurnNotePage = lazy(() => import('./pages/BurnNotePage'));
 const ServicesCatalogPage = lazy(() => import('./pages/ServicesCatalogPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
+const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -86,6 +90,14 @@ const AppRouter = () => {
           <Route path="/10minutemail" element={<TenMinuteMailPage lang={lang} />} />
           <Route path="/help" element={<HelpPage lang={lang} />} />
           <Route path="/contact" element={<ContactPage lang={lang} />} />
+          <Route path="/about" element={<AboutPage lang={lang} />} />
+          <Route path="/about-us" element={<AboutPage lang={lang} />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage lang={lang} />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage lang={lang} />} />
+          <Route path="/terms" element={<TermsOfServicePage lang={lang} />} />
+          <Route path="/terms-of-service" element={<TermsOfServicePage lang={lang} />} />
+          <Route path="/cookies" element={<CookiePolicyPage lang={lang} />} />
+          <Route path="/cookie-policy" element={<CookiePolicyPage lang={lang} />} />
           <Route path="/api-docs" element={<ApiDocsPage lang={lang} />} />
           <Route path="/services" element={<ServicesCatalogPage lang={lang} />} />
           <Route path="/kullanim-alanlari" element={<ServicesCatalogPage lang={lang} />} />

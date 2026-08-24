@@ -1,10 +1,15 @@
 # MephistoMail - Technical SEO & Performance Optimized robots.txt
 # Canonical Domain: https://mephistomail.site
 
-# Major Search Engine Crawlers
+# Major Search Engine Crawlers & Ad Reviewers
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 1
 
 User-agent: Googlebot-Image
 Allow: /

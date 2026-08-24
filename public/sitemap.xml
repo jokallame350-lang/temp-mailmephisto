@@ -57,6 +57,38 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://mephistomail.site/" />
   </url>
 
+  <!-- Core Company & Policy Pages (AdSense Mandatory) -->
+  <url>
+    <loc>https://mephistomail.site/privacy</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mephistomail.site/terms</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mephistomail.site/cookies</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://mephistomail.site/about</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://mephistomail.site/contact</loc>
+    <lastmod>2026-08-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Programmatic Service SEO Pages (25 Routes) -->
   <url>
     <loc>https://mephistomail.site/temp-mail-for-vpn</loc>
