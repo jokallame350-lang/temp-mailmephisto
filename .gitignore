@@ -44,10 +44,12 @@ coverage/
 
 .vercel
 
-# Agent/Skills
+# Agent/Skills & Scratch
 skills/
 .agent/
 .gemini/
+*.py
+*.cjs
 
 # Automation (private)
 automation/
