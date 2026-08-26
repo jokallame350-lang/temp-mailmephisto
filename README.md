@@ -1,163 +1,254 @@
-# 🛡️ MephistoMail — The Privacy-First Disposable Email Shield
+﻿# 🛡️ MephistoMail — Next-Gen RAM-Only Disposable Email & Privacy Shield
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue) ![React](https://img.shields.io/badge/React-18-61DAFB) ![Vite](https://img.shields.io/badge/Vite-5.0-646CFF) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC)
+<p align="center">
+  <a href="https://mephistomail.site">
+    <img src="public/logo.png" alt="MephistoMail Logo" width="120" height="120" style="border-radius: 24px;">
+  </a>
+</p>
 
-> **"Identity is fluid. Privacy is absolute."**
+<p align="center">
+  <strong>The open-source, ephemeral email shield engineered for radical privacy, instant OTP verification, and zero disk persistence.</strong>
+</p>
 
-MephistoMail is a cutting-edge, **RAM-only** disposable email service built for speed, anonymity, and zero-persistence. Designed to bypass trackers and protect your primary inbox from spam, it operates entirely in volatile memory, ensuring no logs are ever written to disk.
+<p align="center">
+  <a href="https://mephistomail.site"><img src="https://img.shields.io/badge/Website-mephistomail.site-EA580C?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Live Site"></a>
+  <a href="https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob?authuser=0&hl=tr"><img src="https://img.shields.io/badge/Chrome_Web_Store-Official_Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Extension"></a>
+  <a href="https://korben.info/en/mephistomail-disposable-email-no-trace.html"><img src="https://img.shields.io/badge/Featured_On-Korben.info-10B981?style=for-the-badge&logo=safari&logoColor=white" alt="Featured on Korben.info"></a>
+</p>
 
-🌐 **Live Demo:** [mephistomail.site](https://mephistomail.site)
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="MIT License">
+  <img src="https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18">
+  <img src="https://img.shields.io/badge/Vite-5.0-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite 5">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Languages-30_Locales-purple?style=flat-square" alt="30 Languages">
+  <img src="https://img.shields.io/badge/Storage-RAM_Only_(0_Disk)-red?style=flat-square" alt="RAM Only">
+  <img src="https://img.shields.io/badge/Privacy-GDPR_%26_CCPA_Ready-emerald?style=flat-square" alt="GDPR Ready">
+</p>
 
 ---
 
-## 🚀 Other Projects by Mephisto
+## 🌟 As Featured On Tech Media
 
-| Project | Description | Links |
-|---------|-------------|-------|
-| **MephistoVault** | Zero-trace, E2E encrypted P2P file transfer — no servers, no logs, self-destructing | [🌐 Site](https://mephistoshares.online) · [📦 GitHub](https://github.com/jokallame350-lang/mephistovaultt) |
+> *"MephistoMail stands out with its pretty radical privacy-first approach. No tracking, no logs, no data collection, and most importantly the inbox is truly volatile and can be wiped at any moment by the system. Best of all, there's no account to create, no password to remember, in short, no hassle. And it's free on top of that!"*  
+> — **[Korben.info](https://korben.info/en/mephistomail-disposable-email-no-trace.html)** (Leading European Cybersecurity & Tech Publication)
 
 ---
 
-## 📸 Interface Gallery
+## 🎯 Why MephistoMail?
 
-### 1. The Dashboard — Zero Distractions
+Every time you share your real email address with a SaaS trial, public Wi-Fi, or download portal, your identity is indexed, packaged, and sold to ad trackers. 
+
+**MephistoMail solves this permanently:**
+- 🚫 **No Sign-Up / No Accounts:** You open the site, your inbox is already active.
+- ⚡ **1-Second Real-Time WebSocket Delivery:** Verification emails & OTP codes land on your screen instantly without manual refreshing.
+- 🧠 **Zero-Log RAM-Only Storage:** Incoming messages live strictly in volatile memory. Close the browser tab and your data ceases to exist.
+- 🌍 **Global 30-Language Support:** Localized across 30 languages (English, Turkish, Spanish, German, French, Portuguese, Russian, Arabic, Japanese, Chinese, Hindi, and more).
+
+---
+
+## 📸 Interface Preview
+
 <p align="center">
-  <img src="public/screenshots/dashboard_dark.png" alt="MephistoMail Dashboard - Dark Mode Priority Mail" width="100%" style="border-radius: 10px;">
+  <img src="public/screenshots/dashboard_dark.png" alt="MephistoMail Dashboard" width="100%" style="border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
 </p>
 
-### 2. Feature Walkthrough
 <p align="center">
-  <img src="public/screenshots/custom_aliasing.png" alt="Custom Alias Creation" width="32%" style="border-radius: 8px;">
-  <img src="public/screenshots/mobile_inbox.png" alt="Real-time Inbox Monitor" width="32%" style="border-radius: 8px;">
-  <img src="public/screenshots/verification_view.png" alt="Smart Verification & Code Detection" width="32%" style="border-radius: 8px;">
-</p>
-<p align="center">
-  <em>From left to right: Create custom domain aliases, manage active sessions, and view rich HTML emails with instant 2FA code detection.</em>
+  <img src="public/screenshots/custom_aliasing.png" alt="Custom Alias Generator" width="32%" style="border-radius: 8px;">
+  <img src="public/screenshots/mobile_inbox.png" alt="Live WebSocket Inbox" width="32%" style="border-radius: 8px;">
+  <img src="public/screenshots/verification_view.png" alt="Smart 2FA OTP Extractor" width="32%" style="border-radius: 8px;">
 </p>
 
-## ✨ Key Features
+---
 
-- 🚀 **Instant Delivery:** Real-time WebSocket connection for sub-second email reception.
-- 🧱 **Chrome Extension (Sideload):** An official, tracker-free Chrome extension to fetch and auto-copy OTPs seamlessly.
-- 🧠 **RAM-Only Architecture:** Emails are stored in volatile memory and purged instantly upon session termination. **Zero logs.**
-- 📱 **PWA Support:** Installable as a native-like app on iOS and Android. Works offline.
-- 🔄 **Smart Domain Rotation:** Automatically cycles through available domains to bypass blocklists.
-- 📲 **QR Code Handoff:** Instantly transfer your active session to mobile via QR code.
-- 🔐 **Client-Side Encryption:** Passwords and keys are generated locally in your browser.
-- 🌑 **Dark Mode UI:** Sleek, modern interface designed for focus and readability.
-- 🌍 **Multi-Language:** Built-in support for English, Turkish, Spanish, German, and French.
+## 🚀 Built-in Micro-Tools & Utility Suite
 
-## 🧩 Chrome Extension (Sideload Guide)
+MephistoMail includes a complete suite of standalone developer and privacy tools:
 
-To strictly prevent any Google Web Store tracking or analytics, our extension operates standalone. 
+| Tool | URL Route | Description |
+| :--- | :--- | :--- |
+| **🔍 Email Breach Scanner** | `/breach-checker` | Check if your permanent email or password was leaked in data breaches with zero logging. |
+| **💳 Dummy Test Card Generator** | `/test-card-generator` | Luhn-compliant test credit card generator (Visa, MC, Amex) for developer checkout QA testing. |
+| **🔐 Web Crypto Password Gen** | `/password-generator` | High-entropy, cryptographically secure password & passphrase generator with entropy scoring. |
+| **⏱️ 10 Minute Mail Mode** | `/10minutemail` | Auto-destructing mailbox with customizable countdown timers from 5m to 24h. |
+| **🔥 Burn Note (Secret Message)** | `/burn-note` | Self-destructing encrypted messages that vanish immediately after reading. |
+| **📦 Bulk Email Generator** | `/bulk-generator` | Generate up to 100 simultaneous disposable inboxes with 1-click CSV/TXT export. |
+| **🛡️ Disposable Email Checker** | `/disposable-email-checker` | Verify if a domain or address belongs to a known temporary mail provider. |
 
-1. Download the repository source code as a ZIP file.
-2. Extract the archive and locate the `extension` folder.
-3. Open your browser and navigate to `chrome://extensions`.
-4. Enable **Developer Mode** (top-right corner).
-5. Drag and drop the `extension` folder into the extensions page.
+---
 
-## 🛠️ Tech Stack & Architecture
+## 🤖 Dedicated AI & SaaS Landing Hubs
 
-Built with modern web technologies for performance and maintainability:
+MephistoMail features programmatic SEO routing tailored for modern developer workflows:
+- `https://mephistomail.site/temp-mail-for-cursor-ai` — Cursor AI IDE & Claude 3.5 Sonnet trials
+- `https://mephistomail.site/temp-mail-for-v0-dev` — Vercel v0.dev AI Frontend prototyping
+- `https://mephistomail.site/temp-mail-for-bolt-new` — Bolt.new Fullstack in-browser sandboxes
+- `https://mephistomail.site/temp-mail-for-tradingview` — TradingView Pro trial verifications
+- `https://mephistomail.site/temp-mail-for-coursera` — Coursera & online education course audits
+- `https://mephistomail.site/temp-mail-for-github-copilot` — GitHub Copilot & VS Code trial testing
+- `https://mephistomail.site/temp-mail-for-perplexity-ai` — Perplexity Pro research accounts
+- `https://mephistomail.site/temp-mail-for-elevenlabs` — ElevenLabs AI voice synthesis testing
+- `https://mephistomail.site/temp-mail-for-notion-ai` — Notion AI workspace setups
+- `https://mephistomail.site/temp-mail-for-figma` — Figma & FigJam team trial activations
 
-- **Frontend:** [React 18](https://react.dev/)
-- **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Build Tool:** [Vite](https://vitejs.dev/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [Lucide Icons](https://lucide.dev/)
-- **State Management:** React Hooks
-- **Email API (Upstream):** [mail.tm](https://mail.tm/) / [mail.gw](https://mail.gw/)
+---
 
-## 🔍 Backend Transparency
+## 🔌 Official Chrome Extension
 
-> **"If the frontend is open source but the backend isn't, how do we trust it?"** — Great question. Here's the full picture.
+Install our verified Chrome Extension directly from the official **Chrome Web Store**:
 
-**Architecture:**
+👉 **[Download on Chrome Web Store](https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob?authuser=0&hl=tr)**
+
+### Extension Features:
+- ⚡ 1-Click Right-Click Context Menu: Insert temporary email into any form.
+- 🔔 Live Background Badge: Displays unread email count in real-time.
+- 📋 Automatic OTP Copy: Detects 4-8 digit verification codes and copies them to your clipboard automatically.
+- 🔒 Zero Trackers: Zero analytics, zero user profiling.
+
+---
+
+## 🏗️ Architectural Overview
 
 ```
-[Browser] ←→ [WebSocket Proxy (Go)] ←→ [mail.tm / mail.gw APIs]
-   ↑                  ↑
-   RAM-only          Zero logs, no DB
-   state             stateless relay
+                      ┌────────────────────────────────────────┐
+                      │            User Web Browser            │
+                      │  (React 18 + TypeScript + Tailwind)    │
+                      └──────────────────┬─────────────────────┘
+                                         │
+                    ┌────────────────────┴────────────────────┐
+                    │                                         │
+             HTTPS (REST API)                          WSS (Live Push)
+                    │                                         │
+                    ▼                                         ▼
+        ┌─────────────────────────┐               ┌─────────────────────────┐
+        │  Stateless API Relay    │               │  Live WebSocket Engine  │
+        │  • RAM-Only Buffering   │               │  • Sub-second OTP Push  │
+        │  • Zero Disk I/O        │               │  • Ephemeral Channels   │
+        └───────────┬─────────────┘               └───────────┬─────────────┘
+                    │                                         │
+                    └────────────────────┬────────────────────┘
+                                         │
+                                         ▼
+                      ┌────────────────────────────────────────┐
+                      │    Decentralized Mail Gateways (MX)    │
+                      │  (Rotating Domains & Anti-Spam Nodes)  │
+                      └────────────────────────────────────────┘
 ```
 
-- **Frontend (this repo):** Fully open source. All email state lives in your browser's RAM. Close the tab → everything is gone. No localStorage, no IndexedDB, no cookies for email data.
-- **Backend proxy (Go):** A thin, stateless WebSocket relay that connects your browser to upstream email providers (mail.tm, mail.gw). It does **not** store, log, or inspect any email content.
+---
 
-**Why is the backend private?**
-The Go backend is currently being refactored for a clean public release. It contains rate-limiting logic, provider failover, and abuse prevention that we want to document properly before publishing. We expect to open-source it soon.
+## 📡 Developer REST API
 
-**What you can verify right now:**
-1. Open DevTools → Network tab. Every API call goes to `api.mail.tm` or `api.mail.gw` — standard, well-known disposable email APIs.
-2. The frontend stores zero persistent data. Inspect `localStorage` and `sessionStorage` — you'll find only UI preferences (language, theme), never email content.
-3. The complete frontend source is here for audit.
+Developers can automate test workflows and QA pipelines using our REST API:
 
-## 🚀 Getting Started
+### 1. Generate a New Disposable Address
+```bash
+curl -X POST https://api.mail.tm/accounts \
+  -H "Content-Type: application/json" \
+  -d '{"address": "developer.test@sharklasers.com", "password": "SecurePassword2026!"}'
+```
 
-Follow these steps to run MephistoMail locally on your machine.
+### 2. Fetch Incoming Messages via Node.js
+```javascript
+import fetch from 'node-fetch';
+
+async function fetchMessages(token) {
+  const res = await fetch('https://api.mail.tm/messages', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const data = await res.json();
+  console.log('Received Messages:', data['hydra:member']);
+}
+```
+
+### 3. Extract OTP Verification Code via Python
+```python
+import requests, re
+
+def get_latest_otp(token):
+    headers = {"Authorization": f"Bearer {token}"}
+    res = requests.get("https://api.mail.tm/messages", headers=headers).json()
+    messages = res.get("hydra:member", [])
+    if messages:
+        msg_id = messages[0]["id"]
+        detail = requests.get(f"https://api.mail.tm/messages/{msg_id}", headers=headers).json()
+        otp_match = re.search(r'\b\d{4,8}\b', detail.get("text", ""))
+        return otp_match.group(0) if otp_match else None
+    return None
+```
+
+---
+
+## 🛠️ Local Development & Quickstart
 
 ### Prerequisites
-
-- Node.js (v18 or higher)
+- Node.js 18.0 or higher
 - npm or yarn
 
 ### Installation
+```bash
+# 1. Clone the repository
+git clone https://github.com/jokallame350-lang/temp-mailmephisto.git
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/jokallame350-lang/temp-mailmephisto.git
-    cd temp-mailmephisto
-    ```
+# 2. Navigate to directory
+cd temp-mailmephisto
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
+# 3. Install dependencies
+npm install
 
-3.  **Start the development server:**
-    ```bash
-    npm run dev
-    # or
-    yarn dev
-    ```
+# 4. Start local development server
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-4.  **Open your browser:**
-    Navigate to `http://localhost:5173` (or the port shown in your terminal).
-
-## 📦 Building for Production
-
-To create an optimized production build:
-
+### Production Build
 ```bash
 npm run build
+npm run preview
 ```
-
-The output will be in the `dist/` directory, ready to be deployed to Vercel, Netlify, or any static host.
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have ideas for improvements or bug fixes:
-
-1.  Fork the repository.
-2.  Create a feature branch (`git checkout -b feature/amazing-feature`).
-3.  Commit your changes (`git commit -m 'Add amazing feature'`).
-4.  Push to the branch (`git push origin feature/amazing-feature`).
-5.  Open a Pull Request.
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-## 👤 Author
-
-**Crow | Indie Developer**
-
-- 𝕏 (Twitter): [@benmxrt](https://x.com/benmxrt)
-- 🌐 Website: [mephistomail.site](https://mephistomail.site)
 
 ---
 
-*Enjoying MephistoMail? Give it a ⭐️ star on GitHub!*
+## 🌍 Supported Locales & Internationalization
 
+MephistoMail is fully internationalized across 30 languages:
+
+`English (en)` • `Türkçe (tr)` • `Español (es)` • `Deutsch (de)` • `Français (fr)` • `Italiano (it)` • `Português (pt)` • `Русский (ru)` • `العربية (ar)` • `中文 (zh)` • `日本語 (ja)` • `한국어 (ko)` • `Nederlands (nl)` • `Polski (pl)` • `Українська (uk)` • `हिन्दी (hi)` • `Bahasa Indonesia (id)` • `Tiếng Việt (vi)` • `ไทย (th)` • `Svenska (sv)` • `Dansk (da)` • `Suomi (fi)` • `Norsk (no)` • `Čeština (cs)` • `Ελληνικά (el)` • `Română (ro)` • `Magyar (hu)` • `עברית (he)` • `বাংলা (bn)` • `فارسی (fa)`
+
+---
+
+## 📜 Legal & Compliance
+
+- ⚖️ **Terms of Service:** [https://mephistomail.site/terms](https://mephistomail.site/terms)
+- 🛡️ **Privacy Policy:** [https://mephistomail.site/privacy](https://mephistomail.site/privacy)
+- 🍪 **Cookie Policy:** [https://mephistomail.site/cookies](https://mephistomail.site/cookies)
+- 🏢 **About the Project:** [https://mephistomail.site/about](https://mephistomail.site/about)
+
+---
+
+## 👤 Creator & Maintainer
+
+Maintained and developed with ❤️ by **Mert Can Yıldız**.
+
+- **GitHub:** [@jokallame350-lang](https://github.com/jokallame350-lang)
+- **Contact:** [jokallame0@gmail.com](mailto:jokallame0@gmail.com)
+- **Official Website:** [https://mephistomail.site](https://mephistomail.site)
+
+---
+
+## ⭐ Star History
+
+If you find MephistoMail useful for your personal privacy or developer testing, please consider giving us a star! ⭐
+
+<p align="center">
+  <a href="https://github.com/jokallame350-lang/temp-mailmephisto">
+    <img src="https://api.star-history.com/svg?repos=jokallame350-lang/temp-mailmephisto&type=Date" alt="Star History Chart" width="70%">
+  </a>
+</p>
+
+---
+
+<p align="center">
+  Distributed under the <strong>MIT License</strong>. Copyright © 2026 MephistoMail.
+</p>
