@@ -180,6 +180,17 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                     {lang === 'tr' ? 'Chrome Eklentisi' : 'Chrome Extension'}
                   </a>
                 </li>
+                <li>
+                  <a
+                    href="https://mephistoshares.online"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-500 text-[11px] hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+                  >
+                    <Shield size={10} />
+                    {lang === 'tr' ? 'MephistoVault (P2P Dosya Transfer)' : 'MephistoVault (P2P File Transfer)'}
+                  </a>
+                </li>
               </ul>
             </nav>
           </div>
