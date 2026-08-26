@@ -1,5 +1,5 @@
-import React, { useRef, useState, useCallback, useMemo } from 'react';
-import { Clock, ChevronRight, Inbox, Loader2, ShieldCheck, Zap, Trash2, CheckCircle2, AlertCircle, Tag, Copy, Check, Search, X, Mail } from 'lucide-react';
+import React, { useRef, useState, useCallback, memo } from 'react';
+import { Clock, ChevronRight, Loader2, ShieldCheck, Zap, Trash2, CheckCircle2, AlertCircle, Tag, Copy, Check, Search, X, Mail } from 'lucide-react';
 import { EmailSummary } from '../types';
 import { translations, Language } from '../translations';
 
@@ -15,8 +15,12 @@ interface EmailListProps {
   onSearchChange: (q: string) => void;
 }
 
-// OTP kodunu subject'ten çıkar
+// Global LRU Cache for OTP Extraction to prevent repeated RegExp executions
+const otpCache = new Map<string, string | null>();
 const extractOTP = (subject: string): string | null => {
+  if (!subject) return null;
+  if (otpCache.has(subject)) return otpCache.get(subject)!;
+
   const patterns = [
     /\b(\d{4,8})\b/,
     /code[:\s]+(\d{4,8})/i,
@@ -24,14 +28,174 @@ const extractOTP = (subject: string): string | null => {
     /verification[:\s]+(\d{4,8})/i,
     /doğrulama[:\s]+(\d{4,8})/i,
   ];
+  let found: string | null = null;
   for (const pattern of patterns) {
     const match = subject.match(pattern);
-    if (match) return match[1];
+    if (match) {
+      found = match[1];
+      break;
+    }
   }
-  return null;
+
+  if (otpCache.size > 200) {
+    const keys = Array.from(otpCache.keys()).slice(0, 100);
+    keys.forEach(k => otpCache.delete(k));
+  }
+  otpCache.set(subject, found);
+  return found;
 };
 
-const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onDelete, onDeleteAll, loading, lang, searchQuery, onSearchChange }) => {
+interface EmailListItemProps {
+  email: EmailSummary;
+  isSelected: boolean;
+  isSwiping: boolean;
+  swipeX: number;
+  onSelect: (id: string) => void;
+  onDelete: (id: string, e: React.MouseEvent) => void;
+  onTouchStart: (e: React.TouchEvent, id: string) => void;
+  onTouchMove: (e: React.TouchEvent, id: string) => void;
+  onTouchEnd: (e: React.TouchEvent, id: string) => void;
+  onCopyCode: (code: string, e: React.MouseEvent) => void;
+  copiedCode: string | null;
+  lang: Language;
+  index: number;
+  noSubjectText: string;
+}
+
+const EmailListItem: React.FC<EmailListItemProps> = memo(({
+  email,
+  isSelected,
+  isSwiping,
+  swipeX,
+  onSelect,
+  onDelete,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  onCopyCode,
+  copiedCode,
+  lang,
+  index,
+  noSubjectText,
+}) => {
+  const fromName = typeof email.from === 'string'
+    ? email.from
+    : (email.from && typeof email.from === 'object'
+        ? String(email.from.name || email.from.address || 'unknown')
+        : String(email.from || 'unknown'));
+
+  const otpCode = extractOTP(email.subject);
+
+  return (
+    <div
+      role="listitem"
+      aria-selected={isSelected}
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(email.id); } }}
+      className="relative overflow-hidden"
+    >
+      {/* Swipe arka planı */}
+      <div className="absolute inset-0 bg-red-500/20 flex items-center justify-end pr-6 pointer-events-none" aria-hidden="true">
+        <Trash2 className="w-5 h-5 text-red-500" />
+      </div>
+
+      {/* Ana kart */}
+      <div
+        onClick={() => onSelect(email.id)}
+        onTouchStart={e => onTouchStart(e, email.id)}
+        onTouchMove={e => onTouchMove(e, email.id)}
+        onTouchEnd={e => onTouchEnd(e, email.id)}
+        className={`email-card-enter stagger-${Math.min(index + 1, 6)} group relative cursor-pointer transition-colors duration-200 bg-[#0a0a0c] ${
+          isSelected
+            ? 'bg-orange-500/[0.07] border-l-2 border-orange-600'
+            : 'hover:bg-white/[0.03] border-l-2 border-transparent'
+        }`}
+        style={isSwiping ? { transform: `translateX(${swipeX}px)`, transition: 'none' } : { transform: 'translateX(0)', transition: 'transform 0.3s' }}
+      >
+        {/* İç Kart */}
+        <div className="p-3 sm:p-4 md:p-5">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest truncate max-w-[120px] sm:max-w-[150px]">
+              {fromName}
+            </span>
+            <div className="flex items-center gap-2 text-slate-500">
+              <Clock className="w-3 h-3" aria-hidden="true" />
+              <time className="text-[9px] font-bold" dateTime={email.createdAt}>
+                {new Date(email.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </time>
+            </div>
+          </div>
+
+          <h3 className={`text-xs font-bold mb-1 truncate ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+            {email.subject || noSubjectText}
+          </h3>
+
+          {otpCode && (
+            <div className="mt-2 flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-lg p-1.5">
+              <span className="font-mono text-xs font-black text-green-400 tracking-wider">⚡ {otpCode}</span>
+              <button
+                onClick={e => onCopyCode(otpCode, e)}
+                className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-black text-[10px] font-bold rounded-md flex items-center gap-1 transition-transform active:scale-95"
+              >
+                {copiedCode === otpCode ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copiedCode === otpCode ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              {email.aiCategory === 'Verification' && <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 text-[9px] border border-green-500/20 flex items-center gap-1" aria-label="Verification code"><CheckCircle2 className="w-3 h-3" aria-hidden="true" /> Code</span>}
+              {email.aiCategory === 'Security' && <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[9px] border border-red-500/20 flex items-center gap-1" aria-label="Security alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> Alert</span>}
+              {email.aiCategory === 'Newsletter' && <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] border border-blue-500/20 flex items-center gap-1" aria-label="Newsletter"><Tag className="w-3 h-3" aria-hidden="true" /> News</span>}
+
+              {/* OTP Tek Tıkla Kopyala */}
+              {otpCode && (
+                <button
+                  onClick={(e) => onCopyCode(otpCode, e)}
+                  className="otp-glow flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-mono font-black hover:bg-green-500/20 transition-transform active:scale-95"
+                  aria-label={`Copy verification code ${otpCode}`}
+                >
+                  {copiedCode === otpCode ? <Check className="w-3 h-3" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
+                  {copiedCode === otpCode ? 'Copied!' : otpCode}
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <ChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'translate-x-1 text-orange-500' : 'opacity-0 group-hover:opacity-100 text-slate-700'}`} aria-hidden="true" />
+              <button
+                onClick={(e) => onDelete(email.id, e)}
+                className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-500/10 sm:opacity-0 sm:group-hover:opacity-100"
+                aria-label={lang === 'tr' ? 'E-postayı sil' : 'Delete email'}
+              >
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" aria-hidden="true" />
+      </div>
+    </div>
+  );
+});
+
+EmailListItem.displayName = 'EmailListItem';
+
+const RefreshIndicator: React.FC<{ scanningText: string }> = memo(({ scanningText }) => (
+  <div className="flex items-center justify-center gap-2 py-3 bg-orange-500/5 border-b border-white/5 animate-pulse">
+    <Loader2 className="w-3 h-3 text-orange-500 animate-spin" />
+    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500/80">
+      {scanningText}
+    </span>
+  </div>
+));
+
+RefreshIndicator.displayName = 'RefreshIndicator';
+
+const EmailList: React.FC<EmailListProps> = ({
+  emails, selectedId, onSelect, onDelete, onDeleteAll, loading, lang, searchQuery, onSearchChange
+}) => {
   const t = translations[lang];
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<string | null>(null);
@@ -41,12 +205,12 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
   const [isPulling, setIsPulling] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const handleCopyCode = (code: string, e: React.MouseEvent) => {
+  const handleCopyCode = useCallback((code: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
-  };
+  }, []);
 
   // Touch handlers for swipe-to-delete
   const handleTouchStart = useCallback((e: React.TouchEvent, id: string) => {
@@ -110,15 +274,6 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
     }
   }, [isPulling, pullY]);
 
-  const RefreshIndicator = () => (
-    <div className="flex items-center justify-center gap-2 py-3 bg-orange-500/5 border-b border-white/5 animate-pulse">
-      <Loader2 className="w-3 h-3 text-orange-500 animate-spin" />
-      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500/80">
-        {t.scanningNetwork}
-      </span>
-    </div>
-  );
-
   // Yükleme Durumu
   if (loading && emails.length === 0) {
     return (
@@ -133,11 +288,10 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
   if (emails.length === 0 && !searchQuery) {
     return (
       <div className="flex flex-col h-full">
-        <RefreshIndicator />
+        <RefreshIndicator scanningText={t.scanningNetwork} />
         <div className="flex-grow flex flex-col items-center justify-center text-center p-8" role="status" aria-live="polite">
           {/* Animasyonlu Empty Inbox İllüstrasyonu */}
           <div className="relative w-28 h-28 mb-6">
-            {/* Ana ikon */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-20 h-20 bg-orange-500/5 rounded-2xl flex items-center justify-center border border-orange-500/10">
                 <Mail className="w-10 h-10 text-orange-500/30" />
@@ -172,7 +326,7 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
 
   return (
     <div className="flex flex-col h-full">
-      <RefreshIndicator />
+      <RefreshIndicator scanningText={t.scanningNetwork} />
 
       {/* Arama Çubuğu */}
       <div className="px-3 py-2 border-b border-white/5">
@@ -234,111 +388,28 @@ const EmailList: React.FC<EmailListProps> = ({ emails, selectedId, onSelect, onD
         role="list"
         aria-label={lang === 'tr' ? 'E-posta listesi' : 'Email list'}
       >
-        {emails.map((email, index) => {
-          const fromName = typeof email.from === 'string'
-            ? email.from
-            : (email.from && typeof email.from === 'object'
-                ? String(email.from.name || email.from.address || 'unknown')
-                : String(email.from || 'unknown'));
-          const otpCode = extractOTP(email.subject);
-          const isSwipingThis = swipingId === email.id;
-
-          return (
-            <div
-              key={email.id}
-              role="listitem"
-              aria-selected={selectedId === email.id}
-              tabIndex={0}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(email.id); } }}
-              className="relative overflow-hidden"
-            >
-              {/* Swipe arka planı */}
-              <div className="absolute inset-0 bg-red-500/20 flex items-center justify-end pr-6" aria-hidden="true">
-                <Trash2 className="w-5 h-5 text-red-500" />
-              </div>
-
-              {/* Ana kart */}
-              <div
-                onClick={() => onSelect(email.id)}
-                onTouchStart={e => handleTouchStart(e, email.id)}
-                onTouchMove={e => handleTouchMove(e, email.id)}
-                onTouchEnd={e => handleTouchEnd(e, email.id)}
-                className={`email-card-enter stagger-${Math.min(index + 1, 6)} group relative cursor-pointer transition-all duration-300 bg-[#0a0a0c] ${selectedId === email.id
-                  ? 'bg-orange-500/[0.07] border-l-2 border-orange-600'
-                  : 'hover:bg-white/[0.03] border-l-2 border-transparent'
-                  }`}
-                style={isSwipingThis ? { transform: `translateX(${swipeX}px)`, transition: 'none' } : { transform: 'translateX(0)', transition: 'transform 0.3s' }}
-              >
-                {/* İç Kart */}
-                <div className="p-3 sm:p-4 md:p-5">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest truncate max-w-[120px] sm:max-w-[150px]">
-                      {fromName}
-                    </span>
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Clock className="w-3 h-3" aria-hidden="true" />
-                      <time className="text-[9px] font-bold" dateTime={email.createdAt}>
-                        {new Date(email.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </time>
-                    </div>
-                  </div>
-
-                  <h3 className={`text-xs font-bold mb-1 truncate ${selectedId === email.id ? 'text-white' : 'text-slate-400'}`}>
-                    {email.subject || t.noSubject}
-                  </h3>
-
-                  {otpCode && (
-                    <div className="mt-2 flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-lg p-1.5">
-                      <span className="font-mono text-xs font-black text-green-400 tracking-wider">⚡ {otpCode}</span>
-                      <button
-                        onClick={e => handleCopyCode(otpCode, e)}
-                        className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-black text-[10px] font-bold rounded-md flex items-center gap-1 transition-all active:scale-95"
-                      >
-                        {copiedCode === otpCode ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                        {copiedCode === otpCode ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-2">
-                      {email.aiCategory === 'Verification' && <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 text-[9px] border border-green-500/20 flex items-center gap-1" aria-label="Verification code"><CheckCircle2 className="w-3 h-3" aria-hidden="true" /> Code</span>}
-                      {email.aiCategory === 'Security' && <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[9px] border border-red-500/20 flex items-center gap-1" aria-label="Security alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> Alert</span>}
-                      {email.aiCategory === 'Newsletter' && <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] border border-blue-500/20 flex items-center gap-1" aria-label="Newsletter"><Tag className="w-3 h-3" aria-hidden="true" /> News</span>}
-
-                      {/* OTP Tek Tıkla Kopyala */}
-                      {otpCode && (
-                        <button
-                          onClick={(e) => handleCopyCode(otpCode, e)}
-                          className="otp-glow flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-mono font-black hover:bg-green-500/20 transition-all active:scale-95"
-                          aria-label={`Copy verification code ${otpCode}`}
-                        >
-                          {copiedCode === otpCode ? <Check className="w-3 h-3" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
-                          {copiedCode === otpCode ? 'Copied!' : otpCode}
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ChevronRight className={`w-4 h-4 transition-transform ${selectedId === email.id ? 'translate-x-1 text-orange-500' : 'opacity-0 group-hover:opacity-100 text-slate-700'}`} aria-hidden="true" />
-                      <button
-                        onClick={(e) => onDelete(email.id, e)}
-                        className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-500/10 sm:opacity-0 sm:group-hover:opacity-100"
-                        aria-label={lang === 'tr' ? 'E-postayı sil' : 'Delete email'}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" aria-hidden="true" />
-              </div>
-            </div>
-          );
-        })}
+        {emails.map((email, index) => (
+          <EmailListItem
+            key={email.id}
+            email={email}
+            isSelected={selectedId === email.id}
+            isSwiping={swipingId === email.id}
+            swipeX={swipeX}
+            onSelect={onSelect}
+            onDelete={onDelete}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onCopyCode={handleCopyCode}
+            copiedCode={copiedCode}
+            lang={lang}
+            index={index}
+            noSubjectText={t.noSubject}
+          />
+        ))}
       </div>
     </div>
   );
 };
 
-export default React.memo(EmailList);
+export default memo(EmailList);

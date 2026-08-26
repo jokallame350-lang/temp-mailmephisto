@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Smartphone, Download, X, Share2, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { Smartphone, Download, X, CheckCircle2 } from 'lucide-react';
 import { Language } from '../translations';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -11,7 +11,7 @@ interface PWAPromptBadgeProps {
   lang: Language;
 }
 
-export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = ({ lang }) => {
+export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState<boolean>(false);
   const [isIOS, setIsIOS] = useState<boolean>(false);
@@ -65,7 +65,7 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = ({ lang }) => {
     };
   }, []);
 
-  const handleInstallClick = async () => {
+  const handleInstallClick = useCallback(async () => {
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
@@ -92,14 +92,14 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = ({ lang }) => {
           : '💡 Install MephistoMail App: Click browser menu (⋮) and choose "Install App" or "Add to Home Screen".'
       );
     }
-  };
+  }, [deferredPrompt, isIOS, lang]);
 
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
     setShowPrompt(false);
     // Dismiss for 3 days to avoid user fatigue while encouraging repeat visits
     const nextWeek = Date.now() + 3 * 24 * 60 * 60 * 1000;
     localStorage.setItem('mephisto_pwa_dismissed_until', nextWeek.toString());
-  };
+  }, []);
 
   if (showToast) {
     return (
@@ -160,6 +160,6 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = ({ lang }) => {
       </div>
     </div>
   );
-};
+});
 
 export default PWAPromptBadge;

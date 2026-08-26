@@ -97,4 +97,4 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ lang, onNewAccoun
     );
 };
 
-export default KeyboardShortcuts;
+export default React.memo(KeyboardShortcuts);

@@ -148,6 +148,40 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
   const [isVip, setIsVip] = useState(() => localStorage.getItem('mephisto_vip_active') === 'true');
   const [limitModal, setLimitModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'daily' | 'capacity'; }>({ isOpen: false, title: '', message: '', type: 'daily' });
 
+  // Modal Handlers memoized to avoid re-rendering child components
+  const handleOpenQR = useCallback(() => setShowQRModal(true), []);
+  const handleCloseQR = useCallback(() => setShowQRModal(false), []);
+  const handleOpenPass = useCallback(() => setShowPassModal(true), []);
+  const handleClosePass = useCallback(() => setShowPassModal(false), []);
+  const handleOpenStats = useCallback(() => setShowStatsModal(true), []);
+  const handleCloseStats = useCallback(() => setShowStatsModal(false), []);
+  const handleOpenFilters = useCallback(() => setShowNotifFilterModal(true), []);
+  const handleCloseFilters = useCallback(() => setShowNotifFilterModal(false), []);
+  const handleOpenLabels = useCallback(() => setShowAliasModal(true), []);
+  const handleCloseLabels = useCallback(() => setShowAliasModal(false), []);
+  const handleOpenVip = useCallback(() => setShowVipModal(true), []);
+  const handleCloseVip = useCallback(() => setShowVipModal(false), []);
+  const handleOpenCustom = useCallback(() => setShowCustomModal(true), []);
+  const handleCloseCustom = useCallback(() => setShowCustomModal(false), []);
+  const handleOpenIdentity = useCallback(() => setShowIdentityModal(true), []);
+  const handleCloseIdentity = useCallback(() => setShowIdentityModal(false), []);
+  const handleOpenForwarding = useCallback(() => setShowForwardingModal(true), []);
+  const handleCloseForwarding = useCallback(() => setShowForwardingModal(false), []);
+  const handleOpenShareDrop = useCallback(() => setShowShareDropModal(true), []);
+  const handleCloseShareDrop = useCallback(() => setShowShareDropModal(false), []);
+  const handleOpenExtension = useCallback(() => setShowExtensionModal(true), []);
+  const handleCloseExtension = useCallback(() => setShowExtensionModal(false), []);
+  const handleOpenCustomDomain = useCallback(() => setShowCustomDomainModal(true), []);
+  const handleCloseCustomDomain = useCallback(() => setShowCustomDomainModal(false), []);
+  const handleCloseLimitModal = useCallback(() => setLimitModal(p => ({ ...p, isOpen: false })), []);
+  const handleBackFromViewer = useCallback(() => setSelectedEmailId(null), [setSelectedEmailId]);
+
+  const handleDeleteActiveAccount = useCallback(() => {
+    if (activeAccount) {
+      deleteAccount(activeAccount.id);
+    }
+  }, [activeAccount, deleteAccount]);
+
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('mephisto_lang');
     if (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'fr') return saved;
@@ -231,10 +265,10 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
     }
   }, [accounts.length, MAX_ACTIVE_ACCOUNTS, createQuickAccount, incrementAccountStat, t]);
 
-  const langOrder: Language[] = ['en', 'tr', 'es', 'de', 'fr'];
+  const langOrder: Language[] = useMemo(() => ['en', 'tr', 'es', 'de', 'fr'], []);
   const toggleLang = useCallback(() => {
     setLang(prev => langOrder[(langOrder.indexOf(prev) + 1) % langOrder.length]);
-  }, []);
+  }, [langOrder]);
 
   const handleAddCustomDomain = useCallback((domain: string, username: string) => {
     const fullAddress = `${username}@${domain}`;
@@ -270,7 +304,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
           onToggleLang={toggleLang}
         />
 
-        {/* Floating Orbs — Minimal arka plan */}
+        {/* Floating Orbs — Hardware-accelerated minimal background */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
           <div className="floating-orb w-96 h-96 bg-orange-500/[0.03] top-0 -left-48" />
           <div className="floating-orb w-80 h-80 bg-orange-500/[0.02] top-40 -right-40" style={{ animationDelay: '-7s' }} />
@@ -289,35 +323,35 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
             setLang={setLang}
             theme={theme}
             setTheme={setTheme}
-            onOpenQR={() => setShowQRModal(true)}
-            onOpenPass={() => setShowPassModal(true)}
-            onOpenExtension={() => setShowExtensionModal(true)}
-            onOpenStats={() => setShowStatsModal(true)}
-            onOpenFilters={() => setShowNotifFilterModal(true)}
-            onOpenLabels={() => setShowAliasModal(true)}
-            onOpenVip={() => setShowVipModal(true)}
+            onOpenQR={handleOpenQR}
+            onOpenPass={handleOpenPass}
+            onOpenExtension={handleOpenExtension}
+            onOpenStats={handleOpenStats}
+            onOpenFilters={handleOpenFilters}
+            onOpenLabels={handleOpenLabels}
+            onOpenVip={handleOpenVip}
             isVip={isVip}
           />
         )}
 
         {/* Modals */}
         <Suspense fallback={null}>
-          <VipUpgradeModal isOpen={showVipModal} onClose={() => setShowVipModal(false)} lang={lang} isVip={isVip} setIsVip={setIsVip} />
-          {showCustomModal && <CustomAddressModal isOpen={showCustomModal} onClose={() => setShowCustomModal(false)} onCreate={handleCreateCustom} lang={lang} />}
-          {showQRModal && <QRCodeModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} email={activeAccount?.address || ''} lang={lang} />}
-          {showPassModal && <PasswordGenModal isOpen={showPassModal} onClose={() => setShowPassModal(false)} lang={lang} />}
-          {limitModal.isOpen && <LimitModal isOpen={limitModal.isOpen} onClose={() => setLimitModal(p => ({ ...p, isOpen: false }))} title={limitModal.title} message={limitModal.message} type={limitModal.type} lang={lang} />}
-          {showStatsModal && <StatsAndFiltersModule isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} stats={stats} lang={lang} />}
-          {showNotifFilterModal && <NotifFilterModule isOpen={showNotifFilterModal} onClose={() => setShowNotifFilterModal(false)} filters={notifFilters} setFilters={setNotifFilters} lang={lang} />}
-          {showAliasModal && <AliasManagerModal isOpen={showAliasModal} onClose={() => setShowAliasModal(false)} accounts={accounts} onUpdateLabel={updateAccountLabel} onSetAutoDelete={setAutoDelete} onBulkCopy={bulkCopyAddresses} lang={lang} />}
-          {showIdentityModal && <IdentityModal isOpen={showIdentityModal} onClose={() => setShowIdentityModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
-          {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={() => setShowForwardingModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
-          {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={() => setShowShareDropModal(false)} lang={lang} activeAddress={activeAccount?.address} />}
-          {showExtensionModal && <ExtensionInstallModal isOpen={showExtensionModal} onClose={() => setShowExtensionModal(false)} lang={lang} />}
+          {showVipModal && <VipUpgradeModal isOpen={showVipModal} onClose={handleCloseVip} lang={lang} isVip={isVip} setIsVip={setIsVip} />}
+          {showCustomModal && <CustomAddressModal isOpen={showCustomModal} onClose={handleCloseCustom} onCreate={handleCreateCustom} lang={lang} />}
+          {showQRModal && <QRCodeModal isOpen={showQRModal} onClose={handleCloseQR} email={activeAccount?.address || ''} lang={lang} />}
+          {showPassModal && <PasswordGenModal isOpen={showPassModal} onClose={handleClosePass} lang={lang} />}
+          {limitModal.isOpen && <LimitModal isOpen={limitModal.isOpen} onClose={handleCloseLimitModal} title={limitModal.title} message={limitModal.message} type={limitModal.type} lang={lang} />}
+          {showStatsModal && <StatsAndFiltersModule isOpen={showStatsModal} onClose={handleCloseStats} stats={stats} lang={lang} />}
+          {showNotifFilterModal && <NotifFilterModule isOpen={showNotifFilterModal} onClose={handleCloseFilters} filters={notifFilters} setFilters={setNotifFilters} lang={lang} />}
+          {showAliasModal && <AliasManagerModal isOpen={showAliasModal} onClose={handleCloseLabels} accounts={accounts} onUpdateLabel={updateAccountLabel} onSetAutoDelete={setAutoDelete} onBulkCopy={bulkCopyAddresses} lang={lang} />}
+          {showIdentityModal && <IdentityModal isOpen={showIdentityModal} onClose={handleCloseIdentity} lang={lang} activeAddress={activeAccount?.address} />}
+          {showForwardingModal && <ForwardingModal isOpen={showForwardingModal} onClose={handleCloseForwarding} lang={lang} activeAddress={activeAccount?.address} />}
+          {showShareDropModal && <ShareDropModal isOpen={showShareDropModal} onClose={handleCloseShareDrop} lang={lang} activeAddress={activeAccount?.address} />}
+          {showExtensionModal && <ExtensionInstallModal isOpen={showExtensionModal} onClose={handleCloseExtension} lang={lang} />}
           {showCustomDomainModal && (
             <CustomDomainModal
               isOpen={showCustomDomainModal}
-              onClose={() => setShowCustomDomainModal(false)}
+              onClose={handleCloseCustomDomain}
               onAddCustomDomain={handleAddCustomDomain}
               lang={lang}
             />
@@ -335,22 +369,20 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                   <span className="hero-gradient-text text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-orange-400 to-orange-500">{t.heroSubtitle}</span>
                 </h1>
                 <p className="text-sm md:text-base text-slate-400 max-w-lg mx-auto leading-relaxed">
-                  {lang === 'tr'
-                    ? 'Kayıt yok. Log yok. Sekmeyi kapat, her şey silinsin.'
-                    : 'No signup. No logs. Close the tab, everything is gone.'}
+                  {t.heroTagline}
                 </p>
               </div>
 
               {/* Trust Signals — Tek satır, sakin */}
-              <div className="flex items-center gap-4 text-[10px] text-slate-500 font-medium uppercase tracking-widest">
+              <div className="flex items-center gap-4 text-[10px] text-slate-400 font-medium uppercase tracking-widest">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-orange-500/60" aria-hidden="true" />
-                  {lang === 'tr' ? 'Sıfır Log' : 'Zero Logs'}
+                  {t.heroBadge1}
                 </span>
                 <span className="text-slate-700">|</span>
-                <span>{lang === 'tr' ? 'Sadece RAM' : 'RAM-Only'}</span>
+                <span>{t.heroBadge2}</span>
                 <span className="text-slate-700">|</span>
-                <span>{lang === 'tr' ? 'Açık Kaynak' : 'Open Source'}</span>
+                <span>{t.heroBadge3}</span>
               </div>
             </div>
           )}
@@ -369,16 +401,12 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                 lang={lang}
                 progress={progress}
                 onChange={handleNewAccount}
-                onDelete={() => {
-                  if (activeAccount) {
-                    deleteAccount(activeAccount.id);
-                  }
-                }}
-                onCreateCustom={() => setShowCustomModal(true)}
-                onIdentity={() => setShowIdentityModal(true)}
-                onForwarding={() => setShowForwardingModal(true)}
-                onShareDrop={() => setShowShareDropModal(true)}
-                onOpenCustomDomain={() => setShowCustomDomainModal(true)}
+                onDelete={handleDeleteActiveAccount}
+                onCreateCustom={handleOpenCustom}
+                onIdentity={handleOpenIdentity}
+                onForwarding={handleOpenForwarding}
+                onShareDrop={handleOpenShareDrop}
+                onOpenCustomDomain={handleOpenCustomDomain}
                 autoVerifyEnabled={autoVerifyEnabled}
                 onToggleAutoVerify={toggleAutoVerify}
               />
@@ -436,7 +464,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                   <EmailViewer
                     email={currentEmailDetail}
                     loading={isLoadingDetail}
-                    onBack={() => setSelectedEmailId(null)}
+                    onBack={handleBackFromViewer}
                     lang={lang}
                     token={activeAccount?.token}
                   />

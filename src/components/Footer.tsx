@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { translations, Language } from '../translations';
 import LegalModal from './LegalModal';
@@ -8,21 +8,21 @@ interface FooterProps {
   lang: Language;
 }
 
-const Footer: React.FC<FooterProps> = ({ lang }) => {
+const Footer: React.FC<FooterProps> = memo(({ lang }) => {
   const t = translations[lang];
   const [modalType, setModalType] = useState<'privacy' | 'terms' | null>(null);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
   const currentYear = new Date().getFullYear();
 
-  const handleNewsletter = (e: React.FormEvent) => {
+  const handleNewsletter = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (newsletterEmail) {
       setNewsletterSubmitted(true);
       setNewsletterEmail('');
       setTimeout(() => setNewsletterSubmitted(false), 4000);
     }
-  };
+  }, [newsletterEmail]);
 
   return (
     <footer className="py-8 sm:py-12 px-4 sm:px-6 bg-black/30 border-t border-white/5 mt-auto" role="contentinfo">
@@ -395,6 +395,6 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
       )}
     </footer>
   );
-};
+});
 
 export default Footer;

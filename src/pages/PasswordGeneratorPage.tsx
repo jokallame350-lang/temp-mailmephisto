@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Key, Copy, Check, RefreshCw, ArrowLeft, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import Footer from '../components/Footer';
@@ -211,6 +211,43 @@ export const PasswordGeneratorPage: React.FC<PasswordGeneratorPageProps> = ({ la
                 />
                 <span className="text-xs font-semibold text-slate-300">{isTr ? "Özel Semboller (!@#)" : "Symbols (!@#)"}</span>
               </label>
+            </div>
+
+            {/* Quick 1-Click Preset Buttons */}
+            <div className="pt-2">
+              <span className="text-[11px] font-semibold text-slate-400 block mb-2">{isTr ? "1-Tık Hazır Şablonlar (Presets):" : "1-Click Quick Presets:"}</span>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => { setLength(4); setIncludeUppercase(false); setIncludeNumbers(true); setIncludeSymbols(false); }}
+                  className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  🔢 PIN (4 {isTr ? 'Hane' : 'Digits'})
+                </button>
+                <button
+                  onClick={() => { setLength(6); setIncludeUppercase(false); setIncludeNumbers(true); setIncludeSymbols(false); }}
+                  className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  🔢 PIN (6 {isTr ? 'Hane' : 'Digits'})
+                </button>
+                <button
+                  onClick={() => { setLength(16); setIncludeUppercase(true); setIncludeNumbers(true); setIncludeSymbols(true); }}
+                  className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-semibold text-orange-400 hover:text-orange-300 transition-colors"
+                >
+                  ⚡ {isTr ? 'Standart Güvenli' : 'Standard'} (16 {isTr ? 'Karakter' : 'Chars'})
+                </button>
+                <button
+                  onClick={() => { setLength(32); setIncludeUppercase(true); setIncludeNumbers(true); setIncludeSymbols(true); }}
+                  className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-semibold text-red-400 hover:text-red-300 transition-colors"
+                >
+                  🛡️ {isTr ? 'Maksimum Güvenlik' : 'Max Entropy'} (32 {isTr ? 'Karakter' : 'Chars'})
+                </button>
+                <button
+                  onClick={() => { setLength(20); setIncludeUppercase(true); setIncludeNumbers(true); setIncludeSymbols(false); }}
+                  className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+                >
+                  🔤 Alfanumerik (20 {isTr ? 'Karakter' : 'Chars'})
+                </button>
+              </div>
             </div>
           </div>
         </div>

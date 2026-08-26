@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Zap, Lock, ChevronDown, ChevronUp, Cpu, Network, Key, ScanLine, CheckCircle2, ArrowRight, Star, Globe, Smartphone, Search, Timer, Users, Layers } from 'lucide-react';
 import { translations, Language } from '../translations';
@@ -7,13 +7,13 @@ interface SEOContentProps {
   lang: Language;
 }
 
-export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
+export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
   const t = translations[lang];
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
+  const toggleFaq = useCallback((index: number) => {
+    setOpenFaq(prev => prev === index ? null : index);
+  }, []);
 
   const faqs = [
     { question: t.faq1Q, answer: t.faq1A },
@@ -385,7 +385,7 @@ export const SEOContent: React.FC<SEOContentProps> = ({ lang }) => {
       </div>
     </section>
   );
-};
+});
 
 /* ===== SUB-COMPONENTS ===== */
 

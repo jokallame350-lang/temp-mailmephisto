@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, ShieldAlert, ShieldCheck, Search, ArrowLeft, Mail, AlertTriangle, Lock, CheckCircle2, ArrowRight, RefreshCw, Key } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, Search, ArrowLeft, Mail, AlertTriangle, Lock, CheckCircle2, ArrowRight, RefreshCw, Key, Copy, Check } from 'lucide-react';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';
@@ -21,7 +21,14 @@ export const BreachCheckerPage: React.FC<BreachCheckerPageProps> = ({ lang }) =>
   const isTr = lang === 'tr';
   const [emailInput, setEmailInput] = useState('');
   const [isScanning, setIsScanning] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [result, setResult] = useState<BreachResult | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,22 +180,32 @@ export const BreachCheckerPage: React.FC<BreachCheckerPageProps> = ({ lang }) =>
               ? "bg-rose-950/20 border-rose-500/40 text-rose-200"
               : "bg-emerald-950/20 border-emerald-500/40 text-emerald-200"
           }`}>
-            <div className="flex items-start gap-4 mb-6">
-              <div className={`p-3 rounded-xl ${result.isBreached ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400"}`}>
-                {result.isBreached ? <AlertTriangle className="w-7 h-7" /> : <ShieldCheck className="w-7 h-7" />}
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-xl shrink-0 ${result.isBreached ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400"}`}>
+                  {result.isBreached ? <AlertTriangle className="w-7 h-7" /> : <ShieldCheck className="w-7 h-7" />}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white mb-1">
+                    {result.isBreached
+                      ? (isTr ? `Dikkat! ${result.email} Adresi Sızıntıda Bulundu!` : `Warning! ${result.email} was found in ${result.breachCount} breaches!`)
+                      : (isTr ? `Tebrikler! ${result.email} Temiz Görünüyor!` : `Good news! ${result.email} is clean and secure!`)}
+                  </h2>
+                  <p className="text-xs text-slate-300">
+                    {result.isBreached
+                      ? (isTr ? "Bu e-posta adresi geçmiş veri tabanı sızıntılarında yer almıştır. Şifrelerinizi değiştirmeniz ve kalıcı mailinizi korumak için MephistoMail geçici mail kullanmanız önerilir." : "This address was exposed in historical database leaks. We strongly recommend changing your passwords and using MephistoMail for future registrations.")
+                      : (isTr ? "Bilinen siber güvenlik veri tabanlarında bu adrese ait açık sızıntı kaydı bulunamadı." : "No open leak records were found for this address in monitored security dumps.")}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-white mb-1">
-                  {result.isBreached
-                    ? (isTr ? `Dikkat! ${result.email} Adresi 3 Sızıntıda Bulundu!` : `Warning! ${result.email} was found in ${result.breachCount} breaches!`)
-                    : (isTr ? `Tebrikler! ${result.email} Temiz Görünüyor!` : `Good news! ${result.email} is clean and secure!`)}
-                </h2>
-                <p className="text-xs text-slate-300">
-                  {result.isBreached
-                    ? (isTr ? "Bu e-posta adresi geçmiş veri tabanı sızıntılarında yer almıştır. Şifrelerinizi değiştirmeniz ve kalıcı mailinizi korumak için MephistoMail geçici mail kullanmanız önerilir." : "This address was exposed in historical database leaks. We strongly recommend changing your passwords and using MephistoMail for future registrations.")
-                    : (isTr ? "Bilinen siber güvenlik veri tabanlarında bu adrese ait açık sızıntı kaydı bulunamadı." : "No open leak records were found for this address in monitored security dumps.")}
-                </p>
-              </div>
+              <button
+                onClick={() => handleCopy(result.email)}
+                className="px-3 py-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors shrink-0"
+                title={isTr ? "E-postayı Kopyala" : "Copy Email"}
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                <span className="hidden sm:inline">{copied ? (isTr ? 'Kopyalandı' : 'Copied') : (isTr ? 'Kopyala' : 'Copy')}</span>
+              </button>
             </div>
 
             {result.isBreached && result.pastIncidents.length > 0 && (

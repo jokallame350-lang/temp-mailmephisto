@@ -15,16 +15,16 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, stats, 
     const t = translations[lang];
 
     const categories: { key: AICategory; label: string; icon: React.ReactNode; color: string }[] = [
-        { key: 'Verification', label: 'Verification', icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-green-500 bg-green-500/10' },
-        { key: 'Security', label: 'Security', icon: <AlertCircle className="w-4 h-4" />, color: 'text-red-500 bg-red-500/10' },
-        { key: 'Newsletter', label: 'Newsletter', icon: <Tag className="w-4 h-4" />, color: 'text-blue-500 bg-blue-500/10' },
-        { key: 'Other', label: 'Other', icon: <Mail className="w-4 h-4" />, color: 'text-slate-400 bg-slate-500/10' },
+        { key: 'Verification', label: t.filterVerificationCodes, icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-green-500 bg-green-500/10' },
+        { key: 'Security', label: t.filterSecurityAlerts, icon: <AlertCircle className="w-4 h-4" />, color: 'text-red-500 bg-red-500/10' },
+        { key: 'Newsletter', label: t.filterNewsletters, icon: <Tag className="w-4 h-4" />, color: 'text-blue-500 bg-blue-500/10' },
+        { key: 'Other', label: t.filterOther, icon: <Mail className="w-4 h-4" />, color: 'text-slate-400 bg-slate-500/10' },
     ];
 
     const total = Object.values(stats.categoryBreakdown).reduce((a, b) => a + b, 0) || 1;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose} role="dialog" aria-modal="true" aria-label="Statistics">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose} role="dialog" aria-modal="true" aria-label={t.statsModalTitle}>
             <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -32,7 +32,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, stats, 
                             <BarChart3 className="w-5 h-5 text-purple-500" />
                         </div>
                         <h2 className="text-lg font-black text-white uppercase tracking-wider">
-                            {lang === 'tr' ? 'İstatistikler' : 'Statistics'}
+                            {t.statsModalTitle}
                         </h2>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors" aria-label="Close statistics">
@@ -44,22 +44,22 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, stats, 
                 <div className="grid grid-cols-2 gap-3 mb-6">
                     <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-center">
                         <p className="text-2xl font-black text-white">{stats.totalAccountsCreated}</p>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                            {lang === 'tr' ? 'Oluşturulan Hesap' : 'Accounts Created'}
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                            {t.statsAccountsCreated}
                         </p>
                     </div>
                     <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-center">
                         <p className="text-2xl font-black text-white">{stats.totalEmailsReceived}</p>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                            {lang === 'tr' ? 'Alınan E-posta' : 'Emails Received'}
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                            {t.statsEmailsReceived}
                         </p>
                     </div>
                 </div>
 
                 {/* Category Breakdown */}
                 <div className="space-y-3">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        {lang === 'tr' ? 'Kategori Dağılımı' : 'Category Breakdown'}
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        {t.statsCategoryBreakdown}
                     </p>
                     {categories.map(cat => {
                         const count = stats.categoryBreakdown[cat.key] || 0;
@@ -70,7 +70,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, stats, 
                                 <div className="flex-grow">
                                     <div className="flex justify-between mb-1">
                                         <span className="text-xs font-bold text-slate-300">{cat.label}</span>
-                                        <span className="text-xs font-mono text-slate-500">{count}</span>
+                                        <span className="text-xs font-mono text-slate-400">{count}</span>
                                     </div>
                                     <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                                         <div className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -95,12 +95,13 @@ interface NotifFilterModalProps {
 
 export const NotifFilterModal: React.FC<NotifFilterModalProps> = ({ isOpen, onClose, filters, setFilters, lang }) => {
     if (!isOpen) return null;
+    const t = translations[lang];
 
     const items: { key: keyof NotificationFilter; label: string; icon: React.ReactNode }[] = [
-        { key: 'verification', label: lang === 'tr' ? 'Doğrulama Kodları' : 'Verification Codes', icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
-        { key: 'security', label: lang === 'tr' ? 'Güvenlik Uyarıları' : 'Security Alerts', icon: <Shield className="w-4 h-4 text-red-500" /> },
-        { key: 'newsletter', label: lang === 'tr' ? 'Bültenler' : 'Newsletters', icon: <Tag className="w-4 h-4 text-blue-500" /> },
-        { key: 'other', label: lang === 'tr' ? 'Diğer' : 'Other', icon: <Mail className="w-4 h-4 text-slate-400" /> },
+        { key: 'verification', label: t.filterVerificationCodes, icon: <CheckCircle2 className="w-4 h-4 text-green-500" /> },
+        { key: 'security', label: t.filterSecurityAlerts, icon: <Shield className="w-4 h-4 text-red-500" /> },
+        { key: 'newsletter', label: t.filterNewsletters, icon: <Tag className="w-4 h-4 text-blue-500" /> },
+        { key: 'other', label: t.filterOther, icon: <Mail className="w-4 h-4 text-slate-400" /> },
     ];
 
     const toggle = (key: keyof NotificationFilter) => {
@@ -108,7 +109,7 @@ export const NotifFilterModal: React.FC<NotifFilterModalProps> = ({ isOpen, onCl
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose} role="dialog" aria-modal="true" aria-label="Notification filters">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={onClose} role="dialog" aria-modal="true" aria-label={t.filterModalTitle}>
             <div className="bg-[#0a0a0c] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -116,7 +117,7 @@ export const NotifFilterModal: React.FC<NotifFilterModalProps> = ({ isOpen, onCl
                             <Bell className="w-5 h-5 text-yellow-500" />
                         </div>
                         <h2 className="text-lg font-black text-white uppercase tracking-wider">
-                            {lang === 'tr' ? 'Bildirim Filtreleri' : 'Notification Filters'}
+                            {t.filterModalTitle}
                         </h2>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors" aria-label="Close notification filters">
@@ -143,8 +144,8 @@ export const NotifFilterModal: React.FC<NotifFilterModalProps> = ({ isOpen, onCl
                     ))}
                 </div>
 
-                <p className="text-[10px] text-slate-600 mt-4 text-center">
-                    {lang === 'tr' ? 'Yalnızca seçili kategorilerde bildirim alırsınız.' : 'You will only receive notifications for selected categories.'}
+                <p className="text-[10px] text-slate-400 mt-4 text-center">
+                    {t.filterNote}
                 </p>
             </div>
         </div>

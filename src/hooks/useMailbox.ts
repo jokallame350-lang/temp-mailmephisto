@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Mailbox } from '../types';
 import { generateMailbox, createCustomMailbox, fetchDomains, storeCredentials, onTokenRefresh } from '../services/mailService';
 
@@ -12,7 +12,10 @@ export function useMailbox() {
     const isCreatingRef = useRef(false);
     const isFirstLoadRef = useRef(true);
 
-    const activeAccount = accounts.find(a => a.id === activeAccountId) || null;
+    const activeAccount = useMemo(
+        () => accounts.find(a => a.id === activeAccountId) || null,
+        [accounts, activeAccountId]
+    );
 
     // Magic URL oluşturucu helper
     const getMagicUrl = useCallback((address?: string) => {

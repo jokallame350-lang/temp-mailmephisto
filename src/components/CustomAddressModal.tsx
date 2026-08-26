@@ -57,9 +57,10 @@ const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose
             <button
               onClick={handleRandomize}
               className="text-[10px] text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded border border-orange-500/20 active:scale-95 transition-all"
+              aria-label={t.randomHandle}
             >
               <Dices className="w-3 h-3" />
-              {lang === 'tr' ? 'Rastgele Adres' : 'Random Handle'}
+              {t.randomHandle}
             </button>
           </div>
           <div className="flex gap-2">

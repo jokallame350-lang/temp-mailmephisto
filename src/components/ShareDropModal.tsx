@@ -10,7 +10,7 @@ interface ShareDropModalProps {
 }
 
 const ShareDropModal: React.FC<ShareDropModalProps> = ({ isOpen, onClose, lang, activeAddress }) => {
-    const t = translations[lang] as any;
+    const t = translations[lang];
     const [copied, setCopied] = useState(false);
 
     if (!isOpen) return null;
@@ -31,7 +31,7 @@ const ShareDropModal: React.FC<ShareDropModalProps> = ({ isOpen, onClose, lang, 
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: lang === 'tr' ? 'MephistoMail Güvenli Gönderim' : 'MephistoMail Secure Drop',
+                    title: t.shareDropTitle,
                     text: copyText,
                 });
             } catch (err) {
@@ -50,9 +50,9 @@ const ShareDropModal: React.FC<ShareDropModalProps> = ({ isOpen, onClose, lang, 
                 <div className="flex items-center justify-between p-5 border-b border-white/5 bg-gradient-to-r from-[#111] to-[#1a1a1c]">
                     <h3 className="text-base font-black uppercase flex items-center gap-2 text-fuchsia-500 tracking-wider">
                         <SendToBack className="w-5 h-5" />
-                        {lang === 'tr' ? 'Güvenli Paylaşım' : 'Secure Drop'}
+                        {t.shareDropTitle}
                     </h3>
-                    <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5 text-slate-500 hover:text-white" /></button>
+                    <button onClick={onClose} aria-label="Close share modal" className="p-1 hover:bg-white/10 rounded-full transition-colors"><X className="w-5 h-5 text-slate-500 hover:text-white" /></button>
                 </div>
 
                 <div className="p-6 space-y-6 flex flex-col items-center">
@@ -61,9 +61,7 @@ const ShareDropModal: React.FC<ShareDropModalProps> = ({ isOpen, onClose, lang, 
                     </div>
 
                     <p className="text-sm text-slate-300 leading-relaxed text-center">
-                        {lang === 'tr'
-                            ? 'Bu adresi Discord, WhatsApp vb uygulamalardan başkalarıyla paylaşarak size güvenli olarak dosya göndermelerini sağlayın.'
-                            : 'Share this address with others on Discord, WhatsApp, etc. so they can send you files securely.'}
+                        {t.shareDropDesc}
                     </p>
 
                     <button
@@ -75,13 +73,13 @@ const ShareDropModal: React.FC<ShareDropModalProps> = ({ isOpen, onClose, lang, 
                     >
                         {copied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
                         {copied
-                            ? (lang === 'tr' ? 'Kopyalandı!' : 'Copied!')
-                            : (lang === 'tr' ? 'Uygulamaya Gönder' : 'Share to App')}
+                            ? t.shareDropCopied
+                            : t.shareDropBtn}
                     </button>
 
-                    <button onClick={handleCopy} className="text-xs text-slate-500 hover:text-white flex items-center gap-1.5 transition-colors">
+                    <button onClick={handleCopy} className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors">
                         <Copy className="w-3.5 h-3.5" />
-                        {lang === 'tr' ? 'Sadece metni kopyala' : 'Just copy text'}
+                        {t.shareDropJustCopy}
                     </button>
                 </div>
             </div>

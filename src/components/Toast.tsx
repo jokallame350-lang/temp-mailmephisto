@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { Mail, X, CheckCircle2, Copy, Check } from 'lucide-react';
 
 export interface ToastData {
@@ -13,7 +13,7 @@ interface ToastProps {
     onDismiss: (id: string) => void;
 }
 
-const Toast: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
+const Toast: React.FC<ToastProps> = memo(({ toasts, onDismiss }) => {
     return (
         <div className="fixed top-20 right-4 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
             {toasts.map((toast) => (
@@ -21,9 +21,9 @@ const Toast: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
             ))}
         </div>
     );
-};
+});
 
-const ToastItem: React.FC<{ toast: ToastData; onDismiss: (id: string) => void }> = ({ toast, onDismiss }) => {
+const ToastItem: React.FC<{ toast: ToastData; onDismiss: (id: string) => void }> = memo(({ toast, onDismiss }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [isLeaving, setIsLeaving] = useState(false);
     const [codeCopied, setCodeCopied] = useState(false);
@@ -41,19 +41,19 @@ const ToastItem: React.FC<{ toast: ToastData; onDismiss: (id: string) => void }>
         return () => clearTimeout(timer);
     }, [toast.id, onDismiss]);
 
-    const handleCopyCode = (e: React.MouseEvent) => {
+    const handleCopyCode = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
         if (toast.code) {
             navigator.clipboard.writeText(toast.code);
             setCodeCopied(true);
             setTimeout(() => setCodeCopied(false), 2000);
         }
-    };
+    }, [toast.code]);
 
-    const handleDismiss = () => {
+    const handleDismiss = useCallback(() => {
         setIsLeaving(true);
         setTimeout(() => onDismiss(toast.id), 400);
-    };
+    }, [onDismiss, toast.id]);
 
     return (
         <div
@@ -118,6 +118,6 @@ const ToastItem: React.FC<{ toast: ToastData; onDismiss: (id: string) => void }>
             </div>
         </div>
     );
-};
+});
 
 export default Toast;

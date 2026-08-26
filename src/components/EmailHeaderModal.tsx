@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, ShieldCheck, Server, Terminal, List } from 'lucide-react';
-import { Language } from '../translations';
+import { translations, Language } from '../translations';
 import { EmailDetail } from '../types';
 
 interface EmailHeaderModalProps {
@@ -11,6 +11,7 @@ interface EmailHeaderModalProps {
 }
 
 const EmailHeaderModal: React.FC<EmailHeaderModalProps> = ({ isOpen, onClose, email, lang }) => {
+  const t = translations[lang];
   if (!isOpen || !email) return null;
 
   const headerFields = email.headerFields || {};
@@ -25,12 +26,12 @@ const EmailHeaderModal: React.FC<EmailHeaderModalProps> = ({ isOpen, onClose, em
             </div>
             <div>
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                {lang === 'tr' ? 'E-posta Başlık İnceleyici' : 'Email Header Inspector'}
+                {t.headerInspectorTitle}
               </h3>
-              <p className="text-[10px] text-slate-500">SPF / DKIM & Origin Trace</p>
+              <p className="text-[10px] text-slate-400">SPF / DKIM & Origin Trace</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close header inspector" className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -40,14 +41,14 @@ const EmailHeaderModal: React.FC<EmailHeaderModalProps> = ({ isOpen, onClose, em
             <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-2.5">
               <ShieldCheck className="w-5 h-5 text-green-400" />
               <div>
-                <p className="text-[10px] text-slate-500 uppercase font-bold">SPF Status</p>
+                <p className="text-[10px] text-slate-400 uppercase font-bold">SPF Status</p>
                 <p className="text-xs font-bold text-green-400">PASS / Verified</p>
               </div>
             </div>
             <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl flex items-center gap-2.5">
               <Server className="w-5 h-5 text-blue-400" />
               <div>
-                <p className="text-[10px] text-slate-500 uppercase font-bold">DKIM Status</p>
+                <p className="text-[10px] text-slate-400 uppercase font-bold">DKIM Status</p>
                 <p className="text-xs font-bold text-blue-400">PASS / Signed</p>
               </div>
             </div>
@@ -62,7 +63,7 @@ const EmailHeaderModal: React.FC<EmailHeaderModalProps> = ({ isOpen, onClose, em
                 </div>
               ))
             ) : (
-              <p className="text-slate-500 italic">{lang === 'tr' ? 'Detaylı başlık verisi mevcut.' : 'Raw header details attached.'}</p>
+              <p className="text-slate-400 italic">{t.noHeadersAvailable}</p>
             )}
           </div>
         </div>

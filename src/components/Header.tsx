@@ -79,12 +79,12 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, []);
 
-  const copyToClipboard = (text: string, id: string, e: React.MouseEvent) => {
+  const copyToClipboard = useCallback((text: string, id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
+  }, []);
 
   return (
     <header className="fixed top-0 left-0 w-full h-14 sm:h-16 border-b border-white/5 bg-[#0a0a0c]/90 backdrop-blur-xl z-50 flex items-center justify-between px-2 sm:px-4 md:px-8 shadow-2xl transition-all duration-300">
@@ -215,6 +215,8 @@ const Header: React.FC<HeaderProps> = ({
                     key={l.code}
                     onClick={() => {
                       setLang(l.code);
+                      localStorage.setItem('mephisto_lang', l.code);
+                      window.dispatchEvent(new Event('mephisto-lang-change'));
                       setLangOpen(false);
                     }}
                     className={`w-full text-left px-3 py-2 text-[12px] transition-colors min-h-[44px] flex items-center ${lang === l.code ? 'text-orange-400 bg-orange-500/10 font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
@@ -379,4 +381,4 @@ const Header: React.FC<HeaderProps> = ({
   );
 };
 
-export default Header;
+export default React.memo(Header);

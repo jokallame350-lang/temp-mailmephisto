@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CreditCard, Copy, Check, RefreshCw, ArrowLeft, Mail, ShieldAlert, Code2, Download } from 'lucide-react';
 import Footer from '../components/Footer';
@@ -89,6 +89,63 @@ export const TestCardGeneratorPage: React.FC<TestCardGeneratorPageProps> = ({ la
     navigator.clipboard.writeText(text);
     setCopiedField(fieldName);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const copyAllDetails = () => {
+    if (!activeCard) return;
+    const rawNumber = activeCard.cardNumber.replace(/\s/g, '');
+    const line = `${rawNumber}|${activeCard.expMonth}/${activeCard.expYear}|${activeCard.cvv}|${activeCard.holder}`;
+    navigator.clipboard.writeText(line);
+    setCopiedField('all');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const exportCardTxt = () => {
+    if (!activeCard) return;
+    const content = [
+      `========================================`,
+      `MEPHISTOMAIL - DUMMY TEST CARD REPORT`,
+      `========================================`,
+      `Brand:       ${activeCard.brand}`,
+      `Card Number: ${activeCard.cardNumber}`,
+      `Raw Number:  ${activeCard.cardNumber.replace(/\s/g, '')}`,
+      `Expiry Date: ${activeCard.expMonth}/${activeCard.expYear}`,
+      `CVV / CVC:   ${activeCard.cvv}`,
+      `Cardholder:  ${activeCard.holder}`,
+      `Luhn Valid:  YES (Algorithmic Dummy Test Card)`,
+      `Generated:   ${new Date().toLocaleString()}`,
+      `========================================`
+    ].join('\n');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test_card_${activeCard.brand.toLowerCase()}_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportCardJson = () => {
+    if (!activeCard) return;
+    const data = {
+      brand: activeCard.brand,
+      cardNumber: activeCard.cardNumber.replace(/\s/g, ''),
+      formattedNumber: activeCard.cardNumber,
+      expMonth: activeCard.expMonth,
+      expYear: activeCard.expYear,
+      cvv: activeCard.cvv,
+      holder: activeCard.holder,
+      luhnValid: true,
+      timestamp: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test_card_${activeCard.brand.toLowerCase()}_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const activeCard = cards[0];
@@ -275,6 +332,37 @@ export const TestCardGeneratorPage: React.FC<TestCardGeneratorPageProps> = ({ la
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span>{isTr ? "Yeni Test Kartı" : "New Card"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick 1-Click Action Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800">
+              <button
+                onClick={copyAllDetails}
+                className="px-4 py-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-300 hover:bg-orange-500/30 border border-orange-500/30 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                title={isTr ? "Tüm Kart Detaylarını Kopyala (Numara|SKT|CVV|İsim)" : "Copy All Card Details (Number|Expiry|CVV|Name)"}
+              >
+                {copiedField === 'all' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedField === 'all' ? (isTr ? 'Tüm Bilgiler Kopyalandı' : 'All Details Copied') : (isTr ? 'Tüm Bilgileri Kopyala' : 'Copy All Details')}</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportCardTxt}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  title={isTr ? "TXT Rapor İndir" : "Export TXT Report"}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>TXT</span>
+                </button>
+                <button
+                  onClick={exportCardJson}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                  title={isTr ? "JSON İndir" : "Export JSON"}
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  <span>JSON</span>
                 </button>
               </div>
             </div>

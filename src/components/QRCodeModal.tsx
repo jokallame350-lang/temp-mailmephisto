@@ -22,14 +22,14 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, email, lang 
       <div className="bg-[#0a0a0c] border border-white/10 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden text-white">
         <div className="flex items-center justify-between p-4 border-b border-white/5">
           <h3 className="text-sm font-bold uppercase flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-blue-500"></span>{t.qrTitle}</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-slate-500 hover:text-white transition-colors" /></button>
+          <button onClick={onClose} aria-label="Close QR Modal"><X className="w-5 h-5 text-slate-500 hover:text-white transition-colors" /></button>
         </div>
         <div className="p-6 flex flex-col items-center gap-6">
-          <div className="bg-white p-2 rounded-lg shadow-inner"><img src={qrUrl} alt="QR Code" className="w-48 h-48" /></div>
+          <div className="bg-white p-2 rounded-lg shadow-inner"><img src={qrUrl} alt={t.qrTitle} className="w-48 h-48" /></div>
           <div className="text-center space-y-2 w-full">
             <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">{t.qrDesc}</p>
-            <div onClick={handleCopy} className="group cursor-pointer bg-white/5 border border-white/5 rounded-lg p-3 flex items-center justify-between gap-3 hover:bg-white/10 transition-all">
-              <span className="text-sm font-mono text-slate-300 truncate">{email || 'No Email'}</span>
+            <div onClick={handleCopy} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCopy(); } }} aria-label={t.tipCopy} className="group cursor-pointer bg-white/5 border border-white/5 rounded-lg p-3 flex items-center justify-between gap-3 hover:bg-white/10 transition-all">
+              <span className="text-sm font-mono text-slate-300 truncate">{email || t.noAccount}</span>
               {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-500" />}
             </div>
           </div>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, FileText, FileSpreadsheet } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
@@ -23,6 +23,49 @@ const getTimerColor = (ms: number): string => {
   if (hours > 1) return 'text-orange-400';
   return 'text-red-500';
 };
+
+/**
+ * Isolated Countdown Badge to prevent 1-second interval
+ * from triggering re-render cascades across the parent AddressBar
+ */
+const CountdownBadge: React.FC<{ createdAt?: number; lang: Language }> = memo(({ createdAt, lang }) => {
+  const [remainingMs, setRemainingMs] = useState<number | null>(() => {
+    if (!createdAt) return null;
+    return Math.max(0, ACCOUNT_LIFETIME_MS - (Date.now() - createdAt));
+  });
+
+  useEffect(() => {
+    if (!createdAt) {
+      setRemainingMs(null);
+      return;
+    }
+    const update = () => {
+      const elapsed = Date.now() - createdAt;
+      setRemainingMs(Math.max(0, ACCOUNT_LIFETIME_MS - elapsed));
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt]);
+
+  if (remainingMs === null) return null;
+
+  return (
+    <div
+      className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5 ${
+        remainingMs < 3600000 ? 'animate-pulse' : ''
+      }`}
+      title={lang === 'tr' ? 'Hesap süresi' : 'Account expires in'}
+    >
+      <Timer className={`w-3 h-3 ${getTimerColor(remainingMs)}`} />
+      <span className={`text-[10px] font-mono font-bold tabular-nums ${getTimerColor(remainingMs)}`}>
+        {formatCountdown(remainingMs)}
+      </span>
+    </div>
+  );
+});
+
+CountdownBadge.displayName = 'CountdownBadge';
 
 interface AddressBarProps {
   mailbox: Mailbox | null;
@@ -53,32 +96,16 @@ const AddressBar: React.FC<AddressBarProps> = ({
   const t = translations[lang];
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [remainingMs, setRemainingMs] = useState<number | null>(null);
 
-  // Geri sayım zamanlayıcısı
-  useEffect(() => {
-    if (!mailbox?.createdAt) {
-      setRemainingMs(null);
-      return;
-    }
-    const update = () => {
-      const elapsed = Date.now() - mailbox.createdAt!;
-      setRemainingMs(Math.max(0, ACCOUNT_LIFETIME_MS - elapsed));
-    };
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, [mailbox?.createdAt]);
-
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     if (mailbox?.address) {
       navigator.clipboard.writeText(mailbox.address);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  };
+  }, [mailbox?.address]);
 
-  const handleCopyMagicUrl = (e?: React.MouseEvent) => {
+  const handleCopyMagicUrl = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!mailbox?.address || typeof window === 'undefined') return;
     const url = new URL(window.location.origin);
@@ -94,9 +121,9 @@ const AddressBar: React.FC<AddressBarProps> = ({
     if (onCopyMagicUrl) {
       onCopyMagicUrl();
     }
-  };
+  }, [mailbox?.address, onCopyMagicUrl]);
 
-  const handleTestOtpTrigger = () => {
+  const handleTestOtpTrigger = useCallback(() => {
     if (!mailbox?.address) return;
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     window.dispatchEvent(new CustomEvent('mephisto-test-otp', {
@@ -111,9 +138,9 @@ const AddressBar: React.FC<AddressBarProps> = ({
       }
     }));
     alert(lang === 'tr' ? `⚡ Test OTP (${otpCode}) Gönderildi! Aşağıdaki gelen kutunuzu kontrol edin.` : `⚡ Test OTP (${otpCode}) Sent! Check your inbox below.`);
-  };
+  }, [mailbox?.address, lang]);
 
-  const exportMailboxTxt = () => {
+  const exportMailboxTxt = useCallback(() => {
     if (!mailbox?.address) return;
     const magicUrl = typeof window !== 'undefined' ? `${window.location.origin}/?mailbox=${encodeURIComponent(mailbox.address)}` : '';
     const content = [
@@ -135,9 +162,9 @@ const AddressBar: React.FC<AddressBarProps> = ({
     a.download = `mailbox_${mailbox.address.split('@')[0]}_export.txt`;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [mailbox?.address, mailbox?.createdAt, mailbox?.autoDeleteMinutes]);
 
-  const exportMailboxCsv = () => {
+  const exportMailboxCsv = useCallback(() => {
     if (!mailbox?.address) return;
     const magicUrl = typeof window !== 'undefined' ? `${window.location.origin}/?mailbox=${encodeURIComponent(mailbox.address)}` : '';
     const headers = 'Address,MagicURL,CreatedAt,Domain,AutoDeleteMinutes\n';
@@ -151,7 +178,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
     a.download = `mailbox_${mailbox.address.split('@')[0]}_export.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  };
+  }, [mailbox?.address, mailbox?.createdAt, mailbox?.autoDeleteMinutes]);
 
   return (
     <div className="w-full flex flex-col items-center gap-4 sm:gap-6 max-w-2xl mx-auto px-3 sm:px-4">
@@ -167,12 +194,12 @@ const AddressBar: React.FC<AddressBarProps> = ({
             handleCopy();
           }
         }}
-        className="w-full relative group cursor-pointer active:scale-[0.99] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/50 rounded-2xl"
+        className="w-full relative group cursor-pointer active:scale-[0.99] transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/50 rounded-2xl"
         title={t.tipCopy}
       >
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500/20 to-orange-400/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500/20 to-orange-400/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none"></div>
 
-        <div className="relative bg-[#0f1115] border border-white/10 rounded-xl sm:rounded-2xl p-1 shadow-xl flex items-center overflow-hidden h-14 sm:h-16 transition-colors duration-300">
+        <div className="relative bg-[#0f1115] border border-white/10 rounded-xl sm:rounded-2xl p-1 shadow-xl flex items-center overflow-hidden h-14 sm:h-16 transition-colors duration-200">
           {/* İlerleme Çubuğu */}
           <div className="absolute bottom-0 left-0 h-[2px] bg-orange-500 transition-all duration-100 ease-linear z-10" style={{ width: `${progress}%` }}></div>
 
@@ -190,7 +217,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
             {isLoading ? (
               <div className="h-5 w-40 bg-white/10 rounded animate-pulse"></div>
             ) : (
-              <span className={`text-base sm:text-lg md:text-xl font-bold font-mono tracking-tight truncate w-full text-center md:text-left transition-colors duration-300 ${copied ? 'text-green-500' : 'text-white'}`}>
+              <span className={`text-base sm:text-lg md:text-xl font-bold font-mono tracking-tight truncate w-full text-center md:text-left transition-colors duration-200 ${copied ? 'text-green-500' : 'text-white'}`}>
                 {mailbox?.address}
               </span>
             )}
@@ -198,16 +225,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
 
           {/* Kopyala Rozeti + Magic Share + Geri Sayım */}
           <div className="pr-2 sm:pr-4 pl-1 sm:pl-2 flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
-            {remainingMs !== null && (
-              <div className={`hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.03] border border-white/5 ${remainingMs < 3600000 ? 'animate-pulse' : ''}`}
-                title={lang === 'tr' ? 'Hesap süresi' : 'Account expires in'}
-              >
-                <Timer className={`w-3 h-3 ${getTimerColor(remainingMs)}`} />
-                <span className={`text-[10px] font-mono font-bold tabular-nums ${getTimerColor(remainingMs)}`}>
-                  {formatCountdown(remainingMs)}
-                </span>
-              </div>
-            )}
+            <CountdownBadge createdAt={mailbox?.createdAt} lang={lang} />
             <button
               type="button"
               onClick={handleCopyMagicUrl}
@@ -286,7 +304,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
           </button>
           <button
             onClick={exportMailboxTxt}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]"
             title={lang === 'tr' ? 'Posta Kutusu Detaylarını TXT Olarak İndir' : 'Export Mailbox Details as TXT'}
           >
             <FileText className="w-3.5 h-3.5 text-blue-400" />
@@ -294,7 +312,7 @@ const AddressBar: React.FC<AddressBarProps> = ({
           </button>
           <button
             onClick={exportMailboxCsv}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-[11px] transition-all min-h-[44px]"
             title={lang === 'tr' ? 'Posta Kutusu Detaylarını CSV Olarak İndir' : 'Export Mailbox Details as CSV'}
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
@@ -325,4 +343,4 @@ const AddressBar: React.FC<AddressBarProps> = ({
   );
 };
 
-export default AddressBar;
+export default memo(AddressBar);

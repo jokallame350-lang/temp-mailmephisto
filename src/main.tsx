@@ -152,6 +152,8 @@ const AppRouter = () => {
           <Route path="/disposable-mail-for-developer-testing" element={<ServiceMailPage lang={lang} />} />
           <Route path="/temp-mail-for-:service" element={<ServiceMailPage lang={lang} />} />
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
+          <Route path="/disposable-checker" element={<DisposableCheckerPage lang={lang} />} />
+          <Route path="/disposable-mail-checker" element={<DisposableCheckerPage lang={lang} />} />
           <Route path="/bulk-generator" element={<BulkGeneratorPage lang={lang} />} />
           <Route path="/burn-note" element={<BurnNotePage lang={lang} />} />
           {/* New Interactive Tools */}

@@ -32,6 +32,8 @@ const KNOWN_TRACKER_DOMAINS = [
   'tr.php',
 ];
 
+const trackerCache = new Map<string, TrackerBlockerResult>();
+
 export interface TrackerBlockerResult {
   cleanHtml: string;
   trackerCount: number;
@@ -41,6 +43,19 @@ export interface TrackerBlockerResult {
 export const sanitizeAndBlockTrackers = (htmlContent: string): TrackerBlockerResult => {
   if (!htmlContent) {
     return { cleanHtml: '', trackerCount: 0, trackerDomains: [] };
+  }
+
+  if (trackerCache.has(htmlContent)) {
+    return trackerCache.get(htmlContent)!;
+  }
+
+  // Fast path: if no img tag or local file protocol, return immediately without parsing DOM
+  const lower = htmlContent.toLowerCase();
+  if (!lower.includes('<img') && !lower.includes('file:') && !lower.includes('content:')) {
+    const result: TrackerBlockerResult = { cleanHtml: htmlContent, trackerCount: 0, trackerDomains: [] };
+    if (trackerCache.size > 100) trackerCache.clear();
+    trackerCache.set(htmlContent, result);
+    return result;
   }
 
   let trackerCount = 0;
@@ -117,11 +132,14 @@ export const sanitizeAndBlockTrackers = (htmlContent: string): TrackerBlockerRes
       }
     });
 
-    return {
+    const finalResult: TrackerBlockerResult = {
       cleanHtml: doc.body.innerHTML,
       trackerCount,
       trackerDomains: Array.from(trackerDomainsSet),
     };
+    if (trackerCache.size > 100) trackerCache.clear();
+    trackerCache.set(htmlContent, finalResult);
+    return finalResult;
   } catch (error) {
     console.error('Tracker blocker error:', error);
     return { cleanHtml: htmlContent, trackerCount: 0, trackerDomains: [] };

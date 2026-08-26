@@ -14,22 +14,23 @@ const translationCache: Partial<Record<Language, TranslationSchema>> = {
   en: fallbackTranslations,
 };
 
+const SUPPORTED_LANGUAGES: Language[] = ['en', 'tr', 'es', 'de', 'fr', 'it', 'pt', 'ru', 'ar'];
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lang, setLangState] = useState<Language>(() => {
     // URL yolunu kontrol et (Örn: /tr/blog -> tr)
     const pathSegments = window.location.pathname.split('/');
     const firstSegment = pathSegments[1];
-    if (firstSegment === 'tr' || firstSegment === 'es' || firstSegment === 'de' || firstSegment === 'fr') {
+    if (SUPPORTED_LANGUAGES.includes(firstSegment as Language) && firstSegment !== 'en') {
       return firstSegment as Language;
     }
 
     const saved = localStorage.getItem('mephisto_lang');
-    if (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'fr') return saved as Language;
+    if (saved && SUPPORTED_LANGUAGES.includes(saved as Language)) return saved as Language;
     const bl = navigator.language.toLowerCase();
-    if (bl.startsWith('tr')) return 'tr';
-    if (bl.startsWith('es')) return 'es';
-    if (bl.startsWith('de')) return 'de';
-    if (bl.startsWith('fr')) return 'fr';
+    for (const l of SUPPORTED_LANGUAGES) {
+      if (l !== 'en' && bl.startsWith(l)) return l;
+    }
     return 'en';
   });
 
@@ -44,7 +45,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const pathname = window.location.pathname;
     const pathSegments = pathname.split('/');
     const firstSegment = pathSegments[1];
-    const isLangSegment = ['tr', 'es', 'de', 'fr'].includes(firstSegment);
+    const isLangSegment = SUPPORTED_LANGUAGES.includes(firstSegment as Language) && firstSegment !== 'en';
     
     let newPathname = pathname;
     if (newLang === 'en') {
@@ -87,6 +88,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return { ...fallbackTranslations, ...(await import('../locales/de')).de };
         case 'fr':
           return { ...fallbackTranslations, ...(await import('../locales/fr')).fr };
+        case 'it':
+          return { ...fallbackTranslations, ...(await import('../locales/it')).it };
+        case 'pt':
+          return { ...fallbackTranslations, ...(await import('../locales/pt')).pt };
+        case 'ru':
+          return { ...fallbackTranslations, ...(await import('../locales/ru')).ru };
+        case 'ar':
+          return { ...fallbackTranslations, ...(await import('../locales/ar')).ar };
         default:
           return fallbackTranslations;
       }
@@ -117,7 +126,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const handlePopState = () => {
       const pathSegments = window.location.pathname.split('/');
       const firstSegment = pathSegments[1];
-      const urlLang = ['tr', 'es', 'de', 'fr'].includes(firstSegment) ? (firstSegment as Language) : 'en';
+      const urlLang = (SUPPORTED_LANGUAGES.includes(firstSegment as Language) && firstSegment !== 'en') ? (firstSegment as Language) : 'en';
       if (urlLang !== lang) {
         setLangState(urlLang);
       }

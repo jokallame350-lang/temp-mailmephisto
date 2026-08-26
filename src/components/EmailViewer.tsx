@@ -325,9 +325,11 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     ? email.from
     : (email.from && typeof email.from === 'object' ? String(email.from.name || email.from.address || 'unknown') : 'unknown');
 
-  const otpCode = extractOTPFromContent(email.subject, email.text || '');
+  const otpCode = useMemo(() => {
+    return extractOTPFromContent(email.subject, email.text || '');
+  }, [email.subject, email.text]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     try {
       const d = new Date(dateString);
       if (isNaN(d.getTime())) return dateString || '';
@@ -337,9 +339,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     } catch {
       return dateString || '';
     }
-  };
+  }, [lang]);
 
-  const handleDownloadTXT = () => {
+  const handleDownloadTXT = useCallback(() => {
     if (!email) return;
     const content = `From: ${fromAddress}\nDate: ${email.createdAt}\nSubject: ${email.subject || ''}\n\n${email.text || ''}`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -348,9 +350,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     link.download = `${email.subject?.replace(/[^a-z0-9]/gi, '_').substring(0, 20) || 'email'}.txt`;
     link.click();
     URL.revokeObjectURL(link.href);
-  };
+  }, [email, fromAddress]);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = useCallback(() => {
     if (!iframeRef.current || !iframeRef.current.contentWindow) {
       window.print();
       return;
@@ -360,9 +362,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     } catch {
       window.print();
     }
-  };
+  }, []);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     const htmlBody = email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
     const emlContent = `From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${htmlBody || email.text || ''}`;
     const blob = new Blob([emlContent], { type: 'message/rfc822' });
@@ -371,21 +373,21 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     link.download = `${email.subject?.replace(/[^a-z0-9]/gi, '_').substring(0, 20) || 'email'}.eml`;
     link.click();
     URL.revokeObjectURL(link.href);
-  };
+  }, [email, fromAddress]);
 
-  const handleForward = () => {
+  const handleForward = useCallback(() => {
     const subject = encodeURIComponent(`Fwd: ${email.subject || ''}`);
     const body = encodeURIComponent(`---------- Forwarded message ----------\nFrom: ${fromAddress}\nDate: ${email.createdAt}\nSubject: ${email.subject || ''}\n\n${email.text || ''}`);
     window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
-  };
+  }, [email, fromAddress]);
 
-  const handleCopyCode = () => {
+  const handleCopyCode = useCallback(() => {
     if (otpCode) {
       navigator.clipboard.writeText(otpCode);
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
     }
-  };
+  }, [otpCode]);
 
   return (
     <div className="flex flex-col h-full bg-transparent text-slate-200" role="article" aria-label={`Email: ${email.subject || 'No subject'}`}>
@@ -425,7 +427,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
-              🛡️ <strong>{trackerResult.trackerCount} adet</strong> gizli takip pikseli (Mail Tracker) engellendi.
+              🛡️ <strong>{trackerResult.trackerCount}</strong> {t.trackerBlockedDesc}
             </span>
           </div>
           <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded font-mono text-emerald-200 uppercase tracking-wider">
@@ -441,7 +443,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <div className="flex items-center gap-2 bg-white/5 px-2.5 sm:px-3 py-1.5 rounded-full border border-white/5 max-w-full overflow-hidden">
             <User className="w-3 h-3 text-orange-500 flex-shrink-0" aria-hidden="true" />
             <span className="text-slate-200 font-medium truncate">{fromName}</span>
-            <span className="text-slate-500 hidden sm:inline truncate">&lt;{fromAddress}&gt;</span>
+            <span className="text-slate-400 hidden sm:inline truncate">&lt;{fromAddress}&gt;</span>
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="w-3 h-3 text-slate-400" aria-hidden="true" />
@@ -459,7 +461,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             </div>
             <div>
               <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-green-500 mb-0.5">
-                {lang === 'tr' ? 'Doğrulama Kodu Algılandı' : 'Verification Code Detected'}
+                {t.otpDetected}
               </p>
               <p className="font-mono text-xl sm:text-2xl font-black text-green-400 tracking-[0.2em]" aria-label={`Verification code: ${otpCode.split('').join(' ')}`}>{otpCode}</p>
             </div>
@@ -470,7 +472,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             aria-label={`Copy code ${otpCode}`}
           >
             {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {codeCopied ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
+            {codeCopied ? 'OK!' : t.copy}
           </button>
         </div>
       )}
@@ -484,7 +486,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             </div>
             <div>
               <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-orange-400 mb-0.5">
-                {lang === 'tr' ? 'Eylem Linki Bulundu' : 'Action Link Found'}
+                {t.actionLinkFound}
               </p>
               <p className="text-sm sm:text-base font-bold text-slate-200 capitalize truncate max-w-[200px] sm:max-w-xs">{actionLink.label}</p>
             </div>
@@ -495,7 +497,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold text-sm flex items-center justify-center transition-all active:scale-95 shrink-0"
           >
-            {lang === 'tr' ? 'Linki Aç' : 'Open Link'}
+            {t.openLink}
           </a>
         </div>
       )}
@@ -506,7 +508,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <div className="flex items-center gap-2 mb-2">
             <Paperclip className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {email.attachments.length} {lang === 'tr' ? 'Ek Dosya' : 'Attachments'}
+              {email.attachments.length} {t.attachments}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -521,14 +523,14 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
                 {getFileIcon(att.contentType)}
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold text-slate-300 truncate max-w-[120px]">{att.filename}</p>
-                  <p className="text-[9px] text-slate-500">{formatSize(att.size)}</p>
+                  <p className="text-[9px] text-slate-400">{formatSize(att.size)}</p>
                 </div>
                 {att.contentType.startsWith('image/') ? (
                   <span className="text-[8px] px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded border border-blue-500/20 font-bold">
-                    {lang === 'tr' ? 'Önizle' : 'Preview'}
+                    {t.preview}
                   </span>
                 ) : (
-                  <Download className="w-3.5 h-3.5 text-slate-600 group-hover:text-green-400 transition-colors" />
+                  <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-green-400 transition-colors" />
                 )}
               </button>
             ))}
@@ -543,7 +545,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             <div className="flex items-center gap-2 mb-4">
               <List className="w-4 h-4 text-orange-500" />
               <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">
-                {lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'}
+                {t.emailHeaders}
               </span>
             </div>
             {email.headerFields && Object.keys(email.headerFields).length > 0 ? (
@@ -556,7 +558,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500">{lang === 'tr' ? 'Bu e-posta için başlık bilgisi mevcut değil.' : 'No header information available for this email.'}</p>
+              <p className="text-xs text-slate-400">{t.noHeadersAvailable}</p>
             )}
           </div>
         ) : viewSource ? (

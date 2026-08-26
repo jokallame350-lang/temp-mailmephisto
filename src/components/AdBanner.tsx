@@ -65,4 +65,4 @@ const AdBanner: React.FC<AdBannerProps> = ({ slot, lang }) => {
     );
 };
 
-export default AdBanner;
+export default React.memo(AdBanner);

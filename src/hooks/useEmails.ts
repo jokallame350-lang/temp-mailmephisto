@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
 import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
 import { extractActionLinks } from '../utils/actionLinks';
@@ -378,18 +378,19 @@ export function useEmails(
         }
     }, [emails, activeAccount]);
 
-    // Arama filtreleme
-    const filteredEmails = searchQuery
-        ? emails.filter(e => {
-            const from = typeof e.from === 'string' ? e.from : `${e.from.name} ${e.from.address}`;
-            const q = searchQuery.toLowerCase();
+    // Arama filtreleme (useMemo to prevent creating new array reference on unrelated re-renders)
+    const filteredEmails = useMemo(() => {
+        if (!searchQuery) return emails;
+        const q = searchQuery.toLowerCase();
+        return emails.filter(e => {
+            const from = typeof e.from === 'string' ? e.from : `${e.from?.name || ''} ${e.from?.address || ''}`;
             return (
                 from.toLowerCase().includes(q) ||
-                e.subject.toLowerCase().includes(q) ||
-                e.intro.toLowerCase().includes(q)
+                (e.subject && e.subject.toLowerCase().includes(q)) ||
+                (e.intro && e.intro.toLowerCase().includes(q))
             );
-        })
-        : emails;
+        });
+    }, [emails, searchQuery]);
 
     const incrementAccountStat = useCallback(() => {
         setStats(prev => ({ ...prev, totalAccountsCreated: prev.totalAccountsCreated + 1, lastActivity: Date.now() }));

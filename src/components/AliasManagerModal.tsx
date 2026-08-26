@@ -37,6 +37,8 @@ const AliasManagerModal: React.FC<AliasManagerModalProps> = ({
     const [copied, setCopied] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
 
+    const t = translations[lang];
+
     if (!isOpen) return null;
 
     const handleBulkCopy = () => {
@@ -88,23 +90,25 @@ const AliasManagerModal: React.FC<AliasManagerModalProps> = ({
                         </div>
                         <div>
                             <h2 className="text-lg font-black text-white uppercase tracking-wider">
-                                {lang === 'tr' ? 'Hesap Yöneticisi' : 'Account Manager'}
+                                {t.aliasManagerTitle}
                             </h2>
-                            <p className="text-[10px] text-slate-500">{accounts.length} {lang === 'tr' ? 'hesap' : 'accounts'}</p>
+                            <p className="text-[10px] text-slate-400">{accounts.length} {t.aliasAccountsCount}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleExportCSV}
                             className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 transition-all"
-                            title={lang === 'tr' ? 'CSV İndir' : 'Export CSV'}
+                            title={t.aliasExportCsv}
+                            aria-label={t.aliasExportCsv}
                         >
                             <FileSpreadsheet className="w-4 h-4 text-green-400" />
                         </button>
                         <button
                             onClick={handleExportJSON}
                             className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-slate-300 transition-all"
-                            title={lang === 'tr' ? 'JSON İndir' : 'Export JSON'}
+                            title={t.aliasExportJson}
+                            aria-label={t.aliasExportJson}
                         >
                             <FileCode className="w-4 h-4 text-blue-400" />
                         </button>
@@ -114,7 +118,7 @@ const AliasManagerModal: React.FC<AliasManagerModalProps> = ({
                             aria-label="Copy all addresses"
                         >
                             {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                            {copied ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
+                            {copied ? 'OK!' : t.copy}
                         </button>
                         <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors" aria-label="Close alias manager">
                             <X className="w-5 h-5" />
@@ -159,7 +163,7 @@ const AliasManagerModal: React.FC<AliasManagerModalProps> = ({
                                 <div className="border-t border-white/5 pt-3 space-y-3">
                                     {/* Labels */}
                                     <div className="space-y-1.5">
-                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{lang === 'tr' ? 'Etiket' : 'Label'}</p>
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.aliasLabel}</p>
                                         <div className="flex flex-wrap gap-1.5">
                                             {LABEL_PRESETS.map(preset => (
                                                 <button
@@ -179,9 +183,9 @@ const AliasManagerModal: React.FC<AliasManagerModalProps> = ({
 
                                     {/* Auto-delete timer */}
                                     <div className="space-y-1.5">
-                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
-                                            {lang === 'tr' ? 'Otomatik Silme' : 'Auto Delete'}
+                                            {t.aliasAutoDelete}
                                         </p>
                                         <div className="flex flex-wrap gap-1.5">
                                             {AUTO_DELETE_OPTIONS.map(opt => (

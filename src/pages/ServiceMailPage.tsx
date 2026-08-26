@@ -1322,6 +1322,179 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       { q: 'Is there an API available for automated test suites?', a: 'Yes! Check out our /api-docs endpoint for comprehensive REST API documentation.' },
       { q: 'Can I receive Webhook notifications on incoming mail?', a: 'Yes, webhooks fire instant HTTP POST payloads to your test listener when mail arrives.' }
     ]
+  },
+  vpn: {
+    id: 'vpn',
+    name: 'VPN & Proxy Services',
+    badge: '🔒 VPN & Privacy',
+    color: 'from-blue-600 to-indigo-800',
+    titleTr: 'VPN & Proxy Servisleri İçin Geçici Mail',
+    titleEn: 'Temp Mail for VPN & Proxy Service Trials',
+    descriptionTr: 'NordVPN, ExpressVPN, Surfshark ve ProtonVPN deneme sürümleri için güvenli kullan-at e-posta.',
+    descriptionEn: 'Anonymous disposable email for NordVPN, ExpressVPN, Surfshark, and ProtonVPN free trials.',
+    whyTr: [
+      'VPN deneme hesaplarını ana mailinizi ifşa etmeden açın.',
+      'Gerçek IP ve kimlik bilginizi koruyun.',
+      'İstediğiniz zaman tek tıkla adresi yok edin.'
+    ],
+    whyEn: [
+      'Activate VPN trial accounts without exposing your primary inbox.',
+      'Protect your true IP and personal identity.',
+      'Destroy the mailbox with zero digital trace.'
+    ],
+    faqsTr: [
+      { q: 'VPN onay mailleri geliyor mu?', a: 'Evet, canlı WebSocket ile VPN onay linkleri ve kodları 1-3 saniyede ekranınıza gelir.' }
+    ],
+    faqsEn: [
+      { q: 'Do VPN activation emails arrive fast?', a: 'Yes, activation links and verification PINs arrive within 1-3 seconds via WebSocket.' }
+    ]
+  },
+  'ai-art': {
+    id: 'ai-art',
+    name: 'AI Art & Image Generators',
+    badge: '🎨 AI Image Studio',
+    color: 'from-purple-600 to-pink-600',
+    titleTr: 'Yapay Zeka Görsel Üreticileri İçin Geçici Mail',
+    titleEn: 'Temp Mail for AI Art & Image Generation Tools',
+    descriptionTr: 'Midjourney, Stable Diffusion, DALL-E ve Leonardo AI deneme hesapları için anonim e-posta.',
+    descriptionEn: 'Disposable email addresses for Midjourney, Stable Diffusion, DALL-E, and Leonardo AI trials.',
+    whyTr: [
+      'Ücretsiz görsel üretim kredilerinizi ana mailinizi riske atmadan kullanın.',
+      'Pazarlama bültenlerinden korunun.'
+    ],
+    whyEn: [
+      'Claim free AI image generation credits without inbox clutter.',
+      'Shield your inbox from marketing drips.'
+    ],
+    faqsTr: [
+      { q: 'Görsel üretici onay kodu gelir mi?', a: 'Evet, 6 haneli kodlar ve onay bağlantıları anında ekranda görüntülenir.' }
+    ],
+    faqsEn: [
+      { q: 'Will AI generator OTP codes arrive?', a: 'Yes, 6-digit codes and magic links arrive in sub-3 seconds.' }
+    ]
+  },
+  freelancers: {
+    id: 'freelancers',
+    name: 'Freelancer & Gig Platforms',
+    badge: '💼 Freelancer Hub',
+    color: 'from-emerald-600 to-teal-700',
+    titleTr: 'Freelancer & İş Platformları İçin Geçici Mail',
+    titleEn: 'Temp Mail for Freelancers & Gig Work Platforms',
+    descriptionTr: 'Upwork, Fiverr, Freelancer ve Bionluk gibi platformlarda deneme ve test hesapları için geçici mail.',
+    descriptionEn: 'Disposable email addresses for Upwork, Fiverr, and freelance marketplace testing.',
+    whyTr: [
+      'Müşteri ve platform spamlerinden ana e-postanızı ayırın.',
+      'Hızlı iş ilanı ve bildirim testleri yapın.'
+    ],
+    whyEn: [
+      'Keep freelance platform alerts separate from your primary inbox.',
+      'Test job postings and client notifications safely.'
+    ],
+    faqsTr: [
+      { q: 'Freelance platform doğrulama mailleri alınabilir mi?', a: 'Evet, tüm onay mailleri 1-3 saniyede MephistoMail kutunuza ulaşır.' }
+    ],
+    faqsEn: [
+      { q: 'Can I receive freelance platform activation emails?', a: 'Yes, all confirmation emails land within seconds.' }
+    ]
+  },
+  crypto: {
+    id: 'crypto',
+    name: 'Crypto & Web3 Privacy',
+    badge: '🪙 Crypto Shield',
+    color: 'from-yellow-600 to-amber-600',
+    titleTr: 'Kripto Para & Web3 Gizlilik Kalkanı',
+    titleEn: 'Temp Mail for Crypto Platforms & Web3 Privacy',
+    descriptionTr: 'Kripto borsaları, DEX ve Web3 platformlarında ana e-postanızı ve cüzdan kimliğinizi koruyun.',
+    descriptionEn: 'Shield your identity and wallet privacy across crypto exchanges and Web3 platforms.',
+    whyTr: [
+      'Oltalama (phishing) saldırılarına karşı tam koruma.',
+      'Kripto bülten spamlerini engelleyin.'
+    ],
+    whyEn: [
+      'Protect against phishing and credential harvesting.',
+      'Block aggressive crypto marketing.'
+    ],
+    faqsTr: [
+      { q: 'Kripto onay kodları hızlı mı?', a: 'Evet, canlı WebSocket ile anında ekrana yansır.' }
+    ],
+    faqsEn: [
+      { q: 'Are crypto OTP codes instant?', a: 'Yes, real-time WebSocket push delivers codes in seconds.' }
+    ]
+  },
+  'disney-plus': {
+    id: 'disney-plus',
+    name: 'Disney+ Streaming',
+    badge: '🎬 Disney+ Shield',
+    color: 'from-blue-700 to-indigo-900',
+    titleTr: 'Disney+ Kayıt & Deneme İçin Geçici E-posta',
+    titleEn: 'Temp Mail for Disney+ Streaming & Family Sign-ups',
+    descriptionTr: 'Disney+ ve dijital yayın platformlarında hesap aktivasyonu için hızlı kullan-at e-posta.',
+    descriptionEn: 'Instant disposable email for Disney+ streaming service verifications and accounts.',
+    whyTr: [
+      'Yayın platformu pazarlama maillerinden ana kutunuzu koruyun.',
+      '6 haneli şifre kodlarını 1 saniyede alın.'
+    ],
+    whyEn: [
+      'Shield your inbox from streaming promotion emails.',
+      'Receive 6-digit OTP passcode in 1 second.'
+    ],
+    faqsTr: [
+      { q: 'Disney+ 6 haneli kod gelir mi?', a: 'Evet, kod otomatik algılanır ve panoya kopyalanabilir.' }
+    ],
+    faqsEn: [
+      { q: 'Does Disney+ 6-digit passcode arrive?', a: 'Yes, auto-detected with 1-click copy.' }
+    ]
+  },
+  workspaces: {
+    id: 'workspaces',
+    name: 'Workspaces & Productivity Tools',
+    badge: '⚡ Team Workspaces',
+    color: 'from-slate-700 to-zinc-900',
+    titleTr: 'Çalışma Alanları (Workspaces) & Takım Araçları İçin Geçici Mail',
+    titleEn: 'Temp Mail for Workspace Demos & Team Productivity Tools',
+    descriptionTr: 'Slack, Miro, Asana, Monday ve Linear gibi takım çalışma araçlarını test etmek için geçici mail.',
+    descriptionEn: 'Disposable email handles for testing Slack, Miro, Asana, Monday, and Linear team workspaces.',
+    whyTr: [
+      'Şirket ve takım araçlarını kişisel veya kurumsal mailinizi kirletmeden test edin.',
+      'Davetiye linklerini anında alın.'
+    ],
+    whyEn: [
+      'Evaluate enterprise tools without cluttering your corporate inbox.',
+      'Receive invitation links instantly.'
+    ],
+    faqsTr: [
+      { q: 'Çalışma alanı davetiyeleri açılır mı?', a: 'Evet, gelen davet linklerine doğrudan tıklayabilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'Do workspace invitations work?', a: 'Yes, invitation links are clickable directly from your inbox.' }
+    ]
+  },
+  'edu-temp-mail': {
+    id: 'students',
+    route: '/edu-temp-mail',
+    name: 'Student Perks & .EDU Hub',
+    badge: '🎓 Student & Developer Perks',
+    color: 'from-blue-600 to-indigo-600',
+    titleTr: 'Öğrenci İndirimleri & .EDU Mail Rehberi - GitHub Pack, Notion & Spotify',
+    titleEn: 'Student Perks & .EDU Mail Guide - GitHub Student Pack, Notion & Spotify',
+    descriptionTr: 'Öğrenciler ve yazılımcılar için GitHub Student Developer Pack, Notion Plus, Figma Pro ve JetBrains indirim rehberi.',
+    descriptionEn: 'Verification guide and student discount hub for GitHub Student Developer Pack, Notion Plus, Figma Pro, and JetBrains.',
+    whyTr: [
+      'GitHub Student Developer Pack doğrulama rehberi.',
+      'Notion Plus ve Figma Pro öğrenci lisanslarını anında aktifleştirin.',
+      'Kişisel e-posta kutunuzu öğrenci bültenlerinden koruyun.'
+    ],
+    whyEn: [
+      'GitHub Student Developer Pack verification guide.',
+      'Instantly activate Notion Plus and Figma Pro student licenses.',
+      'Protect your main inbox from student newsletter spam.'
+    ],
+    faqsTr: [
+      { q: '.EDU mail ile GitHub Student Pack nasıl doğrulanır?', a: 'Doğrulama kodunu MephistoMail kutunuzdan saniyeler içinde kopyalayabilirsiniz.' }
+    ],
+    faqsEn: [
+      { q: 'How to verify student packs?', a: 'Copy the OTP code directly from your MephistoMail inbox.' }
+    ]
   }
 };
 
@@ -1329,7 +1502,35 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
   const location = useLocation();
   const pathKey = location.pathname.replace(/^\//, '').toLowerCase();
   const strippedSlug = pathKey.replace(/^temp-mail-for-/, '');
-  const data = SERVICES_MAP[pathKey] || SERVICES_MAP[strippedSlug] || SERVICES_MAP.classifieds;
+
+  const dynamicFallback: ServiceData = {
+    id: strippedSlug,
+    name: strippedSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
+    badge: '🛡️ Privacy Shield',
+    color: 'from-red-600 to-orange-600',
+    titleTr: `${strippedSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')} İçin Geçici Mail (Temp Mail)`,
+    titleEn: `Temp Mail for ${strippedSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')} - Instant Verification`,
+    descriptionTr: `${strippedSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')} kayıt ve doğrulamaları için 1 saniyelik ücretsiz kullan-at geçici e-posta.`,
+    descriptionEn: `Instant disposable temporary email for ${strippedSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')} verification, OTP codes, and privacy.`,
+    whyTr: [
+      `${strippedSlug} kayıtlarında kişisel e-posta adresinizi koruyun.`,
+      'Canlı WebSocket ile doğrulama kodlarını 1 saniyede alın.',
+      'RAM-only mimari ile sıfır iz bırakın.'
+    ],
+    whyEn: [
+      `Shield your primary inbox during ${strippedSlug} registrations.`,
+      'Receive verification codes in 1 second via live WebSockets.',
+      'Zero trace guarantee with RAM-only architecture.'
+    ],
+    faqsTr: [
+      { q: `${strippedSlug} onay kodu gelir mi?`, a: 'Evet, gelen tüm doğrulama kodları ve linkleri 1-3 saniyede ekranınıza yansır.' }
+    ],
+    faqsEn: [
+      { q: `Will ${strippedSlug} verification codes arrive?`, a: 'Yes, all incoming OTP codes and activation links arrive in 1-3 seconds.' }
+    ]
+  };
+
+  const data = SERVICES_MAP[pathKey] || SERVICES_MAP[strippedSlug] || dynamicFallback;
 
   const isTr = lang === 'tr';
   const title = isTr ? data.titleTr : data.titleEn;

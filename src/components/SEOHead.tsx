@@ -294,4 +294,4 @@ function updateLink(rel: string, href: string, hreflang?: string, attrName?: str
     link.href = href;
 }
 
-export default SEOHead;
+export default React.memo(SEOHead);
