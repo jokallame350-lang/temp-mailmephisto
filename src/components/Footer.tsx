@@ -152,6 +152,24 @@ const Footer: React.FC<FooterProps> = ({ lang }) => {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/breach-checker" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Shield size={10} />
+                    {lang === 'tr' ? 'Sızıntı Kontrolü' : 'Breach Checker'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/test-card-generator" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Zap size={10} />
+                    {lang === 'tr' ? 'Test Kartı Üretici' : 'Test Card Generator'}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/password-generator" className="text-slate-500 text-[11px] hover:text-red-400 transition-colors flex items-center gap-1.5">
+                    <Zap size={10} />
+                    {lang === 'tr' ? 'Güçlü Şifre Üretici' : 'Password Generator'}
+                  </Link>
+                </li>
+                <li>
                   <a
                     href="https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob"
                     target="_blank"

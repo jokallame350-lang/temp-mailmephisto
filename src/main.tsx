@@ -22,6 +22,10 @@ const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
+const BreachCheckerPage = lazy(() => import('./pages/BreachCheckerPage'));
+const TestCardGeneratorPage = lazy(() => import('./pages/TestCardGeneratorPage'));
+const PasswordGeneratorPage = lazy(() => import('./pages/PasswordGeneratorPage'));
+
 
 // Loading fallback
 const PageLoader = () => (
@@ -150,6 +154,27 @@ const AppRouter = () => {
           <Route path="/disposable-email-checker" element={<DisposableCheckerPage lang={lang} />} />
           <Route path="/bulk-generator" element={<BulkGeneratorPage lang={lang} />} />
           <Route path="/burn-note" element={<BurnNotePage lang={lang} />} />
+          {/* New Interactive Tools */}
+          <Route path="/breach-checker" element={<BreachCheckerPage lang={lang} />} />
+          <Route path="/leaked-email-checker" element={<BreachCheckerPage lang={lang} />} />
+          <Route path="/test-card-generator" element={<TestCardGeneratorPage lang={lang} />} />
+          <Route path="/dummy-card-generator" element={<TestCardGeneratorPage lang={lang} />} />
+          <Route path="/cc-generator" element={<TestCardGeneratorPage lang={lang} />} />
+          <Route path="/password-generator" element={<PasswordGeneratorPage lang={lang} />} />
+          <Route path="/strong-password-generator" element={<PasswordGeneratorPage lang={lang} />} />
+
+          {/* New AI & SaaS Programmatic Pages */}
+          <Route path="/temp-mail-for-cursor-ai" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-v0-dev" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-bolt-new" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-tradingview" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-coursera" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-github-copilot" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-perplexity-ai" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-elevenlabs" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-notion-ai" element={<ServiceMailPage lang={lang} />} />
+          <Route path="/temp-mail-for-figma" element={<ServiceMailPage lang={lang} />} />
+
           {/* Catch-all: redirect to home */}
           <Route path="*" element={<App />} />
         </Routes>
