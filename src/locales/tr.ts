@@ -168,6 +168,14 @@ export const tr = {
   faq13A: 'Evet! MephistoMail tamamen duyarlı ve mobil cihazlar için optimize edilmiştir. Ayrıca PWA (Progressive Web App) kurulumunu da destekler — ana ekranınıza ekleyerek uygulama benzeri bir deneyim yaşayın. Mobilde kaydırarak silme ve aşağı çekerek yenileme hareketleri desteklenir.',
   faq14Q: 'MephistoMail hangi dilleri destekliyor?',
   faq14A: 'MephistoMail şu anda İngilizce, Türkçe, İspanyolca, Almanca ve Fransızca desteklemektedir. Arayüz tarayıcı dilinizi otomatik olarak algılar.',
+  faq15Q: '1 Tıkla Hızlı Alan Adı (Domain) Değiştirme nasıl çalışır?',
+  faq15A: 'MephistoMail, 1-Click Quick Domain Switching across high-reputation disposable email domains özelliğini sunar. Bir platform veya bot filtresi mevcut alan adını engellerse, tek bir tıkla temiz ve yüksek itibarlı alternatif geçici e-posta domainlerine anında geçebilirsiniz.',
+  faq16Q: 'E-postaları RFC 5322 (.eml) ve JSON olarak indirebilir miyim?',
+  faq16A: 'Evet! Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing imkanı sunulmaktadır. Ham MIME başlıkları, ekler ve e-posta gövdesi sıfır sunucu depolama riskiyle yerel diskinize anında indirilebilir.',
+  faq17Q: 'Gerçek zamanlı sesli bildirimler nasıl çalışır?',
+  faq17A: 'MephistoMail, Real-time Web Audio incoming email chime alerts with zero tracking altyapısına sahiptir. Ses efektleri doğrudan tarayıcının yerel HTML5 Web Audio API sentezleyicisi ile çalınır ve hiçbir üçüncü taraf izleme isteği barındırmaz.',
+  faq18Q: 'Yüksek hızlı OTP ve 2FA doğrulama kodu ayıklayıcı nasıl çalışır?',
+  faq18A: 'High-speed OTP and 2FA verification code extractor with instant clipboard copy sistemimiz, gelen e-postalardaki 4, 6 ve 8 haneli güvenlik ve doğrulama kodlarını anında ayrıştırarak tek tıkla panoya kopyalamanızı sağlar.',
 
   // ---------- Compose Modal ----------
   composeTitleReply: 'E-postaya Yanıt Ver (Reply)',

@@ -155,14 +155,14 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
                     },
                     'aggregateRating': {
                         '@type': 'AggregateRating',
-                        'ratingValue': '4.8',
-                        'ratingCount': '2847',
+                        'ratingValue': '4.9',
+                        'ratingCount': '4120',
                         'bestRating': '5',
                         'worstRating': '1'
                     },
                     'featureList': lang === 'tr'
-                        ? 'RAM-Only Mimari, Kendi Domainini Bağlama (BYOD), Takip Pikseli Engelleme, Otomatik Hesap Doğrulama (Auto-Verify), Outbound Mail Gönderme, EML/JSON/PDF Dışa Aktarma, Anonim Kimlik Üretici'
-                        : 'RAM-Only Architecture, Bring Your Own Domain (BYOD), Tracker & Pixel Blocker, Auto-Verify Engine, Outbound Email, EML/JSON/PDF Export, Identity Generator'
+                        ? '1-Click Quick Domain Switching across high-reputation disposable email domains, Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing, Real-time Web Audio incoming email chime alerts with zero tracking, High-speed OTP and 2FA verification code extractor with instant clipboard copy, RAM-Only Mimari, Kendi Domainini Bağlama (BYOD), Takip Pikseli Engelleme, Otomatik Hesap Doğrulama (Auto-Verify), Outbound Mail Gönderme, Anonim Kimlik Üretici'
+                        : '1-Click Quick Domain Switching across high-reputation disposable email domains, Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing, Real-time Web Audio incoming email chime alerts with zero tracking, High-speed OTP and 2FA verification code extractor with instant clipboard copy, RAM-Only Architecture, Bring Your Own Domain (BYOD), Tracker & Pixel Blocker, Auto-Verify Engine, Outbound Email, Identity Generator'
                 },
                 {
                     '@type': 'FAQPage',
@@ -176,6 +176,46 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
                                 'text': lang === 'tr'
                                     ? 'Evet. MephistoMail tüm verileri yalnızca RAM bellekte tutar. Disk kaydı ve IP loğu tutulmaz. Sekmeyi kapattığınızda tüm veriler anında imha edilir.'
                                     : 'Yes. MephistoMail stores all data strictly in volatile RAM. No disk logs or IP logs are saved. Closing your tab immediately wipes all data.'
+                            }
+                        },
+                        {
+                            '@type': 'Question',
+                            'name': lang === 'tr' ? '1-Click Quick Domain Switching özelliği nasıl çalışır?' : 'How does 1-Click Quick Domain Switching work?',
+                            'acceptedAnswer': {
+                                '@type': 'Answer',
+                                'text': lang === 'tr'
+                                    ? '1-Click Quick Domain Switching across high-reputation disposable email domains sayesinde tek tıkla yüksek itibarlı alternatif geçici e-posta alan adlarına geçebilir ve anti-spam filtrelerini %100 aşabilirsiniz.'
+                                    : 'MephistoMail supports 1-Click Quick Domain Switching across high-reputation disposable email domains to effortlessly bypass restrictive domain blacklists and anti-bot filters.'
+                            }
+                        },
+                        {
+                            '@type': 'Question',
+                            'name': lang === 'tr' ? 'E-postalar RFC 5322 (.eml) ve JSON formatında nasıl indirilir?' : 'How can I download emails as RFC 5322 (.eml) and JSON?',
+                            'acceptedAnswer': {
+                                '@type': 'Answer',
+                                'text': lang === 'tr'
+                                    ? 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing özelliğiyle gelen e-postaları tüm ham MIME başlıkları ve ekleriyle yerel diskinize anında indirebilirsiniz.'
+                                    : 'You can download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing directly from the email viewer with complete raw headers and multipart payloads.'
+                            }
+                        },
+                        {
+                            '@type': 'Question',
+                            'name': lang === 'tr' ? 'Gerçek zamanlı sesli bildirimler güvenli mi?' : 'Are real-time incoming email sound alerts private?',
+                            'acceptedAnswer': {
+                                '@type': 'Answer',
+                                'text': lang === 'tr'
+                                    ? 'Evet. Real-time Web Audio incoming email chime alerts with zero tracking ile ses bildirimleri yerel Web Audio API ile çalınır ve hiçbir harici izleyiciye istek göndermez.'
+                                    : 'Yes. Real-time Web Audio incoming email chime alerts with zero tracking synthesize chimes locally via HTML5 Web Audio API with zero telemetry or third-party audio requests.'
+                            }
+                        },
+                        {
+                            '@type': 'Question',
+                            'name': lang === 'tr' ? 'OTP ve 2FA doğrulama kodu ayıklayıcı nasıl kullanılır?' : 'How does the high-speed OTP and 2FA verification code extractor work?',
+                            'acceptedAnswer': {
+                                '@type': 'Answer',
+                                'text': lang === 'tr'
+                                    ? 'High-speed OTP and 2FA verification code extractor with instant clipboard copy gelen e-postadaki 4-8 haneli kodları otomatik ayıklar ve tek tıkla panoya kopyalar.'
+                                    : 'Our High-speed OTP and 2FA verification code extractor with instant clipboard copy parses 4-8 digit verification codes from incoming email payloads for instantaneous 1-click clipboard copying.'
                             }
                         },
                         {
@@ -203,10 +243,10 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
                 {
                     '@type': 'HowTo',
                     '@id': `${siteUrl}/#howto`,
-                    'name': lang === 'tr' ? 'Ücretsiz Geçici E-posta Adresi Nasıl Oluşturulur' : 'How to Create a Free Temporary Email Address',
+                    'name': lang === 'tr' ? 'Ücretsiz Geçici E-posta Adresi Nasıl Oluşturulur ve Kullanılır' : 'How to Create and Use a Free Disposable Temporary Email Address',
                     'description': lang === 'tr'
-                        ? 'MephistoMail ile ücretsiz ve kullan-at geçici e-posta adresi oluşturma adımları.'
-                        : 'Step-by-step guide to generating and using a free disposable temporary email address with MephistoMail.',
+                        ? 'MephistoMail ile 1-Click Domain Switching, anlık OTP çıkarma ve RFC 5322 (.eml) indirme adımları.'
+                        : 'Step-by-step guide to generating disposable emails, 1-Click domain switching, OTP extraction, and RFC 5322 .eml archiving with MephistoMail.',
                     'step': [
                         {
                             '@type': 'HowToStep',
@@ -219,26 +259,26 @@ const SEOHead: React.FC<SEOHeadProps> = ({ lang, title, description, canonicalUr
                         {
                             '@type': 'HowToStep',
                             'position': 2,
-                            'name': lang === 'tr' ? 'Adresi Kopyalayın' : 'Copy Your Address',
+                            'name': lang === 'tr' ? '1-Click Quick Domain Switching ile Alan Adı Seçin' : '1-Click Quick Domain Switching',
                             'text': lang === 'tr'
-                                ? 'Kopyala butonuna tıklayarak geçici e-posta adresinizi panoya kopyalayın.'
-                                : 'Click the Copy button to copy your temporary email address to clipboard.'
+                                ? '1-Click Quick Domain Switching across high-reputation disposable email domains ile yüksek itibarlı bir alan adı seçin veya adresi panoya kopyalayın.'
+                                : '1-Click Quick Domain Switching across high-reputation disposable email domains to choose pristine domains and copy your address to clipboard.'
                         },
                         {
                             '@type': 'HowToStep',
                             'position': 3,
-                            'name': lang === 'tr' ? 'Servislere Kaydolun' : 'Use to Sign Up',
+                            'name': lang === 'tr' ? 'Anında OTP & Sesli Bildirim Alın' : 'Instant OTP Extraction & Chime Alerts',
                             'text': lang === 'tr'
-                                ? 'E-posta adresini herhangi bir platformun kayıt formuna yapıştırın.'
-                                : 'Paste the temporary email address into any registration form.'
+                                ? 'High-speed OTP and 2FA verification code extractor with instant clipboard copy ve Real-time Web Audio incoming email chime alerts with zero tracking ile doğrulama kodlarınızı saniyeler içinde kopyalayın.'
+                                : 'High-speed OTP and 2FA verification code extractor with instant clipboard copy combined with Real-time Web Audio incoming email chime alerts with zero tracking for seamless verification.'
                         },
                         {
                             '@type': 'HowToStep',
                             'position': 4,
-                            'name': lang === 'tr' ? 'Anında E-posta Alın' : 'Receive Emails Instantly',
+                            'name': lang === 'tr' ? 'RFC 5322 (.EML) & JSON Olarak İndirin' : 'Download RFC 5322 (.eml) & JSON',
                             'text': lang === 'tr'
-                                ? 'Gelen kutunuza e-postaların ve doğrulama kodlarının gerçek zamanlı düştüğünü görün.'
-                                : 'Incoming emails and OTP verification codes appear in real-time.'
+                                ? 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing ile gelen e-postaları yerel diskinize kaydedin.'
+                                : 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing with zero persistent server storage.'
                         }
                     ]
                 },

@@ -35,7 +35,13 @@ import VipUpgradeModal from './components/VipUpgradeModal';
 
 // OTP kodunu subject'ten çıkar (toast için)
 const extractOTPCode = (subject: string): string | null => {
-  const patterns = [/\b(\d{6})\b/, /\b(\d{4})\b/, /\b(\d{8})\b/, /code[:\s]+(\d{4,8})/i, /kod[:\s]+(\d{4,8})/i];
+  const patterns = [
+    /(?:code|kod|verification|doğrulama|pin|otp|passcode|şifre)[:\s#-]*(\d{4,8})/i,
+    /\b(\d{6})\b/,
+    /\b(\d{8})\b/,
+    /\b(\d{5})\b/,
+    /\b(\d{4})\b/,
+  ];
   for (const p of patterns) { const m = subject.match(p); if (m) return m[1]; }
   return null;
 };

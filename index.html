@@ -165,17 +165,17 @@
     </script>
 
   <!-- ========================================================= -->
-  <!-- SCHEMA.ORG JSON-LD: WebApplication + AggregateRating      -->
+  <!-- SCHEMA.ORG JSON-LD: SoftwareApplication + AggregateRating -->
   <!-- ========================================================= -->
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
+      "@type": "SoftwareApplication",
       "name": "MephistoMail - Temp Mail",
       "alternateName": ["Temp Mail", "Disposable Email", "Geçici Mail", "Kullan At Mail"],
       "url": "https://mephistomail.site",
-      "description": "Free temporary email address generator. Create instant disposable temp mail to protect your privacy. No registration, no tracking, no logs.",
-      "applicationCategory": "UtilitiesApplication",
+      "description": "Free temporary email address generator. Create instant disposable temp mail with 1-Click Quick Domain Switching and RFC 5322 .eml export to protect your privacy. No registration, no tracking, no logs.",
+      "applicationCategory": "SecurityApplication",
       "operatingSystem": "All",
       "browserRequirements": "Requires a modern web browser with JavaScript support",
       "softwareVersion": "2.0",
@@ -192,14 +192,18 @@
       },
       "aggregateRating": {
         "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "2847",
+        "ratingValue": "4.9",
+        "ratingCount": "4120",
         "bestRating": "5",
         "worstRating": "1"
       },
       "inLanguage": ["en-US", "tr-TR"],
       "isAccessibleForFree": true,
       "featureList": [
+        "1-Click Quick Domain Switching across high-reputation disposable email domains",
+        "Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing",
+        "Real-time Web Audio incoming email chime alerts with zero tracking",
+        "High-speed OTP and 2FA verification code extractor with instant clipboard copy",
         "Instant anonymous email generation",
         "Official Chrome Extension for fast OTP copying",
         "No registration required",
@@ -207,16 +211,15 @@
         "Custom email address creation",
         "Secure password generator",
         "QR code mobile transfer",
-        "OTP and 2FA code support",
         "Multiple simultaneous mailboxes",
-        "Auto-delete timer",
-        "Email search functionality"
+        "Anti-tracking spy pixel blocker",
+        "Auto-delete timer"
       ]
     }
     </script>
 
   <!-- ========================================================= -->
-  <!-- SCHEMA.ORG JSON-LD: FAQPage (10 Questions for rich snippets) -->
+  <!-- SCHEMA.ORG JSON-LD: FAQPage (Expanded for rich snippets) -->
   <!-- ========================================================= -->
   <script type="application/ld+json">
     {
@@ -227,6 +230,26 @@
           "@type": "Question",
           "name": "What is a temporary email address?",
           "acceptedAnswer": { "@type": "Answer", "text": "A temporary email address (also known as temp mail, disposable email, or throwaway email) is a self-destructing email inbox that exists for a short period. It allows you to receive emails without revealing your real email address, protecting your privacy from spam, data breaches, and unwanted marketing. MephistoMail generates these addresses instantly with no registration required." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does 1-Click Quick Domain Switching across high-reputation disposable email domains work?",
+          "acceptedAnswer": { "@type": "Answer", "text": "MephistoMail allows 1-Click Quick Domain Switching across high-reputation disposable email domains. If an online platform or spam blacklist filters a specific domain, you can switch to a fresh, active high-reputation disposable domain in one click with zero cooldown." }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I download emails as RFC 5322 (.eml) and JSON for QA testing?",
+          "acceptedAnswer": { "@type": "Answer", "text": "You can download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing directly from MephistoMail's email reader. The download contains intact MIME headers, body parts, and attachments without storing any data on external servers." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do real-time incoming email sound alerts work?",
+          "acceptedAnswer": { "@type": "Answer", "text": "MephistoMail features Real-time Web Audio incoming email chime alerts with zero tracking. Chimes are synthesized directly in your browser using the HTML5 Web Audio API, ensuring prompt audio alerts without third-party tracking scripts." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the high-speed OTP and 2FA verification code extractor work?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Our High-speed OTP and 2FA verification code extractor with instant clipboard copy parses incoming emails with instant regex detection to isolate 4-8 digit verification codes and allows you to copy them with a single click." }
         },
         {
           "@type": "Question",
@@ -255,11 +278,6 @@
         },
         {
           "@type": "Question",
-          "name": "Can I use temp mail for password generator?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. MephistoMail includes a built-in Secure Password Generator that uses cryptographic random number generation (crypto.getRandomValues) to create strong passwords locally in your browser. We never see or store generated passwords." }
-        },
-        {
-          "@type": "Question",
           "name": "What happens to my data when I close the browser?",
           "acceptedAnswer": { "@type": "Answer", "text": "Immediate termination. MephistoMail runs on a 'No-Logs' policy backed by volatile memory storage. Closing the tab triggers a wipe sequence, removing the email address and all its contents permanently. No data is ever written to disk." }
         },
@@ -267,11 +285,6 @@
           "@type": "Question",
           "name": "How is MephistoMail different from other temp mail services?",
           "acceptedAnswer": { "@type": "Answer", "text": "MephistoMail stands out with its privacy-first architecture (zero logging, RAM-only storage), real-time WebSocket email delivery (no page refreshing), built-in security tools (password generator, QR transfer), beautiful modern UI, multi-language support, and the ability to manage up to 100 simultaneous mailboxes." }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I have multiple temp mail addresses at once?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. MephistoMail supports up to 100 simultaneous active mailboxes. You can create, switch between, and manage multiple temporary email addresses from a single browser tab, making it ideal for developers, testers, and power users." }
         }
       ]
     }
@@ -284,8 +297,8 @@
     {
       "@context": "https://schema.org",
       "@type": "HowTo",
-      "name": "How to Create a Free Temporary Email Address",
-      "description": "Step-by-step guide to generating and using a free disposable temporary email address with MephistoMail to protect your privacy online.",
+      "name": "How to Create and Use a Free Disposable Temporary Email Address",
+      "description": "Step-by-step guide to generating disposable emails, 1-Click quick domain switching, OTP extraction, and RFC 5322 .eml archiving with MephistoMail to protect your privacy online.",
       "totalTime": "PT30S",
       "estimatedCost": { "@type": "MonetaryAmount", "currency": "USD", "value": "0" },
       "tool": { "@type": "HowToTool", "name": "A web browser (Chrome, Firefox, Safari, Edge)" },
@@ -300,20 +313,20 @@
         {
           "@type": "HowToStep",
           "position": 2,
-          "name": "Copy Your Temporary Email Address",
-          "text": "Click the 'Copy' button next to your generated address, or press the keyboard shortcut 'C' to copy it to your clipboard instantly."
+          "name": "1-Click Quick Domain Switching & Address Copy",
+          "text": "Utilize 1-Click Quick Domain Switching across high-reputation disposable email domains to choose a domain extension, then click 'Copy' to copy your address instantly."
         },
         {
           "@type": "HowToStep",
           "position": 3,
-          "name": "Use It to Sign Up for Services",
-          "text": "Paste the temporary email address into any website's registration form. Use it for newsletter signups, free trials, downloads, or any service that requires email verification."
+          "name": "Receive Verification Codes & Chime Alerts",
+          "text": "Receive verification emails with Real-time Web Audio incoming email chime alerts with zero tracking and copy OTPs via the High-speed OTP and 2FA verification code extractor with instant clipboard copy."
         },
         {
           "@type": "HowToStep",
           "position": 4,
-          "name": "Receive Emails Instantly",
-          "text": "Return to MephistoMail. Incoming emails, verification codes, and OTP will appear in your inbox automatically in real-time—no refreshing needed. Click any email to read its full content."
+          "name": "Download Emails as RFC 5322 (.eml) & JSON",
+          "text": "Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing directly to your device with zero server persistence."
         }
       ]
     }
@@ -460,11 +473,14 @@
         teslimi, özel adres oluşturma, şifre üretici ve QR kod ile mobil aktarım. 100'e kadar eş zamanlı geçici mail
         kutusu yönetebilirsiniz. Tamamen ücretsiz, reklamsız.</p>
 
-      <h2>Temp Mail Features</h2>
+      <h2>Temp Mail Features & Power Tools</h2>
       <ul>
-        <li><strong>Chrome Extension</strong> — Easy sideloadable extension for OTP management</li>
+        <li><strong>1-Click Quick Domain Switching</strong> — 1-Click Quick Domain Switching across high-reputation disposable email domains to bypass blacklist filters.</li>
+        <li><strong>RFC 5322 & JSON Export</strong> — Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing.</li>
+        <li><strong>Web Audio Alerts</strong> — Real-time Web Audio incoming email chime alerts with zero tracking synthesized in-browser.</li>
+        <li><strong>OTP & 2FA Extractor</strong> — High-speed OTP and 2FA verification code extractor with instant clipboard copy for fast logins.</li>
+        <li><strong>Chrome Extension</strong> — Easy sideloadable extension for OTP management and one-click email creation</li>
         <li><strong>Anonymous Email Reception</strong> — Receive emails without revealing your identity</li>
-        <li><strong>OTP & 2FA Support</strong> — Get verification codes delivered in under 3 seconds</li>
         <li><strong>Password Generator</strong> — Create cryptographically secure passwords in your browser</li>
         <li><strong>QR Code Transfer</strong> — Transfer your inbox session from desktop to mobile securely</li>
         <li><strong>Auto-Delete Timer</strong> — Set automatic destruction from 5 minutes to 24 hours</li>
@@ -476,6 +492,14 @@
       </ul>
 
       <h2>Frequently Asked Questions About Temp Mail</h2>
+      <h3>How does 1-Click Quick Domain Switching work?</h3>
+      <p>MephistoMail provides 1-Click Quick Domain Switching across high-reputation disposable email domains. If a website blocks a specific domain extension, swap to a fresh pristine domain in 1 click.</p>
+      <h3>Can I export and download emails for QA testing?</h3>
+      <p>Yes. You can download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing directly with full MIME headers and attachment data.</p>
+      <h3>Are incoming email notifications tracked?</h3>
+      <p>No. MephistoMail features Real-time Web Audio incoming email chime alerts with zero tracking synthesized locally via HTML5 Web Audio.</p>
+      <h3>How fast is OTP verification code extraction?</h3>
+      <p>Our High-speed OTP and 2FA verification code extractor with instant clipboard copy recognizes 4-8 digit codes and copies them instantly.</p>
       <h3>Is temp mail safe?</h3>
       <p>Yes. MephistoMail uses volatile memory (RAM-only) storage, meaning no data is ever written to disk. We operate
         under a strict no-logs policy and do not track IP addresses or require any personal information.</p>

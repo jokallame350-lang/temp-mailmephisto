@@ -18,14 +18,11 @@ interface EmailViewerProps {
 const extractOTPFromContent = (subject: string, text?: string): string | null => {
   const combined = `${subject || ''} ${text || ''}`;
   const patterns = [
+    /(?:code|kod|verification|doğrulama|pin|otp|passcode|şifre)[:\s#-]*(\d{4,8})/i,
     /\b(\d{6})\b/,
-    /\b(\d{4})\b/,
     /\b(\d{8})\b/,
-    /code[:\s]+(\d{4,8})/i,
-    /kod[:\s]+(\d{4,8})/i,
-    /verification[:\s]+(\d{4,8})/i,
-    /doğrulama[:\s]+(\d{4,8})/i,
-    /pin[:\s]+(\d{4,8})/i,
+    /\b(\d{5})\b/,
+    /\b(\d{4})\b/,
   ];
   for (const pattern of patterns) {
     const match = combined.match(pattern);
@@ -327,8 +324,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     : (email.from && typeof email.from === 'object' ? String(email.from.name || email.from.address || 'unknown') : 'unknown');
 
   const otpCode = useMemo(() => {
-    return extractOTPFromContent(email.subject, email.text || '');
-  }, [email.subject, email.text]);
+    const textContent = email.text || email.intro || (email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0].replace(/<[^>]*>/g, ' ') : '') : '');
+    return extractOTPFromContent(email.subject, textContent);
+  }, [email.subject, email.text, email.intro, email.html]);
 
   const formatDate = useCallback((dateString: string) => {
     try {

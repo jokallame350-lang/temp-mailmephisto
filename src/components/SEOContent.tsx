@@ -30,6 +30,10 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
     { question: t.faq12Q, answer: t.faq12A },
     { question: t.faq13Q, answer: t.faq13A },
     { question: t.faq14Q, answer: t.faq14A },
+    { question: t.faq15Q, answer: t.faq15A },
+    { question: t.faq16Q, answer: t.faq16A },
+    { question: t.faq17Q, answer: t.faq17A },
+    { question: t.faq18Q, answer: t.faq18A },
   ];
 
   return (
@@ -66,29 +70,29 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
             </h2>
             <p className="text-slate-400 text-xs md:text-sm mb-6 leading-relaxed">
               {lang === 'tr'
-                ? 'Standart geçici mail servislerinin ötesinde; özel domain bağlama, casus takip pikseli engelleme ve otomatik hesap aktivasyonu gibi 10+ gelişmiş SaaS kalkanı.'
-                : 'Beyond standard disposable email services; 10+ advanced SaaS features including BYOD custom domains, tracker blockers, and automated verification.'}
+                ? 'Standart geçici mail servislerinin ötesinde; 1-Click Quick Domain Switching across high-reputation disposable email domains, casus takip pikseli engelleme ve otomatik hesap aktivasyonu gibi 10+ gelişmiş SaaS kalkanı.'
+                : 'Beyond standard disposable email services; 10+ advanced SaaS features including 1-Click Quick Domain Switching across high-reputation disposable email domains, tracker blockers, and automated verification.'}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <SaaSModuleCard
-                title={lang === 'tr' ? '🌐 Kendi Alan Adını Bağla (BYOD)' : '🌐 Bring Your Own Domain'}
-                desc={lang === 'tr' ? 'Cloudflare DNS ile özel domaininizi bağlayın, engelli temp mail listelerini %100 kesinlikle aşın.' : 'Connect your custom DNS to bypass temp-mail blacklist filters with 100% success.'}
+                title={lang === 'tr' ? '🌐 1-Click Hızlı Alan Adı Değiştirme' : '🌐 1-Click Quick Domain Switching'}
+                desc={lang === 'tr' ? '1-Click Quick Domain Switching across high-reputation disposable email domains ile engelli temp mail listelerini %100 kesinlikle aşın.' : '1-Click Quick Domain Switching across high-reputation disposable email domains to bypass spam filters and blacklists effortlessly.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '⚡ Yüksek Hızlı OTP & 2FA Ayıklayıcı' : '⚡ High-Speed OTP & 2FA Extractor'}
+                desc={lang === 'tr' ? 'High-speed OTP and 2FA verification code extractor with instant clipboard copy ile gelen onay kodlarını 1 saniyede panoya kopyalayın.' : 'High-speed OTP and 2FA verification code extractor with instant clipboard copy for rapid, frictionless logins.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '🔔 Gerçek Zamanlı Web Audio Bildirimi' : '🔔 Real-time Web Audio Chime Alerts'}
+                desc={lang === 'tr' ? 'Real-time Web Audio incoming email chime alerts with zero tracking ile gelen e-postaları gizlilik odaklı ses efektiyle anında duyun.' : 'Real-time Web Audio incoming email chime alerts with zero tracking for instant, client-synthesized audio notifications.'}
+              />
+              <SaaSModuleCard
+                title={lang === 'tr' ? '📥 RFC 5322 (.EML) & JSON Dışa Aktarma' : '📥 RFC 5322 (.EML) & JSON Export'}
+                desc={lang === 'tr' ? 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing.' : 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing.'}
               />
               <SaaSModuleCard
                 title={lang === 'tr' ? '🛡️ Casus Takip Pikseli Engelleme' : '🛡️ Tracker & Pixel Blocker'}
                 desc={lang === 'tr' ? 'E-postalardaki 1x1 piksel görünmez casus görselleri ve konum takip eden domainleri anında filtreler.' : 'Detects and strips 1x1 spy pixels and location tracker scripts automatically.'}
-              />
-              <SaaSModuleCard
-                title={lang === 'tr' ? '⚡ Otomatik Hesap Doğrulama' : '⚡ Auto-Verify Engine'}
-                desc={lang === 'tr' ? 'Gelen üyelik onay e-postalarındaki aktivasyon linklerini arka planda otomatik olarak tıklar.' : 'Background HTTP GET & DOM execution engine auto-clicks account verification links.'}
-              />
-              <SaaSModuleCard
-                title={lang === 'tr' ? '✉️ E-posta Yanıtlama ve Gönderme' : '✉️ Outbound & Reply Mail'}
-                desc={lang === 'tr' ? 'Gelen geçici mailleri yanıtlayın veya disk izi bırakmadan dışarıya anonim e-posta gönderin.' : 'Reply to incoming messages or compose outbound mail without disk footprint.'}
-              />
-              <SaaSModuleCard
-                title={lang === 'tr' ? '📥 EML, JSON & PDF Dışa Aktarma' : '📥 EML, JSON & PDF Export'}
-                desc={lang === 'tr' ? 'E-postalarınızı ham .eml dosyası, yapılandırılmış JSON verisi veya PDF formatında indirin.' : 'Export emails as raw .eml RFC822 format, structured JSON data, or print PDF.'}
               />
               <SaaSModuleCard
                 title={lang === 'tr' ? '👤 Anonim Kimlik & Şifre Üretici' : '👤 Fake Identity & Pass Gen'}
@@ -121,7 +125,11 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
                   <Zap className="w-5 h-5 text-orange-500" />
                   <strong className="text-white text-[14px] uppercase font-bold">{t.artWhyList2Title}</strong>
                 </div>
-                <span className="text-slate-500 text-[14px] leading-relaxed">{t.artWhyList2Desc}</span>
+                <span className="text-slate-500 text-[14px] leading-relaxed">
+                  {lang === 'tr'
+                    ? 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing ile geliştiriciler ve QA mühendisleri kayıt akışlarını zahmetsizce test eder.'
+                    : 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing across CI/CD pipelines and manual verification runs.'}
+                </span>
               </li>
               <li className="bg-[#0a0a0c] p-5 rounded-xl border border-white/5 hover:border-red-400/20 transition-colors">
                 <div className="flex items-center gap-3 mb-2">
@@ -150,7 +158,9 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
             <meta itemProp="description" content={lang === 'tr' ? 'MephistoMail ile 4 basit adımda ücretsiz ve kullan-at geçici e-posta adresi oluşturma rehberi.' : 'Step-by-step guide to generating and using a free disposable temporary email address with MephistoMail.'} />
             <div className="space-y-4 mb-6">
               <HowToStep step={1} label={lang === 'tr' ? 'MephistoMail\'i ziyaret edin' : 'Visit MephistoMail'} desc={t.artUseP1} />
-              <HowToStep step={2} label={lang === 'tr' ? 'Adresi kopyalayın ve kullanın' : 'Copy and use your address'} desc={t.artUseP2} />
+              <HowToStep step={2} label={lang === 'tr' ? '1-Click Quick Domain Switching ile Alan Adı Seçin' : '1-Click Quick Domain Switching'} desc={lang === 'tr' ? '1-Click Quick Domain Switching across high-reputation disposable email domains özelliğini kullanarak temiz ve yüksek itibarlı bir alan adı seçin veya rastgele adresinizi panoya kopyalayın.' : '1-Click Quick Domain Switching across high-reputation disposable email domains allows you to select clean domains or instantly copy your anonymous address to clipboard.'} />
+              <HowToStep step={3} label={lang === 'tr' ? 'OTP Ayıklayıcı & Web Audio Bildirimi' : 'High-Speed OTP Extraction & Chime Alerts'} desc={lang === 'tr' ? 'High-speed OTP and 2FA verification code extractor with instant clipboard copy ve Real-time Web Audio incoming email chime alerts with zero tracking ile doğrulama kodunuzu saniyeler içinde alın.' : 'High-speed OTP and 2FA verification code extractor with instant clipboard copy paired with Real-time Web Audio incoming email chime alerts with zero tracking for immediate verification.'} />
+              <HowToStep step={4} label={lang === 'tr' ? 'RFC 5322 (.EML) & JSON Olarak İndirin' : 'Download .EML & Archive Emails'} desc={lang === 'tr' ? 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing ile gelen e-postaları ham MIME formatında güvenle saklayın.' : 'Download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing with zero persistent server storage.'} />
             </div>
           </div>
 
@@ -173,6 +183,26 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
                   <ScanLine className="w-4 h-4 text-red-500" /> {t.artTool2Title}
                 </h3>
                 <p className="text-slate-400 text-[14px] leading-relaxed">{t.artTool2Desc}</p>
+              </div>
+              <div>
+                <h3 className="text-[15px] text-white font-bold flex items-center gap-2 mb-2 font-['Sora']">
+                  <Zap className="w-4 h-4 text-yellow-500" /> {lang === 'tr' ? 'Hızlı OTP & 2FA Kod Çıkarıcı' : 'High-Speed OTP & 2FA Extractor'}
+                </h3>
+                <p className="text-slate-400 text-[14px] leading-relaxed">
+                  {lang === 'tr'
+                    ? 'High-speed OTP and 2FA verification code extractor with instant clipboard copy ile gelen kutusuna düşen güvenlik kodları tek dokunuşla panonuza aktarılır.'
+                    : 'High-speed OTP and 2FA verification code extractor with instant clipboard copy detects 4-8 digit numeric codes and copies them to your clipboard in 1 click.'}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-[15px] text-white font-bold flex items-center gap-2 mb-2 font-['Sora']">
+                  <Network className="w-4 h-4 text-cyan-500" /> {lang === 'tr' ? 'Web Audio Sesli Bildirimler' : 'Zero-Tracking Web Audio Alerts'}
+                </h3>
+                <p className="text-slate-400 text-[14px] leading-relaxed">
+                  {lang === 'tr'
+                    ? 'Real-time Web Audio incoming email chime alerts with zero tracking ile sekmeler arası gezinirken bile gelen yeni e-postalardan anında haberdar olun.'
+                    : 'Real-time Web Audio incoming email chime alerts with zero tracking synthesize chimes locally in your browser for instant audio notification without tracking cookies.'}
+                </p>
               </div>
             </div>
           </div>
@@ -201,6 +231,10 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
                 </thead>
                 <tbody className="text-[12px]">
                   <CompareRow feature={lang === 'tr' ? 'Anlık WebSocket Teslimi' : 'Real-time WebSocket'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? '1-Click Quick Domain Switching' : '1-Click Quick Domain Switching'} me={true} m={false} g={true} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'High-Speed OTP & 2FA Extractor' : 'High-Speed OTP & 2FA Extractor'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Web Audio Sesli Bildirim (Zero-Tracking)' : 'Web Audio Chime Alerts (Zero-Tracking)'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'RFC 5322 (.eml) & JSON Dışa Aktarma' : 'RFC 5322 (.eml) & JSON Export'} me={true} m={false} g={false} t10={false} />
                   <CompareRow feature={lang === 'tr' ? 'Sıfır Kayıt / RAM-only' : 'Zero-Log / RAM-only'} me={true} m={false} g={false} t10={false} />
                   <CompareRow feature={lang === 'tr' ? 'Özel Adres Oluşturma' : 'Custom Addresses'} me={true} m={true} g={true} t10={false} />
                   <CompareRow feature={lang === 'tr' ? 'Şifre Üretici' : 'Password Generator'} me={true} m={false} g={false} t10={false} />

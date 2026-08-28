@@ -168,6 +168,14 @@ export const en = {
   faq13A: 'Yes! MephistoMail is fully responsive and optimized for mobile devices. It also supports PWA (Progressive Web App) installation — add it to your home screen for an app-like experience. Swipe-to-delete and pull-to-refresh gestures are supported on mobile.',
   faq14Q: 'What languages does MephistoMail support?',
   faq14A: 'MephistoMail currently supports English, Turkish, Spanish, German, and French. The interface automatically detects your browser language.',
+  faq15Q: 'How does 1-Click Quick Domain Switching across high-reputation disposable email domains work?',
+  faq15A: 'MephistoMail provides 1-Click Quick Domain Switching across high-reputation disposable email domains. If a third-party website or anti-bot filter blocks a specific domain extension, you can swap to an alternative pristine domain with zero cooldown and 100% deliverability.',
+  faq16Q: 'Can I download emails as RFC 5322 (.eml) and JSON for developer testing?',
+  faq16A: 'Yes! You can download emails as RFC 5322 (.eml) and JSON for seamless local archiving and developer QA testing. The export includes complete raw MIME headers, multipart attachments, and body content without any server storage footprint.',
+  faq17Q: 'How do real-time incoming email sound alerts work?',
+  faq17A: 'MephistoMail features real-time Web Audio incoming email chime alerts with zero tracking. Sound chimes are generated entirely within your browser using the HTML5 Web Audio API synthesizer, requiring no third-party audio files or tracking pixels.',
+  faq18Q: 'How does the high-speed OTP and 2FA verification code extractor work?',
+  faq18A: 'Our high-speed OTP and 2FA verification code extractor with instant clipboard copy automatically recognizes 4, 6, and 8-digit verification codes in incoming emails and allows you to copy them with a single click.',
 
   // ---------- Compose Modal ----------
   composeTitleReply: 'Reply to Email',

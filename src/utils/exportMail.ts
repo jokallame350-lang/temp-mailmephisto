@@ -23,7 +23,7 @@ export const downloadAsEML = (email: EmailDetail) => {
   const senderAddress = typeof email.from === 'string' ? email.from : email.from.address;
   const senderName = typeof email.from === 'object' && email.from.name ? email.from.name : '';
   const fromHeader = senderName ? `"${senderName}" <${senderAddress}>` : senderAddress;
-  const toHeader = email.headerFields?.to || email.headerFields?.To || 'Undisclosed-recipients:;';
+  const toHeader = email.headerFields?.to || email.headerFields?.To || (email as any).to || 'Undisclosed-recipients:;';
 
   const htmlBody = email.html && email.html.length > 0 ? (typeof email.html[0] === 'string' ? email.html[0] : JSON.stringify(email.html[0])) : '';
   const textBody = email.text || email.intro || '';
@@ -74,7 +74,7 @@ export const downloadAsTXT = (email: EmailDetail) => {
   const senderAddress = typeof email.from === 'string' ? email.from : email.from.address;
   const senderName = typeof email.from === 'object' && email.from.name ? email.from.name : '';
   const fromHeader = senderName ? `"${senderName}" <${senderAddress}>` : senderAddress;
-  const toHeader = email.headerFields?.to || email.headerFields?.To || '';
+  const toHeader = email.headerFields?.to || email.headerFields?.To || (email as any).to || '';
 
   const plainText = email.text || email.intro || (email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0].replace(/<[^>]*>/g, '') : '') : '');
 

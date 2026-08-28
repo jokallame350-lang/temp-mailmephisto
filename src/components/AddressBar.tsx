@@ -219,7 +219,6 @@ const AddressBar: React.FC<AddressBarProps> = ({
         date: new Date().toLocaleTimeString()
       }
     }));
-    alert(lang === 'tr' ? `⚡ Test OTP (${otpCode}) Gönderildi! Aşağıdaki gelen kutunuzu kontrol edin.` : `⚡ Test OTP (${otpCode}) Sent! Check your inbox below.`);
   }, [mailbox?.address, lang]);
 
   const exportMailboxTxt = useCallback(() => {
@@ -385,41 +384,47 @@ const AddressBar: React.FC<AddressBarProps> = ({
 
                         {/* Domain List Items */}
                         <div className="overflow-y-auto max-h-56 pr-1 space-y-1 custom-scrollbar">
-                          {filteredDomains.map((d) => {
-                            const isActive = d.toLowerCase() === currentDomain.toLowerCase();
-                            return (
-                              <button
-                                key={d}
-                                type="button"
-                                role="option"
-                                aria-selected={isActive}
-                                onClick={(e) => handleDomainSelect(d, e)}
-                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-mono transition-all duration-150 border cursor-pointer ${
-                                  isActive
-                                    ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 shadow-sm shadow-orange-500/10 font-bold'
-                                    : 'bg-white/[0.02] text-slate-300 hover:text-white hover:bg-orange-500/10 border-white/5 hover:border-orange-500/30'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-orange-500 animate-pulse' : 'bg-slate-600'}`} />
-                                  <span className="truncate font-semibold">@{d}</span>
-                                </div>
-                                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                                  {isActive ? (
-                                    <span className="flex items-center gap-1 text-[9px] font-sans font-bold text-orange-400 bg-orange-500/20 px-1.5 py-0.5 rounded-full border border-orange-500/30">
-                                      <Check className="w-2.5 h-2.5 text-orange-400" />
-                                      {lang === 'tr' ? 'Aktif' : 'Active'}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[9px] font-sans text-slate-500 hover:text-orange-400 flex items-center gap-0.5">
-                                      <Zap className="w-2.5 h-2.5 text-amber-400" />
-                                      {lang === 'tr' ? 'Seç' : 'Select'}
-                                    </span>
-                                  )}
-                                </div>
-                              </button>
-                            );
-                          })}
+                          {filteredDomains.length === 0 ? (
+                            <div className="text-center py-4 text-xs text-slate-500 font-mono">
+                              {lang === 'tr' ? 'Domain bulunamadı' : 'No domains found'}
+                            </div>
+                          ) : (
+                            filteredDomains.map((d) => {
+                              const isActive = d.toLowerCase() === currentDomain.toLowerCase();
+                              return (
+                                <button
+                                  key={d}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={isActive}
+                                  onClick={(e) => handleDomainSelect(d, e)}
+                                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-mono transition-all duration-150 border cursor-pointer ${
+                                    isActive
+                                      ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 shadow-sm shadow-orange-500/10 font-bold'
+                                      : 'bg-white/[0.02] text-slate-300 hover:text-white hover:bg-orange-500/10 border-white/5 hover:border-orange-500/30'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-orange-500 animate-pulse' : 'bg-slate-600'}`} />
+                                    <span className="truncate font-semibold">@{d}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                                    {isActive ? (
+                                      <span className="flex items-center gap-1 text-[9px] font-sans font-bold text-orange-400 bg-orange-500/20 px-1.5 py-0.5 rounded-full border border-orange-500/30">
+                                        <Check className="w-2.5 h-2.5 text-orange-400" />
+                                        {lang === 'tr' ? 'Aktif' : 'Active'}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[9px] font-sans text-slate-500 hover:text-orange-400 flex items-center gap-0.5">
+                                        <Zap className="w-2.5 h-2.5 text-amber-400" />
+                                        {lang === 'tr' ? 'Seç' : 'Select'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })
+                          )}
                         </div>
                       </div>
                     )}

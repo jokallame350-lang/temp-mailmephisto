@@ -22,11 +22,11 @@ export const extractOTP = (text: string): string | null => {
   if (otpCache.has(text)) return otpCache.get(text)!;
 
   const patterns = [
-    /\b(\d{4,8})\b/,
-    /code[:\s]+(\d{4,8})/i,
-    /kod[:\s]+(\d{4,8})/i,
-    /verification[:\s]+(\d{4,8})/i,
-    /doğrulama[:\s]+(\d{4,8})/i,
+    /(?:code|kod|verification|doğrulama|pin|otp|passcode|şifre)[:\s#-]*(\d{4,8})/i,
+    /\b(\d{6})\b/,
+    /\b(\d{8})\b/,
+    /\b(\d{5})\b/,
+    /\b(\d{4})\b/,
   ];
   let found: string | null = null;
   for (const pattern of patterns) {

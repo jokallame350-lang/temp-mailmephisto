@@ -19,8 +19,8 @@ const defaultStats: AppStats = {
 const defaultFilters: NotificationFilter = {
     verification: true,
     security: true,
-    newsletter: false,
-    other: false,
+    newsletter: true,
+    other: true,
 };
 
 export function useEmails(
