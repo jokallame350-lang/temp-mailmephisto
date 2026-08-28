@@ -2,7 +2,7 @@ import { EmailDetail } from '../types';
 import DOMPurify from 'dompurify';
 
 /**
- * Utility functions for exporting emails into EML, JSON, and PDF/Print formats.
+ * Utility functions for exporting emails into RFC 822/5322 EML, JSON, TXT, and PDF/Print formats.
  */
 
 // Helper to trigger browser file download
@@ -18,19 +18,21 @@ const triggerDownload = (content: string, filename: string, mimeType: string) =>
   URL.revokeObjectURL(url);
 };
 
-// Export as RFC 822 EML file
+// Export as RFC 5322/2822 EML file (standard format with Date, From, To, Subject, MIME-Version, Content-Type, and body)
 export const downloadAsEML = (email: EmailDetail) => {
   const senderAddress = typeof email.from === 'string' ? email.from : email.from.address;
   const senderName = typeof email.from === 'object' && email.from.name ? email.from.name : '';
   const fromHeader = senderName ? `"${senderName}" <${senderAddress}>` : senderAddress;
+  const toHeader = email.headerFields?.to || email.headerFields?.To || 'Undisclosed-recipients:;';
 
-  const htmlBody = email.html && email.html.length > 0 ? email.html[0] : '';
+  const htmlBody = email.html && email.html.length > 0 ? (typeof email.html[0] === 'string' ? email.html[0] : JSON.stringify(email.html[0])) : '';
   const textBody = email.text || email.intro || '';
 
   const emlLines: string[] = [
-    `From: ${fromHeader}`,
-    `Subject: ${email.subject || '(No Subject)'}`,
     `Date: ${new Date(email.createdAt).toUTCString()}`,
+    `From: ${fromHeader}`,
+    `To: ${toHeader}`,
+    `Subject: ${email.subject || '(No Subject)'}`,
     `MIME-Version: 1.0`,
     `Content-Type: multipart/alternative; boundary="----=_MephistoMail_Boundary"`,
     `X-Mailer: MephistoMail Privacy Shield`,
@@ -65,6 +67,29 @@ export const downloadAsJSON = (email: EmailDetail) => {
   const jsonContent = JSON.stringify(email, null, 2);
   const filename = `${(email.subject || 'email').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${email.id.substring(0, 8)}.json`;
   triggerDownload(jsonContent, filename, 'application/json');
+};
+
+// Export as plain text TXT file
+export const downloadAsTXT = (email: EmailDetail) => {
+  const senderAddress = typeof email.from === 'string' ? email.from : email.from.address;
+  const senderName = typeof email.from === 'object' && email.from.name ? email.from.name : '';
+  const fromHeader = senderName ? `"${senderName}" <${senderAddress}>` : senderAddress;
+  const toHeader = email.headerFields?.to || email.headerFields?.To || '';
+
+  const plainText = email.text || email.intro || (email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0].replace(/<[^>]*>/g, '') : '') : '');
+
+  const txtLines: string[] = [
+    `From: ${fromHeader}`,
+    ...(toHeader ? [`To: ${toHeader}`] : []),
+    `Date: ${new Date(email.createdAt).toLocaleString()}`,
+    `Subject: ${email.subject || '(No Subject)'}`,
+    `--------------------------------------------------`,
+    ``,
+    plainText,
+  ];
+
+  const filename = `${(email.subject || 'email').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${email.id.substring(0, 8)}.txt`;
+  triggerDownload(txtLines.join('\r\n'), filename, 'text/plain;charset=utf-8');
 };
 
 // Print / Save as PDF via browser print dialogue

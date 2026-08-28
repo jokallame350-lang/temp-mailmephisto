@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, FileText, FileSpreadsheet } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Check, Pencil, Globe, Loader2, Timer, Plus, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, FileText, FileSpreadsheet, ChevronDown, Search, X, Volume2, VolumeX } from 'lucide-react';
 import { translations, Language } from '../translations';
+import { isSoundEnabled, toggleSound } from '../utils/audioNotification';
+import { fetchDomains, GUERRILLA_DOMAINS } from '../services/mailService';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 saat
 
@@ -76,6 +78,7 @@ interface AddressBarProps {
   onDelete: () => void;
   progress: number;
   lang: Language;
+  onChangeDomain?: (domain: string) => void;
   onCreateCustom?: () => void;
   onIdentity?: () => void;
   onForwarding?: () => void;
@@ -90,12 +93,91 @@ interface AddressBarProps {
 
 const AddressBar: React.FC<AddressBarProps> = ({
   mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete,
-  progress, lang, onCreateCustom, onIdentity, onShareDrop,
+  progress, lang, onChangeDomain, onCreateCustom, onIdentity, onShareDrop,
   onOpenCustomDomain, autoVerifyEnabled, onToggleAutoVerify, onCopyMagicUrl
 }) => {
   const t = translations[lang];
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => isSoundEnabled());
+
+  // Quick Domain Switcher Popover State
+  const [isDomainOpen, setIsDomainOpen] = useState(false);
+  const [domainList, setDomainList] = useState<string[]>(GUERRILLA_DOMAINS);
+  const [domainSearch, setDomainSearch] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const domainBtnRef = useRef<HTMLButtonElement>(null);
+
+  const addressParts = mailbox?.address ? mailbox.address.split('@') : ['', ''];
+  const username = addressParts[0] || '';
+  const currentDomain = addressParts[1] || '';
+
+  // Fetch available domains with resilient fallback
+  useEffect(() => {
+    fetchDomains().then(res => {
+      if (res?.domains?.length) {
+        setDomainList(res.domains);
+      }
+    }).catch(() => {
+      // Fallback already in initial state
+    });
+  }, []);
+
+  // Handle click outside & escape key to close popover
+  useEffect(() => {
+    if (!isDomainOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        domainBtnRef.current &&
+        !domainBtnRef.current.contains(target)
+      ) {
+        setIsDomainOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsDomainOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDomainOpen]);
+
+  const handleDomainSelect = useCallback((dom: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setIsDomainOpen(false);
+    if (dom.toLowerCase() === currentDomain.toLowerCase()) return;
+    if (onChangeDomain) {
+      onChangeDomain(dom);
+    }
+  }, [currentDomain, onChangeDomain]);
+
+  const filteredDomains = useMemo(() => {
+    if (!domainSearch.trim()) return domainList;
+    return domainList.filter(d => d.toLowerCase().includes(domainSearch.toLowerCase().trim()));
+  }, [domainList, domainSearch]);
+
+  useEffect(() => {
+    const handleSoundChange = (e: Event) => {
+      const custom = e as CustomEvent;
+      if (custom.detail && typeof custom.detail.enabled === 'boolean') {
+        setSoundEnabledState(custom.detail.enabled);
+      } else {
+        setSoundEnabledState(isSoundEnabled());
+      }
+    };
+    window.addEventListener('mephisto-sound-toggle', handleSoundChange);
+    return () => window.removeEventListener('mephisto-sound-toggle', handleSoundChange);
+  }, []);
 
   const handleCopy = useCallback(() => {
     if (mailbox?.address) {
@@ -199,9 +281,9 @@ const AddressBar: React.FC<AddressBarProps> = ({
       >
         <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500/20 to-orange-400/20 rounded-2xl blur-sm opacity-0 group-hover:opacity-100 transition duration-300 pointer-events-none"></div>
 
-        <div className="relative bg-[#0f1115] border border-white/10 rounded-xl sm:rounded-2xl p-1 shadow-xl flex items-center overflow-hidden h-14 sm:h-16 transition-colors duration-200">
+        <div className="relative bg-[#0f1115] border border-white/10 rounded-xl sm:rounded-2xl p-1 shadow-xl flex items-center overflow-visible h-14 sm:h-16 transition-colors duration-200">
           {/* İlerleme Çubuğu */}
-          <div className="absolute bottom-0 left-0 h-[2px] bg-orange-500 transition-all duration-100 ease-linear z-10" style={{ width: `${progress}%` }}></div>
+          <div className="absolute bottom-0 left-0 h-[2px] bg-orange-500 transition-all duration-100 ease-linear z-10 rounded-full" style={{ width: `${progress}%` }}></div>
 
           {/* Sol İkon */}
           <div className="pl-2 sm:pl-4 pr-1 sm:pr-3 flex items-center justify-center flex-shrink-0">
@@ -212,14 +294,138 @@ const AddressBar: React.FC<AddressBarProps> = ({
             )}
           </div>
 
-          {/* Mail Adresi */}
-          <div className="flex-grow flex items-center justify-center md:justify-start min-w-0">
+          {/* Mail Adresi & Domain Switcher */}
+          <div className="flex-grow flex items-center justify-center md:justify-start min-w-0 pr-1">
             {isLoading ? (
               <div className="h-5 w-40 bg-white/10 rounded animate-pulse"></div>
             ) : (
-              <span className={`text-base sm:text-lg md:text-xl font-bold font-mono tracking-tight truncate w-full text-center md:text-left transition-colors duration-200 ${copied ? 'text-green-500' : 'text-white'}`}>
-                {mailbox?.address}
-              </span>
+              <div className="flex items-center min-w-0 max-w-full text-base sm:text-lg md:text-xl font-mono tracking-tight select-none">
+                <span className={`font-bold truncate transition-colors duration-200 ${copied ? 'text-green-500' : 'text-white'}`}>
+                  {username}
+                </span>
+                {currentDomain && (
+                  <div className="relative inline-flex items-center flex-shrink-0">
+                    <button
+                      ref={domainBtnRef}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsDomainOpen(prev => !prev);
+                      }}
+                      className={`group/dom ml-1 px-1.5 sm:px-2 py-0.5 rounded-lg flex items-center gap-1 font-bold text-xs sm:text-sm md:text-base transition-all duration-200 border cursor-pointer ${
+                        isDomainOpen
+                          ? 'bg-orange-500/25 text-orange-300 border-orange-500/60 shadow-lg shadow-orange-500/20 ring-2 ring-orange-500/30 scale-105'
+                          : 'text-orange-400 hover:text-orange-200 bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/30 hover:border-orange-500/50'
+                      }`}
+                      title={lang === 'tr' ? '1 Tıkla Alan Adı Değiştir (@' + currentDomain + ')' : '1-Click Quick Domain Switch (@' + currentDomain + ')'}
+                      aria-expanded={isDomainOpen}
+                      aria-haspopup="listbox"
+                    >
+                      <span className="truncate">@{currentDomain}</span>
+                      <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isDomainOpen ? 'rotate-180 text-orange-300' : 'text-orange-400/80 group-hover/dom:text-orange-200'}`} />
+                    </button>
+
+                    {/* Quick Domain Switch Popover Dropdown */}
+                    {isDomainOpen && (
+                      <div
+                        ref={dropdownRef}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute top-[calc(100%+10px)] left-0 sm:-left-12 w-72 sm:w-80 bg-[#0c0d12]/95 backdrop-blur-2xl border border-orange-500/40 rounded-2xl shadow-2xl shadow-black/95 p-3 z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col gap-2.5"
+                        role="listbox"
+                        aria-label={lang === 'tr' ? 'Alan Adı Listesi' : 'Domain List'}
+                      >
+                        {/* Popover Header */}
+                        <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+                              <Globe className="w-3.5 h-3.5 text-orange-400" />
+                            </div>
+                            <div>
+                              <h4 className="text-[11px] font-bold text-white uppercase tracking-wider">
+                                {lang === 'tr' ? 'Hızlı Domain Değiştir' : 'Quick Domain Switch'}
+                              </h4>
+                              <p className="text-[9px] text-slate-400">
+                                {lang === 'tr' ? '1 Tıkla Anında Geçiş' : 'Instant 1-Click Switch'}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsDomainOpen(false)}
+                            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                            aria-label="Close"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Search in Dropdown */}
+                        {domainList.length > 4 && (
+                          <div className="relative">
+                            <Search className="w-3 h-3 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <input
+                              type="text"
+                              value={domainSearch}
+                              onChange={(e) => setDomainSearch(e.target.value)}
+                              placeholder={lang === 'tr' ? 'Domain ara...' : 'Search domain...'}
+                              className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-orange-500/50"
+                              autoFocus
+                            />
+                            {domainSearch && (
+                              <button
+                                type="button"
+                                onClick={() => setDomainSearch('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Domain List Items */}
+                        <div className="overflow-y-auto max-h-56 pr-1 space-y-1 custom-scrollbar">
+                          {filteredDomains.map((d) => {
+                            const isActive = d.toLowerCase() === currentDomain.toLowerCase();
+                            return (
+                              <button
+                                key={d}
+                                type="button"
+                                role="option"
+                                aria-selected={isActive}
+                                onClick={(e) => handleDomainSelect(d, e)}
+                                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-mono transition-all duration-150 border cursor-pointer ${
+                                  isActive
+                                    ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 shadow-sm shadow-orange-500/10 font-bold'
+                                    : 'bg-white/[0.02] text-slate-300 hover:text-white hover:bg-orange-500/10 border-white/5 hover:border-orange-500/30'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-orange-500 animate-pulse' : 'bg-slate-600'}`} />
+                                  <span className="truncate font-semibold">@{d}</span>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                                  {isActive ? (
+                                    <span className="flex items-center gap-1 text-[9px] font-sans font-bold text-orange-400 bg-orange-500/20 px-1.5 py-0.5 rounded-full border border-orange-500/30">
+                                      <Check className="w-2.5 h-2.5 text-orange-400" />
+                                      {lang === 'tr' ? 'Aktif' : 'Active'}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] font-sans text-slate-500 hover:text-orange-400 flex items-center gap-0.5">
+                                      <Zap className="w-2.5 h-2.5 text-amber-400" />
+                                      {lang === 'tr' ? 'Seç' : 'Select'}
+                                    </span>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -287,6 +493,26 @@ const AddressBar: React.FC<AddressBarProps> = ({
               <span>Auto-Verify {autoVerifyEnabled ? '[AÇIK]' : '[KAPALI]'}</span>
             </button>
           )}
+
+          <button
+            onClick={() => {
+              const next = toggleSound();
+              setSoundEnabledState(next);
+            }}
+            className={`flex items-center justify-center gap-1.5 px-3.5 py-2 border rounded-xl font-bold text-[11px] transition-all shadow-sm min-h-[44px] ${
+              soundEnabled
+                ? 'bg-orange-500/15 text-orange-300 border-orange-500/30 hover:bg-orange-500/25'
+                : 'bg-white/[0.03] text-slate-400 hover:text-slate-200 border-white/10 hover:bg-white/[0.06]'
+            }`}
+            title={
+              soundEnabled
+                ? (lang === 'tr' ? 'Bildirim Sesini Kapat (Sessiz)' : 'Mute Notification Sound')
+                : (lang === 'tr' ? 'Bildirim Sesini Aç' : 'Enable Notification Sound')
+            }
+          >
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-orange-400" /> : <VolumeX className="w-3.5 h-3.5 text-slate-500" />}
+            <span>{soundEnabled ? (lang === 'tr' ? 'Ses: Açık' : 'Sound: ON') : (lang === 'tr' ? 'Ses: Kapalı' : 'Sound: OFF')}</span>
+          </button>
 
           {onIdentity && (
             <button onClick={onIdentity} className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-[11px] transition-all min-h-[44px]" title={lang === 'tr' ? 'Sahte Kimlik' : 'Fake Identity'}>

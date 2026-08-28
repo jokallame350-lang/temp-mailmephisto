@@ -276,6 +276,49 @@ export function useMailbox() {
         setActiveAccountId(mailbox.id);
     }, []);
 
+    const changeDomain = useCallback(async (newDomain: string) => {
+        if (!activeAccount) return { success: false };
+        const parts = activeAccount.address.split('@');
+        const username = parts[0];
+        const currentDomain = parts[1] || '';
+        if (currentDomain.toLowerCase() === newDomain.toLowerCase()) {
+            return { success: true, address: activeAccount.address };
+        }
+
+        setIsLoadingAccount(true);
+        try {
+            const domainRes = await fetchDomains();
+            const provider = domainRes.domainProviderMap[newDomain] || 'guerrilla';
+
+            if (activeAccount.apiBase === 'guerrilla' && provider === 'guerrilla') {
+                const newAddress = `${username}@${newDomain}`;
+                const updatedAccount: Mailbox = {
+                    ...activeAccount,
+                    address: newAddress,
+                };
+                setAccounts(prev => prev.map(a => a.id === activeAccount.id ? updatedAccount : a));
+                if (activeAccount.password) {
+                    storeCredentials(activeAccount.id, newAddress, activeAccount.password);
+                }
+                return { success: true, address: newAddress };
+            } else {
+                const newMailbox = await createCustomMailbox(username, newDomain, provider);
+                const mailboxWithDate: Mailbox = { ...newMailbox, createdAt: Date.now() };
+                if (newMailbox.password) {
+                    storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
+                }
+                setAccounts(prev => [mailboxWithDate, ...prev]);
+                setActiveAccountId(mailboxWithDate.id);
+                return { success: true, address: mailboxWithDate.address };
+            }
+        } catch (err) {
+            console.error('Failed to change domain:', err);
+            return { success: false };
+        } finally {
+            setIsLoadingAccount(false);
+        }
+    }, [activeAccount]);
+
     return {
         accounts,
         activeAccount,
@@ -284,6 +327,7 @@ export function useMailbox() {
         setActiveAccountId,
         createQuickAccount,
         handleCreateCustom,
+        changeDomain,
         deleteAccount,
         updateAccountLabel,
         setAutoDelete,

@@ -201,23 +201,43 @@ const formatSmartSubject = (subject: string, excerpt: string, fromAddress: strin
 
 const isGuerrilla = (provider: string): boolean => provider === 'guerrilla';
 
-// ─── Guerrilla Mail Helpers ──────────────────────────────────────────
+export const GUERRILLA_DOMAINS: string[] = [
+  'guerrillamail.com',
+  'grr.la',
+  'sharklasers.com',
+  'guerrillamail.info',
+  'guerrillamailblock.com',
+  'guerrillamail.net',
+  'guerrillamail.biz',
+  'guerrillamail.de',
+  'pokemail.net',
+  'spam4.me',
+];
 
-/** Guerrilla Mail'den kullanılabilir domainleri çeker */
-const getGuerrillaDomains = async (): Promise<string[]> => {
+/** Guerrilla Mail'den kullanılabilir domainleri çeker - Sessiz fallback ile 100% kesintisiz */
+export const getGuerrillaDomains = async (): Promise<string[]> => {
+  const domains = new Set<string>();
   try {
-    const res = await safeFetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, undefined, 'guerrilla');
-    if (!res.ok) return [];
-    const data = await res.json();
-    const addr: string = data.email_addr || '';
-    const domain = addr.split('@')[1];
-    const domains = new Set<string>();
-    if (domain) domains.add(domain);
-    ['guerrillamailblock.com', 'guerrillamail.com', 'grr.la', 'sharklasers.com', 'guerrillamail.info', 'guerrillamail.net', 'guerrillamail.de'].forEach(d => domains.add(d));
-    return Array.from(domains);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(`${GUERRILLA_API}?f=get_email_address&lang=en`, {
+      signal: controller.signal,
+    }).catch(() => null);
+    clearTimeout(timeoutId);
+
+    if (res && res.ok) {
+      const data = await res.json().catch(() => null);
+      const addr: string = data?.email_addr || '';
+      const domain = addr.split('@')[1];
+      if (domain) domains.add(domain);
+    }
   } catch {
-    return [];
+    // Silent fallback — zero CORS errors logged
   }
+
+  // Add all primary GuerrillaMail domains
+  GUERRILLA_DOMAINS.forEach(d => domains.add(d));
+  return Array.from(domains);
 };
 
 /** Guerrilla Mail ile hesap oluşturur */
@@ -440,7 +460,7 @@ let cachedDomains: { domains: string[]; domainProviderMap: Record<string, string
 let isFetchingDomains = false;
 
 export const fetchDomains = async (): Promise<{ domains: string[]; domainProviderMap: Record<string, string>; apiBase: string }> => {
-  if (cachedDomains) return cachedDomains;
+  if (cachedDomains && cachedDomains.domains.length > 0) return cachedDomains;
   if (isFetchingDomains) {
     return new Promise((resolve) => {
       const interval = setInterval(() => {
@@ -448,7 +468,7 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
           clearInterval(interval);
           resolve(cachedDomains);
         }
-      }, 500);
+      }, 100);
     });
   }
 
@@ -456,43 +476,24 @@ export const fetchDomains = async (): Promise<{ domains: string[]; domainProvide
   const allDomains: string[] = [];
   const domainProviderMap: Record<string, string> = {};
 
-  // Hydra providers + Guerrilla Mail paralel sorgula
-  const results = await Promise.allSettled([
-    // Hydra providers (mail.tm, mail.gw)
-    ...Object.keys(HYDRA_PROVIDERS).map(async (providerKey) => {
-      const apiBase = HYDRA_PROVIDERS[providerKey];
-      try {
-        const res = await safeFetch(`${apiBase}/domains`, undefined, providerKey);
-        if (!res.ok) return { providerKey, domains: [] as string[] };
-        const data = await res.json();
-        const domains = data['hydra:member']?.map((d: any) => d.domain).filter(Boolean) || [];
-        return { providerKey, domains };
-      } catch {
-        return { providerKey, domains: [] as string[] };
-      }
-    }),
-    // Guerrilla Mail
-    (async () => {
-      const domains = await getGuerrillaDomains();
-      return { providerKey: 'guerrilla', domains };
-    })(),
-  ]);
-
-  for (const result of results) {
-    if (result.status === 'fulfilled' && result.value.domains.length > 0) {
-      for (const domain of result.value.domains) {
-        if (!allDomains.includes(domain)) {
-          allDomains.push(domain);
-          domainProviderMap[domain] = result.value.providerKey;
-        }
+  try {
+    const guerrillaDomains = await getGuerrillaDomains();
+    for (const domain of guerrillaDomains) {
+      if (!allDomains.includes(domain)) {
+        allDomains.push(domain);
+        domainProviderMap[domain] = 'guerrilla';
       }
     }
+  } catch {
+    // Silent fallback — zero CORS errors logged
   }
 
-  // Fallback
-  if (allDomains.length === 0) {
-    allDomains.push('guerrillamailblock.com', 'sharklasers.com', 'grr.la');
-    allDomains.forEach(d => domainProviderMap[d] = 'guerrilla');
+  // Ensure full fallback list is always populated
+  for (const d of GUERRILLA_DOMAINS) {
+    if (!allDomains.includes(d)) {
+      allDomains.push(d);
+      domainProviderMap[d] = 'guerrilla';
+    }
   }
 
   cachedDomains = { domains: allDomains, domainProviderMap, apiBase: 'guerrilla' };
@@ -507,7 +508,7 @@ export const generateMailbox = async (): Promise<Mailbox> => {
   const { domains, domainProviderMap } = await fetchDomains();
 
   const validDomains = domains.filter(d => d !== 'mephistomail.site');
-  const domainList = validDomains.length > 0 ? validDomains : ['guerrillamailblock.com', 'sharklasers.com', 'grr.la'];
+  const domainList = validDomains.length > 0 ? validDomains : GUERRILLA_DOMAINS;
 
   const domain = domainList[Math.floor(Math.random() * domainList.length)];
   const provider = domainProviderMap[domain] || 'guerrilla';

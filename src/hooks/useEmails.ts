@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
 import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
 import { extractActionLinks } from '../utils/actionLinks';
+import { playNotificationSound } from '../utils/audioNotification';
 
 const REFRESH_INTERVAL = 2500; // 2.5 saniyede bir ultra-hızlı senkronize kontrol
 const REFRESH_INTERVAL_HIDDEN = 20000; // Sekme arka plandayken 20 sn
@@ -55,6 +56,7 @@ export function useEmails(
                     aiCategory: 'Verification',
                 };
                 setEmails(prev => [newEmail, ...prev]);
+                playNotificationSound();
                 if (onNewEmail) {
                     onNewEmail(fromStr, newEmail.subject);
                 }
@@ -101,24 +103,6 @@ export function useEmails(
     useEffect(() => {
         localStorage.setItem(FILTER_KEY, JSON.stringify(notifFilters));
     }, [notifFilters]);
-
-    const playNotificationSound = useCallback(() => {
-        try {
-            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-            const oscillator = ctx.createOscillator();
-            const gain = ctx.createGain();
-            oscillator.connect(gain);
-            gain.connect(ctx.destination);
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-            oscillator.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-            oscillator.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
-            gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-            oscillator.start(ctx.currentTime);
-            oscillator.stop(ctx.currentTime + 0.4);
-        } catch { /* Ses çalma hatası */ }
-    }, []);
 
     const shouldNotify = useCallback((category: string) => {
         const key = category.toLowerCase() as keyof NotificationFilter;
@@ -380,14 +364,26 @@ export function useEmails(
 
     // Arama filtreleme (useMemo to prevent creating new array reference on unrelated re-renders)
     const filteredEmails = useMemo(() => {
-        if (!searchQuery) return emails;
-        const q = searchQuery.toLowerCase();
+        if (!searchQuery || !searchQuery.trim()) return emails;
+        const q = searchQuery.toLowerCase().trim();
         return emails.filter(e => {
-            const from = typeof e.from === 'string' ? e.from : `${e.from?.name || ''} ${e.from?.address || ''}`;
+            const fromName = typeof e.from === 'string' ? e.from : (e.from?.name || '');
+            const fromAddress = typeof e.from === 'object' ? (e.from?.address || '') : (typeof e.from === 'string' ? e.from : '');
+            const fullFrom = `${fromName} ${fromAddress}`.toLowerCase();
+            const subject = (e.subject || '').toLowerCase();
+            const intro = (e.intro || '').toLowerCase();
+
+            // Check for OTP code pattern
+            const otpMatch = (e.subject || '').match(/\b\d{4,8}\b/) || (e.intro || '').match(/\b\d{4,8}\b/);
+            const otpCode = otpMatch ? otpMatch[0] : '';
+
             return (
-                from.toLowerCase().includes(q) ||
-                (e.subject && e.subject.toLowerCase().includes(q)) ||
-                (e.intro && e.intro.toLowerCase().includes(q))
+                fullFrom.includes(q) ||
+                fromName.toLowerCase().includes(q) ||
+                fromAddress.toLowerCase().includes(q) ||
+                subject.includes(q) ||
+                intro.includes(q) ||
+                (otpCode && otpCode.includes(q))
             );
         });
     }, [emails, searchQuery]);

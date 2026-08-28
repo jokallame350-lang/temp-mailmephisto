@@ -4,7 +4,7 @@ import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, C
 import DOMPurify from 'dompurify';
 import { translations, Language } from '../translations';
 import { sanitizeAndBlockTrackers } from '../utils/trackerBlocker';
-import { downloadAsEML, downloadAsJSON, printEmailContent } from '../utils/exportMail';
+import { downloadAsEML, downloadAsJSON, downloadAsTXT, printEmailContent } from '../utils/exportMail';
 
 interface EmailViewerProps {
   email: EmailDetail | null;
@@ -82,6 +82,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
   const [viewSource, setViewSource] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [rawBodyCopied, setRawBodyCopied] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<'responsive' | 'mobile'>('responsive');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -118,7 +119,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     }
   }, [email, token]);
 
-  useEffect(() => { setViewSource(false); setShowHeaders(false); setCodeCopied(false); }, [email?.id]);
+  useEffect(() => { setViewSource(false); setShowHeaders(false); setCodeCopied(false); setRawBodyCopied(false); }, [email?.id]);
 
   // Sandbox HTML - Tracker Blocker & DOMPurify ile temizle (file:/// ve güvensiz protokolleri kesin engelle)
   const trackerResult = useMemo(() => {
@@ -341,16 +342,16 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     }
   }, [lang]);
 
-  const handleDownloadTXT = useCallback(() => {
+  const handleCopyRawBody = useCallback(() => {
     if (!email) return;
-    const content = `From: ${fromAddress}\nDate: ${email.createdAt}\nSubject: ${email.subject || ''}\n\n${email.text || ''}`;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${email.subject?.replace(/[^a-z0-9]/gi, '_').substring(0, 20) || 'email'}.txt`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }, [email, fromAddress]);
+    const rawContent = (email.html && email.html[0])
+      ? (typeof email.html[0] === 'string' ? email.html[0] : JSON.stringify(email.html[0]))
+      : (email.text || email.intro || '');
+
+    navigator.clipboard.writeText(rawContent);
+    setRawBodyCopied(true);
+    setTimeout(() => setRawBodyCopied(false), 2000);
+  }, [email]);
 
   const handleDownloadPDF = useCallback(() => {
     if (!iframeRef.current || !iframeRef.current.contentWindow) {
@@ -363,17 +364,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       window.print();
     }
   }, []);
-
-  const handleDownload = useCallback(() => {
-    const htmlBody = email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
-    const emlContent = `From: ${fromAddress}\nSubject: ${email.subject}\nDate: ${email.createdAt}\n\n${htmlBody || email.text || ''}`;
-    const blob = new Blob([emlContent], { type: 'message/rfc822' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${email.subject?.replace(/[^a-z0-9]/gi, '_').substring(0, 20) || 'email'}.eml`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }, [email, fromAddress]);
 
   const handleForward = useCallback(() => {
     const subject = encodeURIComponent(`Fwd: ${email.subject || ''}`);
@@ -396,7 +386,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
         <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase md:hidden min-h-[44px] px-2" aria-label={t.back}>
           <ArrowLeft className="w-4 h-4" aria-hidden="true" /> {t.back}
         </button>
-        <div className="flex items-center gap-1.5 md:gap-2 ml-auto">
+        <div className="flex items-center gap-1.5 md:gap-2 ml-auto flex-wrap">
           <button onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}>
             <Smartphone className="w-4 h-4" />
           </button>
@@ -406,16 +396,22 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <button onClick={() => { setViewSource(!viewSource); if (!viewSource) setShowHeaders(false); }} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewSource ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={t.sourceCode} aria-label={viewSource ? 'View rendered' : t.sourceCode} aria-pressed={viewSource}>
             {viewSource ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
           </button>
+          <button onClick={handleCopyRawBody} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={rawBodyCopied ? (lang === 'tr' ? 'Gövde Kopyalandı!' : 'Raw Body Copied!') : (lang === 'tr' ? 'Ham Mesaj Gövdesini Kopyala' : 'Copy Raw Message Body')} aria-label="Copy Raw Message Body">
+            {rawBodyCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          </button>
           <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={t.forward} aria-label={t.forward}>
             <Forward className="w-4 h-4" />
           </button>
-          <button onClick={() => downloadAsEML(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-purple-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'EML İndir (.eml)' : 'Download EML'}>
+          <button onClick={() => downloadAsEML(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-purple-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? '1-Tık EML İndir (.eml - RFC 822/5322)' : '1-Click Export .EML (RFC 822/5322)'} aria-label="Export EML">
             <FileType className="w-4 h-4" />
           </button>
-          <button onClick={() => downloadAsJSON(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'JSON İndir (.json)' : 'Download JSON'}>
+          <button onClick={() => downloadAsJSON(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? '1-Tık JSON İndir (.json)' : '1-Click Export JSON'} aria-label="Export JSON">
             <FileJson className="w-4 h-4" />
           </button>
-          <button onClick={() => printEmailContent(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'}>
+          <button onClick={() => downloadAsTXT(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-blue-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? '1-Tık TXT İndir (.txt)' : '1-Click Export TXT'} aria-label="Export TXT">
+            <FileText className="w-4 h-4" />
+          </button>
+          <button onClick={() => printEmailContent(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'} aria-label="Print or Download PDF">
             <Printer className="w-4 h-4" />
           </button>
         </div>

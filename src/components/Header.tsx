@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X, Crown } from 'lucide-react';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X, Crown, Volume2, VolumeX } from 'lucide-react';
 import { translations, Language } from '../translations';
+import { isSoundEnabled, toggleSound } from '../utils/audioNotification';
 
 interface HeaderProps {
   accounts: Mailbox[];
@@ -38,6 +39,25 @@ const Header: React.FC<HeaderProps> = ({
 
   const langDropRef = useRef<HTMLDivElement>(null);
   const [langOpen, setLangOpen] = useState(false);
+  const [soundEnabled, setSoundEnabledState] = useState<boolean>(() => isSoundEnabled());
+
+  useEffect(() => {
+    const handleSoundChange = (e: Event) => {
+      const custom = e as CustomEvent;
+      if (custom.detail && typeof custom.detail.enabled === 'boolean') {
+        setSoundEnabledState(custom.detail.enabled);
+      } else {
+        setSoundEnabledState(isSoundEnabled());
+      }
+    };
+    window.addEventListener('mephisto-sound-toggle', handleSoundChange);
+    return () => window.removeEventListener('mephisto-sound-toggle', handleSoundChange);
+  }, []);
+
+  const handleToggleSound = useCallback(() => {
+    const next = toggleSound();
+    setSoundEnabledState(next);
+  }, []);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -187,6 +207,24 @@ const Header: React.FC<HeaderProps> = ({
               <Download className="w-4 h-4" />
             </button>
           )}
+
+          {/* Bildirim Sesi Toggle (Web Audio API Chime) */}
+          <button
+            onClick={handleToggleSound}
+            className={`p-1.5 sm:p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center ${
+              soundEnabled
+                ? 'text-orange-400 hover:text-orange-300 hover:bg-orange-500/10'
+                : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+            }`}
+            title={
+              soundEnabled
+                ? (lang === 'tr' ? 'Bildirim Sesini Kapat (Sessiz)' : 'Mute Notification Sound')
+                : (lang === 'tr' ? 'Bildirim Sesini Aç' : 'Enable Notification Sound')
+            }
+            aria-label={soundEnabled ? 'Mute notification sound' : 'Enable notification sound'}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4 text-orange-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+          </button>
 
           {/* Dil Seçimi - Dropdown */}
           <div className="relative" ref={langDropRef}>

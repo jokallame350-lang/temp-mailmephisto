@@ -56,6 +56,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
     setActiveAccountId,
     createQuickAccount,
     handleCreateCustom: rawHandleCreateCustom,
+    changeDomain,
     deleteAccount,
     updateAccountLabel,
     setAutoDelete,
@@ -270,6 +271,16 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
     setLang(prev => langOrder[(langOrder.indexOf(prev) + 1) % langOrder.length]);
   }, [langOrder]);
 
+  const handleDomainChange = useCallback(async (newDomain: string) => {
+    const res = await changeDomain(newDomain);
+    if (res.success && res.address) {
+      addToast(
+        lang === 'tr' ? '🌐 Domain Değiştirildi' : '🌐 Domain Switched',
+        lang === 'tr' ? `Yeni adres: ${res.address}` : `New address: ${res.address}`
+      );
+    }
+  }, [changeDomain, addToast, lang]);
+
   const handleAddCustomDomain = useCallback((domain: string, username: string) => {
     const fullAddress = `${username}@${domain}`;
     const newBox: Mailbox = {
@@ -401,6 +412,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
                 lang={lang}
                 progress={progress}
                 onChange={handleNewAccount}
+                onChangeDomain={handleDomainChange}
                 onDelete={handleDeleteActiveAccount}
                 onCreateCustom={handleOpenCustom}
                 onIdentity={handleOpenIdentity}
