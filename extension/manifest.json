@@ -21,7 +21,8 @@
     "alarms",
     "clipboardWrite",
     "notifications",
-    "scripting"
+    "scripting",
+    "activeTab"
   ],
   "host_permissions": [
     "https://api.mail.gw/*",
