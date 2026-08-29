@@ -1,17 +1,14 @@
 const API_URL = "https://api.mail.gw";
 
-// State
 let currentAccount = null;
 let pollInterval = null;
 let knownMessageIds = new Set();
 let isFirstFetch = true;
 
-// DOM Elements
 const stateLoading = document.getElementById("stateLoading");
 const stateNoAccount = document.getElementById("stateNoAccount");
 const stateActive = document.getElementById("stateActive");
 const stateMessageDetail = document.getElementById("stateMessageDetail");
-
 const btnCreate = document.getElementById("btnCreate");
 const emailAddressInput = document.getElementById("emailAddress");
 const btnCopy = document.getElementById("btnCopy");
@@ -20,13 +17,11 @@ const btnDelete = document.getElementById("btnDelete");
 const msgCount = document.getElementById("msgCount");
 const messageList = document.getElementById("messageList");
 const btnBackToInbox = document.getElementById("btnBackToInbox");
-
 const detailFrom = document.getElementById("detailFrom");
 const detailSubject = document.getElementById("detailSubject");
 const detailLoading = document.getElementById("detailLoading");
 const detailFrame = document.getElementById("detailFrame");
 
-// Helpers
 const showState = (stateNode) => {
     stateLoading.classList.add("hidden");
     stateNoAccount.classList.add("hidden");
@@ -37,58 +32,50 @@ const showState = (stateNode) => {
 
 const generateRandomString = (length = 10) => {
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-    return result;
+    const bytes = new Uint32Array(length);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, value => chars[value % chars.length]).join("");
 };
 
 const extractOTP = (text) => {
     if (!text) return null;
-    const match = text.match(/\b\d{4,8}\b|\b[A-Z0-9]{6}\b/);
+    const match = String(text).match(/\b\d{4,8}\b|\b[A-Z0-9]{6}\b/);
     return match ? match[0] : null;
 };
 
-// API Functions
 const createAccount = async () => {
     showState(stateLoading);
     try {
         const domainRes = await fetch(`${API_URL}/domains`);
+        if (!domainRes.ok) throw new Error("Failed to load domains");
         const domainsData = await domainRes.json();
-        const domain = domainsData['hydra:member'][0].domain;
-
+        const members = domainsData['hydra:member'];
+        if (!Array.isArray(members) || !members[0]?.domain) throw new Error("No domain available");
+        const domain = members[0].domain;
         const address = `${generateRandomString()}@${domain}`;
-        const password = generateRandomString(12);
+        const password = generateRandomString(18);
 
         const accRes = await fetch(`${API_URL}/accounts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ address, password })
         });
-        const accData = await accRes.json();
+        const accData = await accRes.json().catch(() => ({}));
         if (!accRes.ok) throw new Error(accData.message || "Failed to create account");
 
         const tokenRes = await fetch(`${API_URL}/token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({ address, password })
         });
-        const tokenData = await tokenRes.json();
-        if (!tokenRes.ok) throw new Error("Failed to authenticate");
+        const tokenData = await tokenRes.json().catch(() => ({}));
+        if (!tokenRes.ok || !tokenData.token) throw new Error("Failed to authenticate");
 
-        currentAccount = {
-            id: accData.id,
-            address,
-            password,
-            token: tokenData.token
-        };
-
-        chrome.storage.local.set({ mephistoAccount: currentAccount }, () => {
-            isFirstFetch = true;
-            knownMessageIds.clear();
-            renderActiveState();
-            fetchMessages();
-            startPolling();
-        });
+        currentAccount = { id: accData.id, address, password, token: tokenData.token };
+        await chrome.storage.session.set({ mephistoAccount: currentAccount });
+        isFirstFetch = true;
+        knownMessageIds.clear();
+        renderActiveState();
+        fetchMessages();
+        startPolling();
     } catch (err) {
         console.error("Account creation failed:", err);
         showState(stateNoAccount);
@@ -100,155 +87,156 @@ const deleteAccount = async () => {
     showState(stateLoading);
     stopPolling();
     try {
-        await fetch(`${API_URL}/accounts/${currentAccount.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${currentAccount.token}` }
+        await fetch(`${API_URL}/accounts/${encodeURIComponent(currentAccount.id)}`, {
+            method: 'DELETE', headers: { 'Authorization': `Bearer ${currentAccount.token}` }
         });
-    } catch (err) { }
-
-    chrome.storage.local.remove(["mephistoAccount"], () => {
-        currentAccount = null;
-        chrome.action.setBadgeText({ text: "" });
-        showState(stateNoAccount);
-    });
+    } catch (err) { console.warn("Account deletion request failed", err); }
+    await chrome.storage.session.remove(["mephistoAccount"]);
+    currentAccount = null;
+    chrome.action.setBadgeText({ text: "" });
+    showState(stateNoAccount);
 };
 
 const fetchMessages = async () => {
     if (!currentAccount) return;
     try {
-        const res = await fetch(`${API_URL}/messages`, {
-            headers: { 'Authorization': `Bearer ${currentAccount.token}` }
-        });
+        const res = await fetch(`${API_URL}/messages`, { headers: { 'Authorization': `Bearer ${currentAccount.token}` } });
         if (res.ok) {
             const data = await res.json();
-            const activeMsgs = data['hydra:member'].filter(m => !m.isDeleted);
+            const activeMsgs = Array.isArray(data['hydra:member']) ? data['hydra:member'].filter(m => !m.isDeleted) : [];
             renderMessages(activeMsgs);
         }
-    } catch (err) { }
+    } catch (err) { console.warn("Message fetch failed", err); }
 };
 
 const fetchMessageDetail = async (id) => {
     detailLoading.classList.remove("hidden");
     detailFrame.classList.add("hidden");
     showState(stateMessageDetail);
-
     try {
-        const res = await fetch(`${API_URL}/messages/${id}`, {
-            headers: { 'Authorization': `Bearer ${currentAccount.token}` }
-        });
-        if (res.ok) {
-            const msg = await res.json();
-            detailFrom.innerText = `From: ${msg.from.name || ''} <${msg.from.address}>`;
-            detailSubject.innerText = msg.subject;
+        const res = await fetch(`${API_URL}/messages/${encodeURIComponent(id)}`, { headers: { 'Authorization': `Bearer ${currentAccount.token}` } });
+        if (!res.ok) throw new Error("Unable to load message");
+        const msg = await res.json();
+        detailFrom.textContent = `From: ${msg.from?.name || ''} <${msg.from?.address || ''}>`;
+        detailSubject.textContent = msg.subject || '';
 
-            const doc = detailFrame.contentWindow.document;
-            doc.open();
-            // Injecting basic text/html safely inside the iframe sandbox
-            doc.write(msg.html ? msg.html[0] : `<pre style="white-space:pre-wrap; font-family:sans-serif; padding:12px;">${msg.text || ''}</pre>`);
-            doc.close();
-
-            detailLoading.classList.add("hidden");
-            detailFrame.classList.remove("hidden");
+        const doc = detailFrame.contentDocument;
+        if (!doc) throw new Error("Message frame unavailable");
+        doc.open();
+        const body = msg.html?.[0] || `<pre style="white-space:pre-wrap;font-family:sans-serif;padding:12px;"></pre>`;
+        doc.write(`<!doctype html><html><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline';"><style>body{font-family:sans-serif;padding:12px;word-break:break-word}img{max-width:100%;height:auto}</style></head><body></body></html>`);
+        doc.close();
+        const bodyNode = doc.body;
+        if (msg.html?.[0]) {
+            const template = doc.createElement('template');
+            template.innerHTML = String(body);
+            template.content.querySelectorAll('script,iframe,object,embed,form,input,textarea,button').forEach(node => node.remove());
+            template.content.querySelectorAll('*').forEach(node => {
+                [...node.attributes].forEach(attr => {
+                    if (/^on/i.test(attr.name) || /^(javascript|data|file|blob|chrome|resource):/i.test(attr.value.trim())) node.removeAttribute(attr.name);
+                });
+            });
+            bodyNode.replaceChildren(template.content.cloneNode(true));
+        } else {
+            const pre = doc.createElement('pre');
+            pre.style.cssText = 'white-space:pre-wrap;font-family:sans-serif;padding:12px;';
+            pre.textContent = msg.text || '';
+            bodyNode.replaceChildren(pre);
         }
+        detailLoading.classList.add("hidden");
+        detailFrame.classList.remove("hidden");
     } catch (err) {
-        detailLoading.innerText = "Error loading message.";
+        detailLoading.textContent = "Error loading message.";
     }
 };
 
-// Rendering
 const renderActiveState = () => {
     showState(stateActive);
-    emailAddressInput.value = currentAccount.address;
+    emailAddressInput.value = currentAccount?.address || '';
 };
 
 const renderMessages = (activeMsgs) => {
-    msgCount.innerText = activeMsgs.length;
-    chrome.action.setBadgeText({ text: activeMsgs.length > 0 ? activeMsgs.length.toString() : "" });
+    msgCount.textContent = String(activeMsgs.length);
+    chrome.action.setBadgeText({ text: activeMsgs.length > 0 ? String(activeMsgs.length) : "" });
     chrome.action.setBadgeBackgroundColor({ color: "#dc2626" });
-
+    messageList.replaceChildren();
     if (activeMsgs.length === 0) {
-        messageList.innerHTML = `<li class="empty-state">No emails yet. Waiting for victims...</li>`;
+        const empty = document.createElement('li');
+        empty.className = 'empty-state';
+        empty.textContent = 'No emails yet. Waiting for email...';
+        messageList.appendChild(empty);
         return;
     }
 
-    messageList.innerHTML = "";
     activeMsgs.forEach(msg => {
         const li = document.createElement("li");
         li.className = "msg-item";
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+        const textWrap = document.createElement('div');
+        textWrap.style.cssText = 'flex:1;min-width:0;overflow:hidden;';
+        const from = document.createElement('div');
+        from.className = 'msg-from';
+        from.textContent = msg.from?.name || msg.from?.address || 'Unknown sender';
+        const subject = document.createElement('div');
+        subject.className = 'msg-subject';
+        subject.style.cssText = 'max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        subject.textContent = msg.subject || '(No subject)';
+        textWrap.append(from, subject);
+        row.appendChild(textWrap);
 
-        // Extract OTP for interactive copy button
         const otpMatch = extractOTP(msg.subject) || extractOTP(msg.intro);
-
-        const copyButtonHTML = otpMatch
-            ? `<button class="btn-icon copy-otp-btn" data-otp="${otpMatch}" title="Copy OTP" style="padding:4px 8px; border:1px solid var(--border-color); border-radius:6px; font-size:12px; font-weight:600; background:var(--bg-dark); color:var(--text-primary); transition:all 0.2s;">Copy ${otpMatch}</button>`
-            : '';
-
-        li.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-         <div style="flex:1; min-width:0; overflow:hidden;">
-           <div class="msg-from">${msg.from.name || msg.from.address}</div>
-           <div class="msg-subject" style="max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${msg.subject}</div>
-         </div>
-         ${copyButtonHTML}
-      </div>
-    `;
-
-        // Click handler for viewing message or clicking the copy OTP button
-        li.addEventListener('click', (e) => {
-            // Don't open mail detail if clicked on copy OTP
+        if (otpMatch) {
+            const copyButton = document.createElement('button');
+            copyButton.className = 'btn-icon copy-otp-btn';
+            copyButton.type = 'button';
+            copyButton.textContent = `Copy ${otpMatch}`;
+            copyButton.dataset.otp = otpMatch;
+            copyButton.title = 'Copy OTP';
+            copyButton.style.cssText = 'padding:4px 8px;border:1px solid var(--border-color);border-radius:6px;font-size:12px;font-weight:600;background:var(--bg-dark);color:var(--text-primary);transition:all .2s;';
+            row.appendChild(copyButton);
+        }
+        li.appendChild(row);
+        li.addEventListener('click', async (e) => {
             const copyBtn = e.target.closest('.copy-otp-btn');
             if (copyBtn) {
-                navigator.clipboard.writeText(copyBtn.dataset.otp);
-                const prevHtml = copyBtn.innerHTML;
-                copyBtn.innerHTML = `<svg style="width:14px;height:14px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied`;
-                copyBtn.style.color = "#22c55e";
-                setTimeout(() => {
-                    copyBtn.innerHTML = prevHtml;
-                    copyBtn.style.color = "var(--text-primary)";
-                }, 1500);
-                return; // exit
+                try { await navigator.clipboard.writeText(copyBtn.dataset.otp || ''); } catch {}
+                const previous = copyBtn.textContent;
+                copyBtn.textContent = 'Copied';
+                copyBtn.style.color = 'var(--success, #22c55e)';
+                setTimeout(() => { copyBtn.textContent = previous; copyBtn.style.color = 'var(--text-primary)'; }, 1500);
+                return;
             }
-
-            // otherwise, view the email details
             fetchMessageDetail(msg.id);
         });
-
         messageList.appendChild(li);
     });
 };
 
 const startPolling = () => {
     if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(() => {
-        fetchMessages();
-    }, 3000);
+    pollInterval = setInterval(fetchMessages, 5000);
 };
+const stopPolling = () => { if (pollInterval) clearInterval(pollInterval); };
 
-const stopPolling = () => {
-    if (pollInterval) clearInterval(pollInterval);
-};
-
-// Event Listeners
 btnCreate.addEventListener('click', createAccount);
 btnDelete.addEventListener('click', deleteAccount);
 btnBackToInbox.addEventListener('click', renderActiveState);
 btnRefresh.addEventListener('click', () => {
     const icon = btnRefresh.querySelector("svg");
-    icon.classList.add("spinner");
-    fetchMessages().finally(() => icon.classList.remove("spinner"));
+    icon?.classList.add("spinner");
+    fetchMessages().finally(() => icon?.classList.remove("spinner"));
 });
-btnCopy.addEventListener('click', () => {
-    if (currentAccount && currentAccount.address) {
-        navigator.clipboard.writeText(currentAccount.address);
-        const originalSvg = btnCopy.innerHTML;
-        btnCopy.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        setTimeout(() => { btnCopy.innerHTML = originalSvg; }, 1500);
-    }
+btnCopy.addEventListener('click', async () => {
+    if (!currentAccount?.address) return;
+    try { await navigator.clipboard.writeText(currentAccount.address); } catch {}
+    const original = btnCopy.innerHTML;
+    btnCopy.textContent = 'Copied';
+    setTimeout(() => { btnCopy.innerHTML = original; }, 1500);
 });
 
-// Initialization
-chrome.storage.local.get(["mephistoAccount"], (result) => {
-    if (result.mephistoAccount && result.mephistoAccount.token) {
+chrome.storage.session.get(["mephistoAccount"]).then(result => {
+    if (result.mephistoAccount?.token) {
         currentAccount = result.mephistoAccount;
         renderActiveState();
         fetchMessages();
@@ -256,4 +244,4 @@ chrome.storage.local.get(["mephistoAccount"], (result) => {
     } else {
         showState(stateNoAccount);
     }
-});
+}).catch(() => showState(stateNoAccount));
