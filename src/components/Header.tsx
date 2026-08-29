@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Mailbox } from '../types';
-import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X, Crown, Volume2, VolumeX } from 'lucide-react';
+import { Copy, Check, User, QrCode, KeyRound, Languages, ChevronDown, Trash2, Download, BarChart3, Bell, Tag, Palette, Menu, X, Crown, Volume2, VolumeX, Plus, Sparkles } from 'lucide-react';
 import { translations, Language } from '../translations';
 import { isSoundEnabled, toggleSound } from '../utils/audioNotification';
 
@@ -22,12 +22,15 @@ interface HeaderProps {
   onOpenLabels?: () => void;
   onOpenVip?: () => void;
   isVip?: boolean;
+  onNewAccount?: () => void;
+  onOpenCustom?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   accounts, currentAccount, onSwitchAccount, onDeleteAccount,
   lang, setLang, theme, setTheme, onOpenQR, onOpenPass, onOpenExtension,
-  onOpenStats, onOpenFilters, onOpenLabels, onOpenVip, isVip = false
+  onOpenStats, onOpenFilters, onOpenLabels, onOpenVip, isVip = false,
+  onNewAccount, onOpenCustom
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -329,6 +332,33 @@ const Header: React.FC<HeaderProps> = ({
                   </div>
                 )) : (
                   <div className="p-4 text-center text-slate-500 text-xs">{t.noAccount}</div>
+                )}
+              </div>
+              {/* Account Actions */}
+              <div className="border-t border-white/10 p-2 space-y-1 bg-white/[0.02]">
+                {onNewAccount && (
+                  <button
+                    onClick={() => {
+                      onNewAccount();
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[11px] font-bold text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-xl transition-all min-h-[38px]"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{lang === 'tr' ? '+ Yeni Mailbox Ekle' : '+ Add New Mailbox'}</span>
+                  </button>
+                )}
+                {onOpenCustom && (
+                  <button
+                    onClick={() => {
+                      onOpenCustom();
+                      setIsOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-[11px] font-bold text-amber-300 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all min-h-[38px]"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{lang === 'tr' ? 'Özel Adres Tanımla' : 'Custom Address'}</span>
+                  </button>
                 )}
               </div>
               {/* Quick Tools */}

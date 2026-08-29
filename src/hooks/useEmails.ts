@@ -4,7 +4,7 @@ import { getMessages, getMessageDetail, deleteMessage, deleteAllMessages, getRat
 import { playNotificationSound } from '../utils/audioNotification';
 import { extractActionLinks } from '../utils/actionLinks';
 
-const BASE_POLL_INTERVAL = 10000;
+const BASE_POLL_INTERVAL = 4000;
 const MAX_POLL_INTERVAL = 60000;
 const BACKOFF_FACTOR = 1.5;
 const STATS_KEY = 'mephisto_stats';
@@ -44,6 +44,7 @@ export function useEmails(
     const [stats, setStats] = useState<AppStats>(() => safeRead(STATS_KEY, defaultStats));
     const [notifFilters, setNotifFilters] = useState<NotificationFilter>(() => safeRead(FILTER_KEY, defaultFilters));
 
+    const testEmailDetailsRef = useRef<Map<string, EmailDetail>>(new Map());
     const previousIdsRef = useRef<Set<string>>(new Set());
     const autoVerifiedIdsRef = useRef<Set<string>>(new Set());
     const fetchRequestIdRef = useRef(0);
@@ -284,12 +285,62 @@ export function useEmails(
         };
     }, [activeAccount, clearPollingTimer]);
 
+    // Handle live simulated Test OTP events from AddressBar / Bulk / Burn / Checker pages
+    useEffect(() => {
+        const handleTestOtpEvent = (e: Event) => {
+            const custom = e as CustomEvent;
+            const detail = custom.detail;
+            if (!detail || !detail.id) return;
+
+            const testSummary: EmailSummary = {
+                id: String(detail.id),
+                from: String(detail.from || 'security@verify-service.com'),
+                subject: String(detail.subject || '🔐 Doğrulama Kodu'),
+                intro: String(detail.body || detail.subject || ''),
+                seen: false,
+                createdAt: new Date().toISOString(),
+                aiCategory: 'Verification',
+            };
+
+            const testDetail: EmailDetail = {
+                ...testSummary,
+                text: String(detail.body || ''),
+                html: [`<div style="font-family:system-ui,-apple-system,sans-serif;padding:24px;background:#0c0d12;color:#f8fafc;border-radius:16px;border:1px solid rgba(249,115,22,0.2);"><div style="display:inline-block;padding:4px 12px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);border-radius:8px;font-size:12px;font-weight:bold;color:#fb923c;margin-bottom:12px;">MephistoMail Live OTP Demo</div><h2 style="font-size:18px;font-weight:bold;margin:0 0 16px 0;color:#ffffff;">${detail.subject}</h2><div style="font-size:14px;line-height:1.6;color:#cbd5e1;background:#14161f;padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);white-space:pre-wrap;">${detail.body}</div><div style="margin-top:16px;font-size:11px;color:#64748b;">Sender: ${detail.from} &bull; Received via MephistoMail Test Channel</div></div>`],
+                hasAttachments: false,
+                attachments: [],
+                headerFields: {
+                    From: String(detail.from || 'security@verify-service.com'),
+                    Subject: String(detail.subject || '🔐 Doğrulama Kodu'),
+                    Date: new Date().toISOString(),
+                    'Content-Type': 'text/html',
+                },
+            };
+
+            testEmailDetailsRef.current.set(testSummary.id, testDetail);
+            setEmails(prev => [testSummary, ...prev.filter(item => item.id !== testSummary.id)]);
+            notifyNewEmails([testSummary]);
+            const from = typeof testSummary.from === 'string' ? testSummary.from : testSummary.from?.name || testSummary.from?.address || 'security@verify-service.com';
+            onNewEmailRef.current?.(from, testSummary.subject);
+        };
+
+        window.addEventListener('mephisto-test-otp', handleTestOtpEvent);
+        return () => window.removeEventListener('mephisto-test-otp', handleTestOtpEvent);
+    }, [notifyNewEmails]);
+
     useEffect(() => {
         if (!selectedEmailId || !activeAccount) {
             setCurrentEmailDetail(null);
             setIsLoadingDetail(false);
             return;
         }
+
+        // Check in-memory test email detail cache first
+        if (testEmailDetailsRef.current.has(selectedEmailId)) {
+            setCurrentEmailDetail(testEmailDetailsRef.current.get(selectedEmailId) || null);
+            setIsLoadingDetail(false);
+            return;
+        }
+
         const currentAccountId = activeAccount.id;
         const currentDetailId = ++detailRequestIdRef.current;
         setIsLoadingDetail(true);

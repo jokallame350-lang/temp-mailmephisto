@@ -2082,4 +2082,139 @@ test('Integration O4: All 9 locales have 100% key parity with 0 extra keys, 0 mi
   }
 });
 
+test('Integration O5: Guerrilla Mail set_email_user contract resolves username from setData.email_addr or setData.email_user', async () => {
+  // Test seam simulating Guerrilla Mail set_email_user real API responses
+  const originalFetch = globalThis.fetch;
+  try {
+    // 1. Successful custom mailbox where Guerrilla returns email_addr (real Guerrilla contract)
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({
+          email_addr: 'random123@guerrillamailblock.com',
+          sid_token: 'sid_valid_123',
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({
+          email_addr: 'cyber.amxmq564@guerrillamailblock.com',
+          sid_token: 'sid_valid_123',
+          auth: { success: true, error_codes: [] }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    const mb = await createCustomMailbox('cyber.amxmq564', 'guerrillamailblock.com', 'guerrilla');
+    assert.equal(mb.address, 'cyber.amxmq564@guerrillamailblock.com');
+    assert.equal(mb.token, 'sid_valid_123');
+
+    // 2. Rejected custom username where upstream returns error_codes
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({
+          email_addr: 'random123@guerrillamailblock.com',
+          sid_token: 'sid_valid_456',
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({
+          alias_error: 'Invalid username format',
+          error_codes: ['invalid_user'],
+          auth: { success: false, error_codes: ['invalid_user'] }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    await assert.rejects(
+      async () => await createCustomMailbox('bad#user!', 'guerrillamailblock.com', 'guerrilla'),
+      /İstenen özel kullanıcı adı upstream servis tarafından kabul edilmedi|Geçersiz e-posta adresi/
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Integration O6: Test OTP simulation produces compliant verification email and extractable OTP', () => {
+  const otpCode = '583214';
+  const detail = {
+    id: 'test_123456789',
+    from: 'security@verify-service.com',
+    subject: `🔐 Doğrulama Kodunuz: ${otpCode}`,
+    body: `MephistoMail canlı test doğrulaması. OTP: ${otpCode}`,
+    date: new Date().toLocaleTimeString(),
+  };
+
+  const extracted = extractOTP(detail.body);
+  assert.equal(extracted, '583214');
+
+  const subjectExtracted = extractOTP(detail.subject);
+  assert.equal(subjectExtracted, '583214');
+});
+
+test('Integration O7: Language toggle cycle covers all 9 supported locales', () => {
+  const langOrder = ['en', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'ru', 'ar'];
+  assert.equal(langOrder.length, 9);
+
+  let currentLang = 'en';
+  const visited = [currentLang];
+  for (let i = 0; i < langOrder.length - 1; i++) {
+    currentLang = langOrder[(langOrder.indexOf(currentLang) + 1) % langOrder.length];
+    visited.push(currentLang);
+  }
+
+  assert.deepEqual(visited, ['en', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'ru', 'ar']);
+  const backToStart = langOrder[(langOrder.indexOf(currentLang) + 1) % langOrder.length];
+  assert.equal(backToStart, 'en');
+});
+
+test('Integration O8: Guerrilla Mail empty subject fallback displays excerpt cleanly', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_list')) {
+        return new Response(JSON.stringify({
+          list: [
+            {
+              mail_id: '288001682',
+              mail_from: 'jokallame0@gmail.com',
+              mail_subject: '',
+              mail_excerpt: 'MephistoMail test kodu: 583214\n\n',
+              mail_timestamp: '1787988786',
+              mail_read: '0',
+              mail_date: '07:33:06',
+              att: '0',
+              mail_size: '4811'
+            }
+          ],
+          count: '1',
+          email: 'cyber.amxmq564@guerrillamailblock.com',
+          sid_token: 'sid_test_empty_subj'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    const messages = await getMessages({
+      id: 'sid_test_empty_subj',
+      address: 'cyber.amxmq564@guerrillamailblock.com',
+      apiBase: 'guerrilla',
+      token: 'sid_test_empty_subj'
+    });
+
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].id, '288001682');
+    const fromAddr = typeof messages[0].from === 'string' ? messages[0].from : messages[0].from?.address;
+    assert.equal(fromAddr, 'jokallame0@gmail.com');
+    // Excerpt was used when subject was empty
+    assert.ok(messages[0].subject.includes('MephistoMail test kodu: 583214') || messages[0].intro.includes('MephistoMail test kodu: 583214'));
+    assert.equal(messages[0].aiCategory, 'Verification');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 

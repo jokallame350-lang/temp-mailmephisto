@@ -36,21 +36,28 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => 
     const checkIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(checkIOS);
 
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowPrompt(true);
+    const handleInstallAvailable = () => {
+      const promptEvent = (window as any).__pwaInstallPrompt;
+      if (promptEvent) {
+        setDeferredPrompt(promptEvent);
+        setShowPrompt(true);
+      }
     };
+
+    if ((window as any).__pwaInstallPrompt) {
+      setDeferredPrompt((window as any).__pwaInstallPrompt);
+    }
 
     const handleAppInstalled = () => {
       setInstalled(true);
       setShowPrompt(false);
       setDeferredPrompt(null);
+      (window as any).__pwaInstallPrompt = null;
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('pwa-install-available', handleInstallAvailable);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     // Auto-display floating badge after 2.5 seconds if not dismissed
@@ -61,7 +68,7 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => 
     }, 2500);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('pwa-install-available', handleInstallAvailable);
       window.removeEventListener('appinstalled', handleAppInstalled);
       clearTimeout(timer);
     };

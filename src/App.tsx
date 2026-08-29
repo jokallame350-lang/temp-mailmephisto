@@ -51,14 +51,34 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
   const [limitModal, setLimitModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'daily' | 'capacity'; }>({ isOpen: false, title: '', message: '', type: 'daily' });
   const handleOpenQR = useCallback(() => setShowQRModal(true), []), handleCloseQR = useCallback(() => setShowQRModal(false), []), handleOpenPass = useCallback(() => setShowPassModal(true), []), handleClosePass = useCallback(() => setShowPassModal(false), []), handleOpenStats = useCallback(() => setShowStatsModal(true), []), handleCloseStats = useCallback(() => setShowStatsModal(false), []), handleOpenFilters = useCallback(() => setShowNotifFilterModal(true), []), handleCloseFilters = useCallback(() => setShowNotifFilterModal(false), []), handleOpenLabels = useCallback(() => setShowAliasModal(true), []), handleCloseLabels = useCallback(() => setShowAliasModal(false), []), handleOpenVip = useCallback(() => setShowVipModal(true), []), handleCloseVip = useCallback(() => setShowVipModal(false), []), handleOpenCustom = useCallback(() => setShowCustomModal(true), []), handleCloseCustom = useCallback(() => setShowCustomModal(false), []), handleOpenIdentity = useCallback(() => setShowIdentityModal(true), []), handleCloseIdentity = useCallback(() => setShowIdentityModal(false), []), handleOpenForwarding = useCallback(() => setShowForwardingModal(true), []), handleCloseForwarding = useCallback(() => setShowForwardingModal(false), []), handleOpenShareDrop = useCallback(() => setShowShareDropModal(true), []), handleCloseShareDrop = useCallback(() => setShowShareDropModal(false), []), handleOpenExtension = useCallback(() => setShowExtensionModal(true), []), handleCloseExtension = useCallback(() => setShowExtensionModal(false), []), handleOpenCustomDomain = useCallback(() => setShowCustomDomainModal(true), []), handleCloseCustomDomain = useCallback(() => setShowCustomDomainModal(false), []), handleCloseLimitModal = useCallback(() => setLimitModal(p => ({ ...p, isOpen: false })), []), handleBackFromViewer = useCallback(() => setSelectedEmailId(null), [setSelectedEmailId]);
   const handleDeleteActiveAccount = useCallback(() => { if (activeAccount) deleteAccount(activeAccount.id); }, [activeAccount, deleteAccount]);
-  const [lang, setLang] = useState<Language>(() => { const saved = localStorage.getItem('mephisto_lang'); if (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'fr') return saved; const bl = navigator.language.toLowerCase(); if (bl.startsWith('tr')) return 'tr'; if (bl.startsWith('es')) return 'es'; if (bl.startsWith('de')) return 'de'; if (bl.startsWith('fr')) return 'fr'; return 'en'; });
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem('mephisto_lang') as Language;
+    if (saved && ['en', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'ru', 'ar'].includes(saved)) return saved;
+    const bl = navigator.language.toLowerCase();
+    if (bl.startsWith('tr')) return 'tr';
+    if (bl.startsWith('de')) return 'de';
+    if (bl.startsWith('es')) return 'es';
+    if (bl.startsWith('fr')) return 'fr';
+    if (bl.startsWith('it')) return 'it';
+    if (bl.startsWith('pt')) return 'pt';
+    if (bl.startsWith('ru')) return 'ru';
+    if (bl.startsWith('ar')) return 'ar';
+    return 'en';
+  });
   const t = useMemo(() => translations[lang], [lang]);
-  useEffect(() => { localStorage.setItem('mephisto_lang', lang); window.dispatchEvent(new Event('mephisto-lang-change')); }, [lang]);
+  useEffect(() => {
+    localStorage.setItem('mephisto_lang', lang);
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    }
+    window.dispatchEvent(new Event('mephisto-lang-change'));
+  }, [lang]);
   useEffect(() => { const handleRefresh = () => handleManualRefresh(); window.addEventListener('mephisto-refresh', handleRefresh); return () => window.removeEventListener('mephisto-refresh', handleRefresh); }, [handleManualRefresh]);
   useEffect(() => { const baseTitle = lang === 'tr' ? 'MephistoMail - Geçici E-posta' : 'MephistoMail - Temp Mail'; const unreadCount = emails.filter(e => !e.seen).length; document.title = unreadCount > 0 && document.hidden ? `(${unreadCount}) ${baseTitle}` : baseTitle; const handleFocus = () => { document.title = baseTitle; }; window.addEventListener('focus', handleFocus); return () => window.removeEventListener('focus', handleFocus); }, [emails, lang]);
   const handleCreateCustom = useCallback(async (username: string, domain: string, apiBase: string) => { const result = await rawHandleCreateCustom(username, domain, apiBase); if (result.success) { setShowCustomModal(false); incrementAccountStat(); } else { const isTaken = result.reason === 'taken'; const title = isTaken ? (lang === 'tr' ? 'Kullanıcı Adı Kullanımda' : 'Username Taken') : (lang === 'tr' ? 'Hesap Oluşturulamadı' : 'Creation Failed'); const msg = isTaken ? (lang === 'tr' ? `"${username}@${domain}" adresi zaten başkası tarafından alınmış. Lütfen farklı bir kullanıcı adı veya domain seçin.` : `"${username}@${domain}" is already taken. Please choose a different username.`) : t.connError; setLimitModal({ isOpen: true, title, message: msg, type: 'daily' }); } }, [rawHandleCreateCustom, incrementAccountStat, lang, t]);
   const handleNewAccount = useCallback(async () => { if (accounts.length >= MAX_ACTIVE_ACCOUNTS) { setLimitModal({ isOpen: true, title: t.limitCapacityTitle, message: t.limitCapacityMsg, type: 'capacity' }); return; } const result = await createQuickAccount(); if (result.success) incrementAccountStat(); }, [accounts.length, MAX_ACTIVE_ACCOUNTS, createQuickAccount, incrementAccountStat, t]);
-  const langOrder: Language[] = useMemo(() => ['en', 'tr', 'es', 'de', 'fr'], []);
+  const langOrder: Language[] = useMemo(() => ['en', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'ru', 'ar'], []);
   const toggleLang = useCallback(() => { setLang(prev => langOrder[(langOrder.indexOf(prev) + 1) % langOrder.length]); }, [langOrder]);
   const handleDomainChange = useCallback(async (newDomain: string) => { const res = await changeDomain(newDomain); if (res.success && res.address) addToast(lang === 'tr' ? '🌐 Domain Değiştirildi' : '🌐 Domain Switched', lang === 'tr' ? `Yeni adres: ${res.address}` : `New address: ${res.address}`); }, [changeDomain, addToast, lang]);
   const handleAddCustomDomain = useCallback((domain: string, username: string) => { const fullAddress = `${username}@${domain}`; const newBox: Mailbox = { id: `custom_${Date.now()}`, address: fullAddress, apiBase: 'mail_tm', isCustomDomain: true, customDomainName: domain, createdAt: Date.now(), label: 'Custom Domain', labelColor: '#a855f7' }; addCustomAccount(newBox); addToast('🌐 Kendi Domainin Bağlandı!', `${fullAddress} adresi başarıyla oluşturuldu.`); }, [addCustomAccount, addToast]);
@@ -70,7 +90,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
         <KeyboardShortcuts lang={lang} onNewAccount={handleNewAccount} onRefresh={handleManualRefresh} onToggleLang={toggleLang} />
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true"><div className="floating-orb w-96 h-96 bg-orange-500/[0.03] top-0 -left-48" /><div className="floating-orb w-80 h-80 bg-orange-500/[0.02] top-40 -right-40" style={{ animationDelay: '-7s' }} /></div>
         <Toast toasts={toasts} onDismiss={dismissToast} />
-        {!hideNavbar && <Header accounts={accounts} currentAccount={activeAccount} onSwitchAccount={setActiveAccountId} onDeleteAccount={deleteAccount} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} onOpenQR={handleOpenQR} onOpenPass={handleOpenPass} onOpenExtension={handleOpenExtension} onOpenStats={handleOpenStats} onOpenFilters={handleOpenFilters} onOpenLabels={handleOpenLabels} onOpenVip={handleOpenVip} isVip={isVip} />}
+        {!hideNavbar && <Header accounts={accounts} currentAccount={activeAccount} onSwitchAccount={setActiveAccountId} onDeleteAccount={deleteAccount} lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} onOpenQR={handleOpenQR} onOpenPass={handleOpenPass} onOpenExtension={handleOpenExtension} onOpenStats={handleOpenStats} onOpenFilters={handleOpenFilters} onOpenLabels={handleOpenLabels} onOpenVip={handleOpenVip} isVip={isVip} onNewAccount={handleNewAccount} onOpenCustom={handleOpenCustom} />}
         <Suspense fallback={null}>
           {showVipModal && <VipUpgradeModal isOpen={showVipModal} onClose={handleCloseVip} lang={lang} isVip={isVip} setIsVip={setIsVip} />}
           {showCustomModal && <CustomAddressModal isOpen={showCustomModal} onClose={handleCloseCustom} onCreate={handleCreateCustom} lang={lang} />}

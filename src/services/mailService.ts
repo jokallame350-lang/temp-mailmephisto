@@ -565,19 +565,25 @@ const createGuerrillaMailbox = async (
     }
 
     const setData = await setRes.json().catch(() => null);
-    if (
+    const userFromAddr = typeof setData?.email_addr === 'string' ? setData.email_addr.split('@')[0] : '';
+    const userFromUser = typeof setData?.email_user === 'string' ? setData.email_user : '';
+    const resolvedUser = userFromUser || userFromAddr || emailUser;
+
+    const hasError =
       !setData ||
-      typeof setData.email_user !== 'string' ||
-      !setData.email_user ||
-      setData.error_codes ||
-      setData.error
-    ) {
+      !resolvedUser ||
+      (Array.isArray(setData.error_codes) && setData.error_codes.length > 0) ||
+      (Array.isArray(setData.auth?.error_codes) && setData.auth.error_codes.length > 0) ||
+      Boolean(setData.error) ||
+      Boolean(setData.alias_error);
+
+    if (hasError) {
       throw new Error(
         'İstenen özel kullanıcı adı upstream servis tarafından kabul edilmedi.'
       );
     }
 
-    user = setData.email_user;
+    user = resolvedUser;
   }
 
   return {
