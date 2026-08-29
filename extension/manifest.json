@@ -1,39 +1,30 @@
 {
-    "manifest_version": 3,
-    "name": "MephistoMail",
-    "version": "1.0.0",
-    "description": "Zero-log, RAM-only disposable email directly in your browser.",
-    "action": {
-        "default_popup": "popup.html",
-        "default_title": "Open MephistoMail"
-    },
-    "icons": {
-        "16": "icons/icon16.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
-    },
-    "background": {
-        "service_worker": "js/background.js"
-    },
-    "content_scripts": [
-        {
-            "matches": [
-                "<all_urls>"
-            ],
-            "js": [
-                "js/content.js"
-            ]
-        }
-    ],
-    "permissions": [
-        "storage",
-        "contextMenus",
-        "alarms",
-        "clipboardWrite",
-        "notifications"
-    ],
-    "host_permissions": [
-        "*://api.mail.gw/*",
-        "*://api.mail.tm/*"
-    ]
+  "manifest_version": 3,
+  "name": "MephistoMail",
+  "version": "1.0.1",
+  "description": "Temporary email with privacy-first browser tools.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Open MephistoMail"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "alarms",
+    "clipboardWrite",
+    "notifications",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://api.mail.gw/*",
+    "https://api.mail.tm/*"
+  ]
 }
