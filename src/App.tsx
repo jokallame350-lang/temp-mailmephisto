@@ -32,14 +32,7 @@ const CustomDomainModal = lazy(() => import('./components/CustomDomainModal'));
 const ComposeModal = lazy(() => import('./components/ComposeModal'));
 import VipUpgradeModal from './components/VipUpgradeModal';
 
-const extractOTPCode = (subject: string): string | null => {
-  const patterns = [
-    /(?:code|kod|verification|doğrulama|pin|otp|passcode|şifre)[:\s#-]*(\d{4,8})/i,
-    /\b(\d{6})\b/, /\b(\d{8})\b/, /\b(\d{5})\b/, /\b(\d{4})\b/,
-  ];
-  for (const p of patterns) { const m = subject.match(p); if (m) return m[1]; }
-  return null;
-};
+import { extractOTP } from './utils/otp';
 
 interface AppProps { hideSEOContent?: boolean; hideFooter?: boolean; hideHeroBanner?: boolean; hideNavbar?: boolean; }
 
@@ -48,7 +41,7 @@ const App: React.FC<AppProps> = ({ hideSEOContent = false, hideFooter = false, h
   const [theme, setTheme] = useState<string>(() => localStorage.getItem('mephisto_theme') || 'dark');
   useEffect(() => { localStorage.setItem('mephisto_theme', theme); document.body.className = theme === 'cyberpunk' ? 'theme-cyberpunk' : theme === 'light' ? 'theme-light' : ''; }, [theme]);
   const [toasts, setToasts] = useState<ToastData[]>([]);
-  const addToast = useCallback((from: string, subject: string) => { const code = extractOTPCode(subject); setToasts(prev => [{ id: Date.now().toString(), from, subject, code: code || undefined }, ...prev].slice(0, 5)); }, []);
+  const addToast = useCallback((from: string, subject: string) => { const code = extractOTP(subject); setToasts(prev => [{ id: Date.now().toString(), from, subject, code: code || undefined }, ...prev].slice(0, 5)); }, []);
   const dismissToast = useCallback((id: string) => setToasts(prev => prev.filter(t => t.id !== id)), []);
   const [autoVerifyEnabled, setAutoVerifyEnabled] = useState<boolean>(() => localStorage.getItem('mephisto_auto_verify') !== 'false');
   const toggleAutoVerify = useCallback(() => { setAutoVerifyEnabled(prev => { const next = !prev; localStorage.setItem('mephisto_auto_verify', String(next)); setToasts(p => [{ id: Date.now().toString(), from: next ? '⚡ Otomatik Doğrulama Aktif' : 'Otomatik Doğrulama Kapalı', subject: next ? 'Gelen üyelik onay linkleri arka planda otomatik tıklanacak.' : 'Otomatik tıklama modu kapatıldı.' }, ...p].slice(0, 5)); return next; }); }, []);

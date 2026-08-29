@@ -279,15 +279,28 @@ const generatePassword = (): string => {
   return out;
 };
 
-const determineCategory = (
+export const normalizeSearchText = (text?: string): string => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c');
+};
+
+export const determineCategory = (
   subject: string,
   from: string,
   intro: string
 ): AICategory => {
-  const text = `${subject} ${from} ${intro}`.toLowerCase();
+  const raw = `${subject || ''} ${from || ''} ${intro || ''}`;
+  const text = normalizeSearchText(raw);
 
   if (
-    /(code|verify|verification|otp|confirm|activation|pin\b|doğrulama|kod|şifre)/.test(
+    /(code|verify|verification|otp|confirm|activation|activate|pin\b|passcode|dogrulama|kod|sifre|aktivasyon|etkinlestir|onay)/i.test(
       text
     )
   ) {
@@ -295,7 +308,7 @@ const determineCategory = (
   }
 
   if (
-    /(security|alert|reset password|suspicious|login attempt|güvenlik|giriş|uyarı)/.test(
+    /(security|alert|reset password|suspicious|login attempt|unauthorized|2fa|guvenlik|giris|uyari|sifirlama)/i.test(
       text
     )
   ) {
@@ -303,7 +316,7 @@ const determineCategory = (
   }
 
   if (
-    /(newsletter|bülten|weekly|digest|fırsat|indirim|offer|sale)/.test(
+    /(newsletter|bulten|weekly|digest|firsat|indirim|offer|sale|kampanya|promo|discount)/i.test(
       text
     )
   ) {
@@ -313,7 +326,7 @@ const determineCategory = (
   return 'Other';
 };
 
-const formatSenderName = (fromAddress: string): string => {
+export const formatSenderName = (fromAddress: string): string => {
   if (!fromAddress || fromAddress === 'unknown') {
     return 'Bilinmeyen Gönderen';
   }
@@ -367,7 +380,7 @@ const formatSenderName = (fromAddress: string): string => {
   );
 };
 
-const formatSmartSubject = (
+export const formatSmartSubject = (
   subject: string,
   excerpt: string,
   fromAddress: string
@@ -377,13 +390,14 @@ const formatSmartSubject = (
   if (
     clean &&
     clean !== '(Konu Yok)' &&
-    clean !== 'Konu Yok'
+    clean !== 'Konu Yok' &&
+    clean !== '(No Subject)' &&
+    clean !== 'No Subject'
   ) {
     return clean;
   }
 
-  const combined =
-    `${excerpt || ''} ${fromAddress || ''}`.toLowerCase();
+  const combined = normalizeSearchText(`${excerpt || ''} ${fromAddress || ''}`);
 
   if (combined.includes('instagram')) {
     return 'Instagram Doğrulama Kodu';
@@ -393,11 +407,11 @@ const formatSmartSubject = (
     return 'Cloudflare E-posta Yönlendirme Onayı';
   }
 
-  if (/code|kod|verify|confirm/.test(combined)) {
+  if (/code|kod|verify|confirm|dogrulama|onay|otp|passcode/.test(combined)) {
     return 'E-posta Doğrulama Kodu';
   }
 
-  if (/security|güvenlik/.test(combined)) {
+  if (/security|alert|guvenlik|uyari|sifirlama/.test(combined)) {
     return 'Güvenlik Bildirimi';
   }
 
@@ -407,7 +421,7 @@ const formatSmartSubject = (
     : 'Gelen Mesaj';
 };
 
-const isGuerrilla = (provider: string): boolean => {
+export const isGuerrilla = (provider: string): boolean => {
   return provider === 'guerrilla';
 };
 
@@ -499,22 +513,29 @@ const createGuerrillaMailbox = async (
     data.email_addr.split('@')[1] ||
     GUERRILLA_DOMAINS[0];
 
-  const targetUser = emailUser || user;
+  if (emailUser) {
+    const setRes = await safeFetch(
+      `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(
+        emailUser
+      )}&lang=en&sid_token=${encodeURIComponent(sid)}`,
+      undefined,
+      'guerrilla'
+    );
 
-  const setRes = await safeFetch(
-    `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(
-      targetUser
-    )}&lang=en&sid_token=${encodeURIComponent(sid)}`,
-    undefined,
-    'guerrilla'
-  );
-
-  if (setRes.ok) {
-    const setData = await setRes.json().catch(() => null);
-
-    if (typeof setData?.email_user === 'string') {
-      user = setData.email_user;
+    if (!setRes.ok) {
+      throw new Error(
+        `Özel e-posta adresi ayarlanamadı (HTTP ${setRes.status})`
+      );
     }
+
+    const setData = await setRes.json().catch(() => null);
+    if (!setData || typeof setData.email_user !== 'string') {
+      throw new Error(
+        'İstenen özel kullanıcı adı upstream servis tarafından kabul edilmedi.'
+      );
+    }
+
+    user = setData.email_user;
   }
 
   return {
@@ -545,7 +566,7 @@ const parseGuerrillaDate = (msg: any): string => {
     : new Date().toISOString();
 };
 
-const decodeHTMLEntities = (text: string): string => {
+export const decodeHTMLEntities = (text: string): string => {
   if (!text) return '';
 
   if (typeof DOMParser !== 'undefined') {
@@ -563,7 +584,9 @@ const decodeHTMLEntities = (text: string): string => {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'");
+    .replace(/&#039;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ');
 };
 
 const getGuerrillaMessages = async (

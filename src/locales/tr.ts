@@ -84,7 +84,7 @@ export const tr = {
   featVolatileTitle: 'Uçucu Bellek',
   featVolatileDesc: 'Sadece RAM depolama. HDD izi yok.',
   featLatencyTitle: 'Düşük Gecikme',
-  featLatencyDesc: 'Websockets ile anlık paket iletimi.',
+  featLatencyDesc: 'Düşük gecikmeli hızlı gelen kutusu senkronizasyonu.',
   featEntropyTitle: 'Entropi Üretimi',
   featEntropyDesc: 'İstemci taraflı güvenli şifre oluşturma.',
   featHandoffTitle: 'Güvenli Aktarım',
@@ -118,7 +118,7 @@ export const tr = {
   artChooseP2: 'MephistoMail "durumsuz" (state-less) olacak şekilde mimarilendirilmiştir, yani verilerinizi depolamadığımız için fiziksel olarak satamayız. Reklam göstermeyiz, kayıt gerektirmeyiz, tarama davranışınızı takip etmeyiz. Hesap oluşturmaya zorlayan servislerden kaçının — bu, geçici mailin amacını ortadan kaldırır.',
   artUseTitle: 'Geçici E-posta Adresleri Nasıl Kullanılır?',
   artUseP1: 'MephistoMail\'i kullanmak sıfır sürtünmeli, sorunsuz bir deneyim olacak şekilde tasarlanmıştır. Platformumuzu ziyaret ettiğinizde, kriptografik algoritmamız kullanılarak sizin için anında benzersiz bir anonim adres otomatik olarak oluşturulur. Sadece "Kopyala"ya tıklayın ve ihtiyacınız olan yere yapıştırın.',
-  artUseP2: 'Saniyeler içinde gelen e-postalar, sayfayı yenilemeye gerek kalmadan doğrudan WebSocket ile MephistoMail gelen kutunuzda görünecektir. İster doğrulama kodu, ister OTP, ister bülten olsun — anında alacaksınız.',
+  artUseP2: 'Saniyeler içinde gelen e-postalar, sayfayı yenilemeye gerek kalmadan doğrudan otomatik senkronizasyon ile MephistoMail gelen kutunuzda görünecektir. İster doğrulama kodu, ister OTP, ister bülten olsun — anında alacaksınız.',
 
   // ---------- SEO İÇERİK: GENIŞLETILMIŞ — Kullanım Alanları ----------
   artUseCasesTitle: 'Geçici Mail Kullanım Alanları',
@@ -133,7 +133,7 @@ export const tr = {
 
   // ---------- SEO İÇERİK: Karşılaştırma ----------
   artCompareTitle: 'MephistoMail vs Diğer Geçici Mail Servisleri',
-  artCompareP1: 'Mailinator, Guerrilla Mail, TempMail.org ve 10MinuteMail ile karşılaştırıldığında MephistoMail daha hızlı anlık WebSocket teslimatı, daha güçlü gizlilik (sıfır kayıt, sadece RAM), modern koyu tema arayüzü, yerleşik güvenlik araçları ve 100 eş zamanlı posta kutusu yönetme imkanı sunar — hepsi ücretsiz.',
+  artCompareP1: 'Mailinator, Guerrilla Mail, TempMail.org ve 10MinuteMail ile karşılaştırıldığında MephistoMail daha hızlı anlık otomatik teslimat, daha güçlü gizlilik (sıfır kayıt, sadece RAM), modern koyu tema arayüzü, yerleşik güvenlik araçları ve 100 eş zamanlı posta kutusu yönetme imkanı sunar — hepsi ücretsiz.',
 
   artConclusionTitle: 'Tam Dijital Hijyen',
   artConclusionDesc: 'Sürekli gözetim ve algoritmik profilleme çağında MephistoMail, dijital anonimliğinizi geri kazanmak için gerekli temel araçları sağlar. En güvenli geçici mail hizmetini bugün kullanmaya başlayın.',
@@ -141,11 +141,11 @@ export const tr = {
   // ---------- SSS (14 Soru) ----------
   faqTitle: 'Sıkça Sorulan Sorular',
   faq1Q: 'Geçici mail (temp mail) nedir ve nasıl çalışır?',
-  faq1A: 'Geçici mail (temp mail, kullan at mail veya sahte mail olarak da bilinir) anonim, kendini yok eden bir e-posta kutusudur. MephistoMail anında benzersiz bir adres oluşturur — e-postalar WebSocket\'ler aracılığıyla gerçek zamanlı gelir. Sekmeyi kapattığınızda veya otomatik silme zamanlayıcısı sona erdiğinde, her şey uçucu bellekten kalıcı olarak silinir.',
+  faq1A: 'Geçici mail (temp mail, kullan at mail veya sahte mail olarak da bilinir) anonim, kendini yok eden bir e-posta kutusudur. MephistoMail anında benzersiz bir adres oluşturur — e-postalar otomatik senkronizasyon\'ler aracılığıyla gerçek zamanlı gelir. Sekmeyi kapattığınızda veya otomatik silme zamanlayıcısı sona erdiğinde, her şey uçucu bellekten kalıcı olarak silinir.',
   faq2Q: 'MephistoMail tamamen ücretsiz mi?',
   faq2A: 'Evet, %100 ücretsiz. Gizli maliyet veya premium katman yok. Hiçbir kayıt gerektirmeden anında sınırsız sayıda geçici e-posta hesabı açabilirsiniz. Özel adresler, şifre üretici, sahte kimlik oluşturucu, QR transferi ve 100\'e kadar eş zamanlı posta kutusu dahil tüm özellikler sıfır maliyetle sınırsız kullanılabilir.',
   faq3Q: 'Doğrulama kodlarını ve 2FA OTP alabilir miyim?',
-  faq3A: 'Kesinlikle. Düşük gecikmeli WebSocket mimarimiz, Tek Kullanımlık Şifrelerin (OTP) ve doğrulama kodlarının 1-3 saniye içinde ulaşmasını sağlayarak MephistoMail\'i kayıt duvarlarını aşmak ve hesapları doğrulamak için ideal kılar.',
+  faq3A: 'Kesinlikle. Düşük gecikmeli hızlı senkronizasyon mimarimiz, Tek Kullanımlık Şifrelerin (OTP) ve doğrulama kodlarının 1-3 saniye içinde ulaşmasını sağlayarak MephistoMail\'i kayıt duvarlarını aşmak ve hesapları doğrulamak için ideal kılar.',
   faq4Q: 'Geçici e-posta adresi ne kadar süre aktif kalır?',
   faq4A: 'Geçici mail adresiniz tarayıcı oturumunuz açık olduğu sürece aktif kalır. Otomatik yok etme için zamanlayıcılar ayarlayabilirsiniz (5 dk, 30 dk, 1 saat veya 24 saat). Sekmeyi kapatmak her şeyi anında siler.',
   faq5Q: 'Özel bir e-posta adresi oluşturabilir miyim?',
@@ -159,7 +159,7 @@ export const tr = {
   faq9Q: 'Aynı anda kaç geçici mail adresine sahip olabilirim?',
   faq9A: 'MephistoMail 100\'e kadar eş zamanlı aktif posta kutusunu destekler. Tek bir tarayıcı sekmesinden birden fazla kullan at mail adresi oluşturabilir, aralarında geçiş yapabilir ve yönetebilirsiniz.',
   faq10Q: 'MephistoMail, Mailinator veya Guerrilla Mail\'den daha mı iyi?',
-  faq10A: 'MephistoMail daha hızlı gerçek zamanlı teslimat (WebSocket vs polling), daha güçlü gizlilik (sıfır kayıt, yalnızca RAM), modern premium arayüz, yerleşik güvenlik araçları (şifre üretici, QR transferi), çoklu dil desteği ve 100 eş zamanlı posta kutusu sunar — hepsi ücretsiz. Birçok kullanıcı onu üstün bir alternatif olarak değerlendirmektedir.',
+  faq10A: 'MephistoMail daha hızlı gerçek zamanlı teslimat (hızlı otomatik senkronizasyon), daha güçlü gizlilik (sıfır kayıt, geçici oturum belleği), modern premium arayüz, yerleşik güvenlik araçları (şifre üretici, QR transferi), çoklu dil desteği ve 100 eş zamanlı posta kutusu sunar — hepsi ücretsiz. Birçok kullanıcı onu üstün bir alternatif olarak değerlendirmektedir.',
   faq11Q: 'MephistoMail ile e-posta gönderebilir miyim?',
   faq11A: 'MephistoMail yalnızca e-posta almak için tasarlanmıştır. Bu, kötüye kullanımı ve spam\'i önlemek için kasıtlı bir tasarım kararıdır. Doğrulama kodları, OTP, bültenler ve diğer tüm gelen e-postaları alabilirsiniz.',
   faq12Q: 'Tarayıcı sekmesini kapattığımda ne olur?',

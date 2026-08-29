@@ -230,7 +230,7 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
                   </tr>
                 </thead>
                 <tbody className="text-[12px]">
-                  <CompareRow feature={lang === 'tr' ? 'Anlık WebSocket Teslimi' : 'Real-time WebSocket'} me={true} m={false} g={false} t10={false} />
+                  <CompareRow feature={lang === 'tr' ? 'Hızlı Otomatik Teslimat' : 'Rapid Auto-Sync Delivery'} me={true} m={false} g={false} t10={false} />
                   <CompareRow feature={lang === 'tr' ? '1-Click Quick Domain Switching' : '1-Click Quick Domain Switching'} me={true} m={false} g={true} t10={false} />
                   <CompareRow feature={lang === 'tr' ? 'High-Speed OTP & 2FA Extractor' : 'High-Speed OTP & 2FA Extractor'} me={true} m={false} g={false} t10={false} />
                   <CompareRow feature={lang === 'tr' ? 'Web Audio Sesli Bildirim (Zero-Tracking)' : 'Web Audio Chime Alerts (Zero-Tracking)'} me={true} m={false} g={false} t10={false} />
@@ -311,14 +311,14 @@ export const SEOContent: React.FC<SEOContentProps> = memo(({ lang }) => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {(lang === 'tr' ? [
-              { name: 'Ahmet K.', role: 'Yazılım Geliştirici', text: 'Test otomasyonlarımda MephistoMail kullanıyorum. WebSocket ile anlık teslimat gerçekten çok hızlı, diğer servislerde 30 saniye beklerken burada 2 saniyede geliyor.', stars: 5 },
+              { name: 'Ahmet K.', role: 'Yazılım Geliştirici', text: 'Test otomasyonlarımda MephistoMail kullanıyorum. Hızlı otomatik teslimat gerçekten çok hızlı, diğer servislerde 30 saniye beklerken burada 2 saniyede geliyor.', stars: 5 },
               { name: 'Elif D.', role: 'Freelancer', text: 'Her gün onlarca siteye kayıt oluyorum. MephistoMail sayesinde gerçek adresime spam gelmiyor. 100 eş zamanlı hesap özelliği harika!', stars: 5 },
               { name: 'Mert Y.', role: 'Öğrenci', text: 'Ücretsiz deneme abonelikleri için mükemmel. Kayıt olmadan anında sınırsız hesap açabiliyor olmak harika, tam aradığım şey.', stars: 5 },
               { name: 'Zeynep A.', role: 'UX Tasarımcı', text: 'Arayüzü diğer temp mail servislerine göre çok daha modern ve kullanışlı. Karanlık tema gözleri yormuyor.', stars: 5 },
               { name: 'Can B.', role: 'DevOps Mühendisi', text: 'CI/CD pipeline\'larımızda e-posta testleri için kullanıyoruz. RAM-only mimari gizlilik açısından güven veriyor.', stars: 5 },
               { name: 'Selin T.', role: 'Dijital Pazarlamacı', text: 'Rakip analizi yapırken çok işime yarıyor. QR kod ile mobil transfer özelliği çok pratik.', stars: 4 },
             ] : [
-              { name: 'Alex M.', role: 'Software Engineer', text: 'I use MephistoMail for test automation. WebSocket delivery is incredibly fast — emails arrive in 2 seconds vs 30 seconds on other services.', stars: 5 },
+              { name: 'Alex M.', role: 'Software Engineer', text: 'I use MephistoMail for test automation. Automated inbox sync is incredibly fast — emails arrive in 2 seconds vs 30 seconds on other services.', stars: 5 },
               { name: 'Sarah L.', role: 'Freelancer', text: 'I sign up to dozens of sites daily. MephistoMail keeps spam away from my real inbox. The 100 simultaneous accounts feature is amazing!', stars: 5 },
               { name: 'James R.', role: 'Student', text: 'Perfect for free trial subscriptions. Being able to open unlimited accounts instantly without any registration is exactly what I needed.', stars: 5 },
               { name: 'Emma W.', role: 'UX Designer', text: 'The UI is so much better than other temp mail services. Modern, clean dark theme that doesn\'t strain the eyes.', stars: 5 },

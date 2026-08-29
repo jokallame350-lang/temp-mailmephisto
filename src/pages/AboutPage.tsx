@@ -104,12 +104,12 @@ export const AboutPage: React.FC<AboutPageProps> = ({ lang }) => {
               <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/60 space-y-1.5">
                 <div className="font-bold text-white text-sm flex items-center gap-2">
                   <Globe className="w-4 h-4 text-cyan-400" />
-                  {isTr ? "1 Saniyede Canlı WebSocket" : "Real-time WebSocket Push"}
+                  {isTr ? "Hızlı Otomatik Senkronizasyon" : "Rapid Real-time Inbox Sync"}
                 </div>
                 <p className="text-xs text-slate-400 leading-normal">
                   {isTr
                     ? "Sayfayı yenilemenize gerek kalmadan OTP kodları ve mailler anında ekranınıza düşer."
-                    : "Zero page reloads required. Inbound messages and OTP codes arrive instantly via live WebSocket streaming."}
+                    : "Zero page reloads required. Inbound messages and OTP codes arrive instantly via fast automated inbox synchronization."}
                 </p>
               </div>
             </div>

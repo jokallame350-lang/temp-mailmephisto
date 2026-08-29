@@ -144,7 +144,7 @@ flowchart TD
 
     subgraph Relays ["Stateless Ingress & Processing Layer"]
         API["Stateless REST API Router"]
-        SSE["Mercure SSE / WebSocket Event Stream"]
+        SSE["Rapid Auto-Sync / Mercure Stream"]
         GuerrillaRouter["GuerrillaMail Multi-Domain Gateway"]
         BYOD["Custom Domain Cloudflare MX Ingress"]
     end

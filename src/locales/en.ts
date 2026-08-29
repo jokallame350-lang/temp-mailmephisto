@@ -84,7 +84,7 @@ export const en = {
   featVolatileTitle: 'Volatile Memory',
   featVolatileDesc: 'RAM-only storage. No HDD traces.',
   featLatencyTitle: 'Low Latency',
-  featLatencyDesc: 'Instant packet delivery via Websockets.',
+  featLatencyDesc: 'Instant packet delivery via rapid auto-sync.',
   featEntropyTitle: 'Entropy Gen',
   featEntropyDesc: 'Client-side secure password creation.',
   featHandoffTitle: 'Secure Handoff',
@@ -118,7 +118,7 @@ export const en = {
   artChooseP2: 'MephistoMail is architected to be "state-less", meaning we physically cannot sell your data because we don\'t store it. We don\'t inject ads, don\'t require registration, and don\'t track your browsing behavior. Avoid services that force you to create accounts — that defeats the purpose of disposable email.',
   artUseTitle: 'How to Use Temporary Email Addresses',
   artUseP1: 'Using MephistoMail is designed to be a seamless, zero-friction experience. Upon visiting our platform, a unique anonymous address is auto-generated for you immediately using our cryptographic algorithm. Simply click "Copy" and paste it wherever you need it.',
-  artUseP2: 'Within seconds, incoming emails will appear in your Mephisto inbox, pushed directly via WebSockets without the need to refresh the page. Whether it\'s a verification code, OTP, or newsletter, you\'ll receive it instantly.',
+  artUseP2: 'Within seconds, incoming emails will appear in your Mephisto inbox, pushed directly via Rapid Auto-Syncs without the need to refresh the page. Whether it\'s a verification code, OTP, or newsletter, you\'ll receive it instantly.',
 
   // ---------- SEO CONTENT: EXPANDED — Use Cases ----------
   artUseCasesTitle: 'Top Use Cases for Temp Mail',
@@ -133,7 +133,7 @@ export const en = {
 
   // ---------- SEO CONTENT: Comparison ----------
   artCompareTitle: 'MephistoMail vs Other Temp Mail Services',
-  artCompareP1: 'Compared to Mailinator, Guerrilla Mail, TempMail.org, and 10MinuteMail, MephistoMail offers faster real-time WebSocket delivery, stronger privacy (no logs, RAM-only), a modern dark-theme UI, built-in security tools, and the ability to manage 100 simultaneous mailboxes — all for free.',
+  artCompareP1: 'Compared to Mailinator, Guerrilla Mail, TempMail.org, and 10MinuteMail, MephistoMail offers faster real-time Rapid Auto-Sync delivery, stronger privacy (no logs, RAM-only), a modern dark-theme UI, built-in security tools, and the ability to manage 100 simultaneous mailboxes — all for free.',
 
   artConclusionTitle: 'Total Digital Hygiene',
   artConclusionDesc: 'In an age of constant surveillance and algorithmic profiling, MephistoMail provides the essential tools necessary to reclaim your digital anonymity. Start using the most secure temp mail service today.',
@@ -141,11 +141,11 @@ export const en = {
   // ---------- FAQ (14 Questions) ----------
   faqTitle: 'Frequently Asked Questions',
   faq1Q: 'What is temp mail and how does it work?',
-  faq1A: 'Temp mail (temporary email or disposable email) is an anonymous, self-destructing email inbox. MephistoMail generates a unique address instantly — emails arrive in real-time via WebSockets. When you close the tab or the auto-delete timer expires, everything is permanently erased from volatile memory.',
+  faq1A: 'Temp mail (temporary email or disposable email) is an anonymous, self-destructing email inbox. MephistoMail generates a unique address instantly — emails arrive in real-time via automated rapid sync. When you close the tab or the auto-delete timer expires, everything is permanently erased from volatile memory.',
   faq2Q: 'Is MephistoMail completely free?',
   faq2A: 'Yes, 100% free. No hidden costs, no premium tiers. Start generating unlimited disposable email accounts instantly without registration. Every feature — custom addresses, password generator, fake identity generator, QR transfer, and up to 100 simultaneous mailboxes — is available at zero cost.',
   faq3Q: 'Can I receive verification codes and 2FA OTP?',
-  faq3A: 'Absolutely. Our low-latency WebSocket architecture ensures that One-Time Passwords (OTP) and verification codes arrive within 1-3 seconds, making MephistoMail ideal for bypassing registration walls and verifying accounts.',
+  faq3A: 'Absolutely. Our low-latency Rapid Auto-Sync architecture ensures that One-Time Passwords (OTP) and verification codes arrive within 1-3 seconds, making MephistoMail ideal for bypassing registration walls and verifying accounts.',
   faq4Q: 'How long does a temporary email address last?',
   faq4A: 'Your temp mail address stays active as long as your browser session is open. You can set auto-delete timers (5 min, 30 min, 1 hour, or 24 hours) for automatic destruction. Closing the tab immediately erases everything.',
   faq5Q: 'Can I create a custom email address?',
@@ -159,7 +159,7 @@ export const en = {
   faq9Q: 'How many temp mail addresses can I have at once?',
   faq9A: 'MephistoMail supports up to 100 simultaneous active mailboxes. You can create, switch between, and manage multiple disposable email addresses from a single browser tab.',
   faq10Q: 'Is MephistoMail better than Mailinator or Guerrilla Mail?',
-  faq10A: 'MephistoMail offers faster real-time delivery (WebSockets vs polling), stronger privacy (zero-log, RAM-only), a modern premium UI, built-in security tools (password generator, QR transfer), multi-language support, and 100 simultaneous mailboxes — all free. Many users consider it a superior alternative.',
+  faq10A: 'MephistoMail offers faster real-time delivery (Rapid Auto-Syncs vs polling), stronger privacy (ephemeral session memory, no disk tracking), a modern premium UI, built-in security tools (password generator, QR transfer), multi-language support, and 100 simultaneous mailboxes — all free. Many users consider it a superior alternative.',
   faq11Q: 'Can I send emails with MephistoMail?',
   faq11A: 'MephistoMail is designed for receiving emails only. This is intentional to prevent abuse and spam. You can receive verification codes, OTP, newsletters, and any other incoming emails.',
   faq12Q: 'What happens when I close the browser tab?',

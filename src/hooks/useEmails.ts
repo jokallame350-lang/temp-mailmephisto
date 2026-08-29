@@ -68,10 +68,11 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
 
     const fetchEmails = useCallback(async () => {
         if (!activeAccount || fetchingRef.current) return;
+        const currentAccountId = activeAccount.id;
         fetchingRef.current = true;
         try {
             const fetched = await getMessages(activeAccount);
-            if (!Array.isArray(fetched) || !mountedRef.current) return;
+            if (!Array.isArray(fetched) || !mountedRef.current || activeAccount?.id !== currentAccountId) return;
             const currentDeleted = deletedIdsRef.current;
             const filtered = fetched.filter(e => !currentDeleted.has(e.id));
             const previousIds = previousIdsRef.current;
@@ -83,10 +84,12 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
                 if (autoVerifyEnabled) await Promise.allSettled(newEmails.map(email => autoVerifyEmail(activeAccount, email)));
             }
             previousIdsRef.current = new Set(filtered.map(e => e.id));
-            setEmails(prev => { const map = new Map<string, EmailSummary>(); prev.forEach(item => { if (!currentDeleted.has(item.id)) map.set(item.id, item); }); filtered.forEach(item => map.set(item.id, item)); return Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); });
-            setFetchError(null);
+            if (mountedRef.current && activeAccount?.id === currentAccountId) {
+                setEmails(prev => { const map = new Map<string, EmailSummary>(); prev.forEach(item => { if (!currentDeleted.has(item.id)) map.set(item.id, item); }); filtered.forEach(item => map.set(item.id, item)); return Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); });
+                setFetchError(null);
+            }
         } catch (err: unknown) {
-            if (!mountedRef.current) return;
+            if (!mountedRef.current || activeAccount?.id !== currentAccountId) return;
             const message = err instanceof Error ? err.message : String(err || '');
             if (message) setFetchError(message);
         } finally { fetchingRef.current = false; }

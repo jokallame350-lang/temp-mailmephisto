@@ -77,11 +77,11 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       '100% anonymous developer workflow powered by RAM-only zero-log storage.'
     ],
     faqsTr: [
-      { q: 'Cursor AI doğrulama kodu MephistoMail kutuma düşer mi?', a: 'Evet! Canlı WebSocket altyapımız sayesinde doğrulama kodu sayfayı yenilemeden 1 saniyede ekranınıza gelir.' },
+      { q: 'Cursor AI doğrulama kodu MephistoMail kutuma düşer mi?', a: 'Evet! Canlı Otomatik Hızlı Senkronizasyon altyapımız sayesinde doğrulama kodu sayfayı yenilemeden 1 saniyede ekranınıza gelir.' },
       { q: 'Cursor AI için birden fazla e-posta alabilir miyim?', a: 'Evet! MephistoMail üzerinde aynı anda 100 adede kadar eşzamanlı geçici e-posta kutusu yönetebilirsiniz.' }
     ],
     faqsEn: [
-      { q: 'Will I receive Cursor AI OTP verification codes instantly?', a: 'Yes! Our real-time WebSocket delivers verification emails to your inbox within 1 second without page refresh.' },
+      { q: 'Will I receive Cursor AI OTP verification codes instantly?', a: 'Yes! Our real-time Otomatik Hızlı Senkronizasyon delivers verification emails to your inbox within 1 second without page refresh.' },
       { q: 'Can I manage multiple emails for Cursor AI testing?', a: 'Yes! MephistoMail supports up to 100 simultaneous volatile inboxes.' }
     ]
   },
@@ -120,8 +120,8 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     descriptionEn: 'Instant disposable email to verify Bolt.new fullstack development sandboxes.',
     whyTr: ['Bolt.new hesaplarını saniyeler içinde doğrulayın.'],
     whyEn: ['Verify Bolt.new accounts in seconds.'],
-    faqsTr: [{ q: 'Bolt.new mailleri hızlı gelir mi?', a: 'Evet, 1 saniyede canlı WebSocket ile gelir.' }],
-    faqsEn: [{ q: 'Do Bolt.new verification emails arrive fast?', a: 'Yes, within 1 second via live WebSocket push.' }]
+    faqsTr: [{ q: 'Bolt.new mailleri hızlı gelir mi?', a: 'Evet, 1 saniyede otomatik hızlı senkronizasyon ile gelir.' }],
+    faqsEn: [{ q: 'Do Bolt.new verification emails arrive fast?', a: 'Yes, within 1 second via live Otomatik Hızlı Senkronizasyon push.' }]
   },
   'tradingview': {
     id: 'tradingview',
@@ -190,8 +190,8 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     descriptionEn: 'Instant temporary email to test ElevenLabs voice cloning and text-to-speech credits.',
     whyTr: ['ElevenLabs hesap onay maillerini 1 saniyede alın.'],
     whyEn: ['Receive ElevenLabs account confirmation emails in 1 second.'],
-    faqsTr: [{ q: 'ElevenLabs doğrulama mailleri geliyor mu?', a: 'Evet, canlı WebSocket ile anında gelir.' }],
-    faqsEn: [{ q: 'Do ElevenLabs verification emails arrive?', a: 'Yes, delivered instantly via real-time WebSocket.' }]
+    faqsTr: [{ q: 'ElevenLabs doğrulama mailleri geliyor mu?', a: 'Evet, otomatik hızlı senkronizasyon ile anında gelir.' }],
+    faqsEn: [{ q: 'Do ElevenLabs verification emails arrive?', a: 'Yes, delivered instantly via real-time Otomatik Hızlı Senkronizasyon.' }]
   },
   'notion-ai': {
     id: 'notion-ai',
@@ -242,11 +242,11 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     ],
     faqsTr: [
       { q: 'Discord geçici e-posta adreslerini kabul ediyor mu?', a: 'Evet! MephistoMail sürekli güncellenen temiz domain listesi sunduğu için Discord doğrulama kodlarını sorunsuz şekilde alır.' },
-      { q: 'Discord doğrulama kodum ne kadar sürede düşer?', a: 'WebSocket ve SSE altyapımız sayesinde doğrulama kodunuz 1 ila 3 saniye içinde ekranınızdaki bildirimde görünür.' }
+      { q: 'Discord doğrulama kodum ne kadar sürede düşer?', a: 'Otomatik Hızlı Senkronizasyon ve SSE altyapımız sayesinde doğrulama kodunuz 1 ila 3 saniye içinde ekranınızdaki bildirimde görünür.' }
     ],
     faqsEn: [
       { q: 'Does Discord accept temporary email addresses?', a: 'Yes! MephistoMail uses fresh, regularly rotated domains ensuring Discord verification emails arrive smoothly.' },
-      { q: 'How fast will I get my Discord OTP code?', a: 'Our SSE and WebSocket real-time delivery ensures your 6-digit code arrives in 1 to 3 seconds.' }
+      { q: 'How fast will I get my Discord OTP code?', a: 'Our SSE and Otomatik Hızlı Senkronizasyon real-time delivery ensures your 6-digit code arrives in 1 to 3 seconds.' }
     ]
   },
   chatgpt: {
@@ -501,10 +501,10 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       'Shield your primary inbox from game server newsletter noise.'
     ],
     faqsTr: [
-      { q: 'Oyun doğrulama kodları ne zaman gelir?', a: 'Real-time WebSocket altyapısı ile kodlar 1-3 saniyede bildirime düşer.' }
+      { q: 'Oyun doğrulama kodları ne zaman gelir?', a: 'Real-time Otomatik Hızlı Senkronizasyon altyapısı ile kodlar 1-3 saniyede bildirime düşer.' }
     ],
     faqsEn: [
-      { q: 'How fast do game security PINs arrive?', a: 'Powered by SSE & WebSockets, PINs arrive in sub-3 seconds.' }
+      { q: 'How fast do game security PINs arrive?', a: 'Powered by SSE & Otomatik Hızlı Senkronizasyons, PINs arrive in sub-3 seconds.' }
     ]
   },
   'qa-testing': {
@@ -1099,16 +1099,16 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     color: 'from-yellow-500 to-red-600',
     titleTr: '1 Saniyede Geçici E-posta Oluştur (1 Second Temp Mail) - Işık Hızında',
     titleEn: '1 Second Temp Mail Generator - Instant Ultra-Fast Disposable Email',
-    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında WebSocket ve SSE canlı posta kutusu.',
-    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time WebSocket delivery, and sub-second OTP arrival.',
+    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında Otomatik Hızlı Senkronizasyon ve SSE canlı posta kutusu.',
+    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time Otomatik Hızlı Senkronizasyon delivery, and sub-second OTP arrival.',
     whyTr: [
       'Tek tıkla 1 saniyeden kısa sürede hazır e-posta adresi alın.',
-      'Gelen e-postaları ve OTP kodlarını canlı WebSocket altyapısı ile anında görün.',
+      'Gelen e-postaları ve OTP kodlarını canlı Otomatik Hızlı Senkronizasyon altyapısı ile anında görün.',
       'Zaman kaybetmeden form doğrulamalarını ve hızlı kayıtları tamamlayın.'
     ],
     whyEn: [
       'Get a fully operational disposable address in under 1000 milliseconds.',
-      'View incoming emails and security OTPs in real-time via persistent WebSockets.',
+      'View incoming emails and security OTPs in real-time via persistent Otomatik Hızlı Senkronizasyons.',
       'Bypass slow sign-up forms and verify accounts with zero latency.'
     ],
     faqsTr: [
@@ -1128,16 +1128,16 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     color: 'from-yellow-500 to-red-600',
     titleTr: '1 Saniyede Geçici E-posta Oluştur (1 Second Temp Mail) - Işık Hızında',
     titleEn: '1 Second Temp Mail Generator - Instant Ultra-Fast Disposable Email',
-    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında WebSocket ve SSE canlı posta kutusu.',
-    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time WebSocket delivery, and sub-second OTP arrival.',
+    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında Otomatik Hızlı Senkronizasyon ve SSE canlı posta kutusu.',
+    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time Otomatik Hızlı Senkronizasyon delivery, and sub-second OTP arrival.',
     whyTr: [
       'Tek tıkla 1 saniyeden kısa sürede hazır e-posta adresi alın.',
-      'Gelen e-postaları ve OTP kodlarını canlı WebSocket altyapısı ile anında görün.',
+      'Gelen e-postaları ve OTP kodlarını canlı Otomatik Hızlı Senkronizasyon altyapısı ile anında görün.',
       'Zaman kaybetmeden form doğrulamalarını ve hızlı kayıtları tamamlayın.'
     ],
     whyEn: [
       'Get a fully operational disposable address in under 1000 milliseconds.',
-      'View incoming emails and security OTPs in real-time via persistent WebSockets.',
+      'View incoming emails and security OTPs in real-time via persistent Otomatik Hızlı Senkronizasyons.',
       'Bypass slow sign-up forms and verify accounts with zero latency.'
     ],
     faqsTr: [
@@ -1343,10 +1343,10 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       'Destroy the mailbox with zero digital trace.'
     ],
     faqsTr: [
-      { q: 'VPN onay mailleri geliyor mu?', a: 'Evet, canlı WebSocket ile VPN onay linkleri ve kodları 1-3 saniyede ekranınıza gelir.' }
+      { q: 'VPN onay mailleri geliyor mu?', a: 'Evet, otomatik hızlı senkronizasyon ile VPN onay linkleri ve kodları 1-3 saniyede ekranınıza gelir.' }
     ],
     faqsEn: [
-      { q: 'Do VPN activation emails arrive fast?', a: 'Yes, activation links and verification PINs arrive within 1-3 seconds via WebSocket.' }
+      { q: 'Do VPN activation emails arrive fast?', a: 'Yes, activation links and verification PINs arrive within 1-3 seconds via rapid auto-sync.' }
     ]
   },
   'ai-art': {
@@ -1415,10 +1415,10 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       'Block aggressive crypto marketing.'
     ],
     faqsTr: [
-      { q: 'Kripto onay kodları hızlı mı?', a: 'Evet, canlı WebSocket ile anında ekrana yansır.' }
+      { q: 'Kripto onay kodları hızlı mı?', a: 'Evet, otomatik hızlı senkronizasyon ile anında ekrana yansır.' }
     ],
     faqsEn: [
-      { q: 'Are crypto OTP codes instant?', a: 'Yes, real-time WebSocket push delivers codes in seconds.' }
+      { q: 'Are crypto OTP codes instant?', a: 'Yes, automated rapid sync delivers codes in seconds.' }
     ]
   },
   'disney-plus': {
@@ -1514,12 +1514,12 @@ export const ServiceMailPage: React.FC<ServiceMailPageProps> = ({ lang }) => {
     descriptionEn: `Instant disposable temporary email for ${strippedSlug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')} verification, OTP codes, and privacy.`,
     whyTr: [
       `${strippedSlug} kayıtlarında kişisel e-posta adresinizi koruyun.`,
-      'Canlı WebSocket ile doğrulama kodlarını 1 saniyede alın.',
+      'Otomatik hızlı senkronizasyon ile doğrulama kodlarını 1 saniyede alın.',
       'RAM-only mimari ile sıfır iz bırakın.'
     ],
     whyEn: [
       `Shield your primary inbox during ${strippedSlug} registrations.`,
-      'Receive verification codes in 1 second via live WebSockets.',
+      'Receive verification codes in 1 second via automated rapid sync.',
       'Zero trace guarantee with RAM-only architecture.'
     ],
     faqsTr: [

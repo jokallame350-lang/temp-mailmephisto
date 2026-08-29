@@ -15,50 +15,8 @@ interface EmailViewerProps {
   onReply?: (initialData: { to: string; subject: string; body: string }) => void;
 }
 
-const extractOTPFromContent = (subject: string, text?: string): string | null => {
-  const combined = `${subject || ''} ${text || ''}`;
-  const patterns = [
-    /(?:code|kod|verification|doğrulama|pin|otp|passcode|şifre)[:\s#-]*(\d{4,8})/i,
-    /\b(\d{6})\b/,
-    /\b(\d{8})\b/,
-    /\b(\d{5})\b/,
-    /\b(\d{4})\b/,
-  ];
-  for (const pattern of patterns) {
-    const match = combined.match(pattern);
-    if (match) return match[1];
-  }
-  return null;
-};
-
-// Basit AI/Heuristic Eylem Linki Çıkarıcı
-const extractActionLinks = (htmlText?: string): { url: string, label: string } | null => {
-  if (!htmlText) return null;
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, 'text/html');
-    const links = doc.querySelectorAll('a');
-
-    const targetWords = ['verify', 'confirm', 'activate', 'reset', 'unsubscribe', 'onayla', 'doğrula', 'etkinleştir', 'sıfırla', 'login', 'sign in', 'giriş', 'şifre', 'click here', 'tıkla', 'unsubscribe', 'ayrıl'];
-
-    for (let i = 0; i < links.length; i++) {
-      const link = links[i];
-      const textContext = (link.textContent || '').toLowerCase().trim();
-      const href = link.getAttribute('href');
-
-      if (!textContext || !href || (!href.startsWith('http') && !href.startsWith('https'))) continue;
-
-      const isAction = targetWords.some(word => textContext.includes(word));
-
-      if (isAction || link.style.padding || link.style.backgroundColor) {
-        return { url: href, label: link.textContent?.trim() || 'Action Link' };
-      }
-    }
-  } catch (e) {
-    console.error('Action link parse failed', e);
-  }
-  return null;
-};
+import { extractActionLinks } from '../utils/actionLinks';
+import { extractOTP } from '../utils/otp';
 
 // Dosya tipine göre ikon
 const getFileIcon = (contentType: string) => {
@@ -324,8 +282,8 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     : (email.from && typeof email.from === 'object' ? String(email.from.name || email.from.address || 'unknown') : 'unknown');
 
   const otpCode = useMemo(() => {
-    const textContent = email.text || email.intro || (email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0].replace(/<[^>]*>/g, ' ') : '') : '');
-    return extractOTPFromContent(email.subject, textContent);
+    const textContent = `${email.subject || ''} ${email.text || email.intro || ''} ${email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0].replace(/<[^>]*>/g, ' ') : '') : ''}`;
+    return extractOTP(textContent);
   }, [email.subject, email.text, email.intro, email.html]);
 
   const formatDate = useCallback((dateString: string) => {

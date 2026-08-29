@@ -9,8 +9,8 @@
     "lint": "tsc -b --pretty false",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
-    "test": "node --test scripts/unit-tests.mjs",
-    "test:watch": "node --test --watch scripts/unit-tests.mjs",
+    "test": "npx tsx --test scripts/unit-tests.ts",
+    "test:watch": "npx tsx --test --watch scripts/unit-tests.ts",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
