@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
 import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
 import { playNotificationSound } from '../utils/audioNotification';
+import { extractActionLinks } from '../utils/actionLinks';
 
 const REFRESH_INTERVAL = 10000;
 const REFRESH_INTERVAL_HIDDEN = 30000;
@@ -13,7 +14,7 @@ const defaultFilters: NotificationFilter = { verification: true, security: true,
 
 const safeRead = <T,>(key: string, fallback: T): T => { try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
 
-export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: string, subject: string) => void, _autoVerifyEnabled?: boolean, _onAutoVerifySuccess?: (urlLabel: string) => void) {
+export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: string, subject: string) => void, autoVerifyEnabled = false, onAutoVerifySuccess?: (urlLabel: string) => void) {
     const [emails, setEmails] = useState<EmailSummary[]>([]);
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
     const [currentEmailDetail, setCurrentEmailDetail] = useState<EmailDetail | null>(null);
@@ -27,12 +28,13 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
     const [stats, setStats] = useState<AppStats>(() => safeRead(STATS_KEY, defaultStats));
     const [notifFilters, setNotifFilters] = useState<NotificationFilter>(() => safeRead(FILTER_KEY, defaultFilters));
     const previousIdsRef = useRef<Set<string>>(new Set());
+    const autoVerifiedIdsRef = useRef<Set<string>>(new Set());
     const fetchingRef = useRef(false);
     const mountedRef = useRef(true);
 
     useEffect(() => () => { mountedRef.current = false; }, []);
     useEffect(() => { deletedIdsRef.current = deletedIds; }, [deletedIds]);
-    useEffect(() => { setEmails([]); setSelectedEmailId(null); setCurrentEmailDetail(null); setDeletedIds(new Set()); deletedIdsRef.current = new Set(); previousIdsRef.current = new Set(); setFetchError(null); setProgress(0); }, [activeAccount?.id]);
+    useEffect(() => { setEmails([]); setSelectedEmailId(null); setCurrentEmailDetail(null); setDeletedIds(new Set()); deletedIdsRef.current = new Set(); previousIdsRef.current = new Set(); autoVerifiedIdsRef.current = new Set(); setFetchError(null); setProgress(0); }, [activeAccount?.id]);
     useEffect(() => { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch {} }, [stats]);
     useEffect(() => { try { localStorage.setItem(FILTER_KEY, JSON.stringify(notifFilters)); } catch {} }, [notifFilters]);
 
@@ -48,6 +50,27 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
         else { try { new Notification(title, { body, icon: '/icon.png' }); } catch {} }
     }, [shouldNotify]);
 
+    const autoVerifyEmail = useCallback(async (account: Mailbox, email: EmailSummary) => {
+        if (!autoVerifyEnabled || autoVerifiedIdsRef.current.has(email.id)) return;
+        autoVerifiedIdsRef.current.add(email.id);
+        try {
+            const detail = await getMessageDetail(account, email.id);
+            if (!mountedRef.current || !detail) return;
+            const html = detail.html?.[0];
+            const htmlText = typeof html === 'string' ? html : '';
+            const action = extractActionLinks(htmlText);
+            if (!action) return;
+
+            // Only the strict HTTPS URL accepted by extractActionLinks is contacted.
+            // no-cors is intentional: verification endpoints commonly do not expose CORS,
+            // while the GET still reaches the destination without exposing its response.
+            await fetch(action.url, { method: 'GET', mode: 'no-cors', credentials: 'omit', redirect: 'error' }).catch(() => undefined);
+            if (mountedRef.current) onAutoVerifySuccess?.(action.label);
+        } catch {
+            // Auto-verification is best-effort; never interrupt mailbox polling.
+        }
+    }, [autoVerifyEnabled, onAutoVerifySuccess]);
+
     const fetchEmails = useCallback(async () => {
         if (!activeAccount || fetchingRef.current) return;
         fetchingRef.current = true;
@@ -62,6 +85,7 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
                 notifyNewEmails(newEmails);
                 newEmails.forEach(e => { const from = typeof e.from === 'string' ? e.from : e.from?.name || e.from?.address || 'unknown'; onNewEmail?.(String(from), e.subject || ''); });
                 setStats(prev => { const updated = { ...prev, totalEmailsReceived: prev.totalEmailsReceived + newEmails.length, lastActivity: Date.now() }; newEmails.forEach(e => { updated.categoryBreakdown[e.aiCategory] = (updated.categoryBreakdown[e.aiCategory] || 0) + 1; }); return updated; });
+                if (autoVerifyEnabled) await Promise.allSettled(newEmails.map(email => autoVerifyEmail(activeAccount, email)));
             }
             previousIdsRef.current = new Set(filtered.map(e => e.id));
             setEmails(prev => { const map = new Map<string, EmailSummary>(); prev.forEach(item => { if (!currentDeleted.has(item.id)) map.set(item.id, item); }); filtered.forEach(item => map.set(item.id, item)); return Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); });
@@ -71,7 +95,7 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
             const message = err instanceof Error ? err.message : String(err || '');
             if (message) setFetchError(message);
         } finally { fetchingRef.current = false; }
-    }, [activeAccount, notifyNewEmails, onNewEmail]);
+    }, [activeAccount, autoVerifyEmail, autoVerifyEnabled, notifyNewEmails, onNewEmail]);
 
     const handleManualRefresh = useCallback(async () => { if (!activeAccount) return; setIsLoadingEmails(true); setProgress(25); await fetchEmails(); if (!mountedRef.current) return; setProgress(100); window.setTimeout(() => { if (mountedRef.current) { setIsLoadingEmails(false); setProgress(0); } }, 300); }, [activeAccount, fetchEmails]);
     useEffect(() => { if (!activeAccount) return; return subscribeToMailboxEvents(activeAccount, fetchEmails); }, [activeAccount, fetchEmails]);
