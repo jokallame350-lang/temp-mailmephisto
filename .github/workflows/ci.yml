@@ -32,7 +32,7 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Unit tests
-        run: npm test -- --run
+        run: npm test
       - name: Production build
         run: npm run build
       - name: Verify build output
