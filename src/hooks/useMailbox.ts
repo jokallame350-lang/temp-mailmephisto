@@ -2,40 +2,48 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Mailbox } from '../types';
 import { generateMailbox, createCustomMailbox, fetchDomains, storeCredentials, clearCredentials, onTokenRefresh } from '../services/mailService';
 
-const STORAGE_KEY = 'nexus_accounts_v5';
-const MAX_ACTIVE_ACCOUNTS = 100;
-const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000;
+export const STORAGE_KEY = 'nexus_accounts_v5';
+export const MAX_ACTIVE_ACCOUNTS = 100;
+export const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000;
 
-const safeParseAccounts = (raw: string | null): Mailbox[] => {
+export const safeParseAccounts = (raw: string | null): Mailbox[] => {
     if (!raw) return [];
     try {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
         const now = Date.now();
-        return parsed.filter((a: Mailbox) => a && typeof a.id === 'string' && typeof a.address === 'string' && (!a.createdAt || now - a.createdAt < ACCOUNT_LIFETIME_MS)).map((a: Mailbox) => {
-            const { password: _password, ...safeAccount } = a as Mailbox;
-            return safeAccount as Mailbox;
-        });
+        return parsed
+            .filter((a: Mailbox) => a && typeof a.id === 'string' && typeof a.address === 'string' && (!a.createdAt || now - a.createdAt < ACCOUNT_LIFETIME_MS))
+            .map((a: any) => {
+                const { password: _p, token: _t, ...safeAccount } = a;
+                return {
+                    ...safeAccount,
+                    token: undefined,
+                    password: undefined,
+                } as Mailbox;
+            });
     } catch { return []; }
 };
 
-const getInitialAccounts = (): Mailbox[] => {
+export const getInitialAccounts = (): Mailbox[] => {
     if (typeof window === 'undefined') return [];
     return safeParseAccounts(localStorage.getItem(STORAGE_KEY));
 };
 
-const getInitialActiveId = (initialAccounts: Mailbox[]): string | null => {
+export const getInitialActiveId = (initialAccounts: Mailbox[]): string | null => {
     if (typeof window === 'undefined' || !initialAccounts.length) return null;
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const targetMailbox = urlParams.get('mailbox')?.trim()?.toLowerCase();
         if (targetMailbox && /^[^@\s]+@[^@\s]+$/.test(targetMailbox)) {
+            const exactMatch = initialAccounts.find(a => a.address.toLowerCase() === targetMailbox);
+            if (exactMatch) return exactMatch.id;
+
             const targetUser = targetMailbox.split('@')[0];
-            const match = initialAccounts.find(a => 
-                a.address.toLowerCase() === targetMailbox ||
-                (a.apiBase === 'guerrilla' && a.address.split('@')[0].toLowerCase() === targetUser)
+            const aliasMatch = initialAccounts.find(a => 
+                a.apiBase === 'guerrilla' && a.address.split('@')[0].toLowerCase() === targetUser
             );
-            if (match) return match.id;
+            if (aliasMatch) return aliasMatch.id;
         }
     } catch {}
     return initialAccounts[0].id;
@@ -66,7 +74,7 @@ export function useMailbox() {
 
     const persist = useCallback((items: Mailbox[]) => {
         try {
-            const safeItems = items.map(({ password: _password, ...account }) => account);
+            const safeItems = items.map(({ password: _p, token: _t, ...account }) => account);
             if (safeItems.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(safeItems)); else localStorage.removeItem(STORAGE_KEY);
         } catch {}
     }, []);
@@ -112,11 +120,13 @@ export function useMailbox() {
             const validAccounts = safeParseAccounts(typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null);
 
             if (targetMailbox && /^[^@\s]+@[^@\s]+$/.test(targetMailbox)) {
-                const targetUser = targetMailbox.split('@')[0].toLowerCase();
-                const existing = validAccounts.find(a => 
-                    a.address.toLowerCase() === targetMailbox.toLowerCase() ||
-                    (a.apiBase === 'guerrilla' && a.address.split('@')[0].toLowerCase() === targetUser)
-                );
+                const normalizedTarget = targetMailbox.toLowerCase();
+                const targetUser = normalizedTarget.split('@')[0];
+                const exactMatch = validAccounts.find(a => a.address.toLowerCase() === normalizedTarget);
+                const aliasMatch = !exactMatch
+                    ? validAccounts.find(a => a.apiBase === 'guerrilla' && a.address.split('@')[0].toLowerCase() === targetUser)
+                    : undefined;
+                const existing = exactMatch || aliasMatch;
                 if (existing) {
                     if (!cancelled) {
                         setAccounts(validAccounts);
@@ -192,7 +202,6 @@ export function useMailbox() {
         return () => window.clearInterval(interval);
     }, [persist]);
 
-    // Keep activeAccountId synced if the active account is removed/expired
     useEffect(() => {
         if (activeAccountId && accounts.length > 0 && !accounts.some(a => a.id === activeAccountId)) {
             setActiveAccountId(accounts[0]?.id || null);
@@ -226,7 +235,10 @@ export function useMailbox() {
     const updateAccountLabel = useCallback((id: string, label: string, labelColor: string) => setAccounts(prev => prev.map(a => a.id === id ? { ...a, label, labelColor } : a)), []);
     const setAutoDelete = useCallback((id: string, minutes: number | undefined) => setAccounts(prev => prev.map(a => a.id === id ? { ...a, autoDeleteMinutes: minutes, createdAt: a.createdAt || Date.now() } : a)), []);
     const bulkCopyAddresses = useCallback(() => { const addresses = accounts.map(a => a.address).join('\n'); navigator.clipboard?.writeText(addresses).catch(() => {}); return addresses; }, [accounts]);
-    const addCustomAccount = useCallback((mailbox: Mailbox) => setAccounts(prev => { const updated = [mailbox, ...prev].slice(0, MAX_ACTIVE_ACCOUNTS); persist(updated); return updated; }), [persist]);
+    const addCustomAccount = useCallback((mailbox: Mailbox) => {
+        if (mailbox.password) storeCredentials(mailbox.id, mailbox.address, mailbox.password);
+        setAccounts(prev => { const updated = [mailbox, ...prev].slice(0, MAX_ACTIVE_ACCOUNTS); persist(updated); return updated; });
+    }, [persist]);
 
     const changeDomain = useCallback(async (newDomain: string) => {
         if (!activeAccount || !newDomain) return { success: false };
@@ -250,4 +262,4 @@ export function useMailbox() {
     }, [activeAccount, persist]);
 
     return { accounts, activeAccount, activeAccountId, isLoadingAccount, setActiveAccountId, createQuickAccount, handleCreateCustom, changeDomain, deleteAccount, updateAccountLabel, setAutoDelete, bulkCopyAddresses, addCustomAccount, getMagicUrl, MAX_ACTIVE_ACCOUNTS };
-}
+}

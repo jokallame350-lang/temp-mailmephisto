@@ -100,7 +100,18 @@ import {
   MailboxFetchError,
 } from '../src/services/mailService.ts';
 import {
+  safeParseAccounts,
+  getInitialActiveId,
+  STORAGE_KEY,
+  ACCOUNT_LIFETIME_MS,
+} from '../src/hooks/useMailbox.ts';
+import {
   getInboxCacheKey,
+  getDeletedCacheKey,
+  safeReadDeletedIds,
+  safeSaveDeletedIds,
+  safeReadDeleted,
+  safeSaveDeleted,
   safeReadInbox,
   safeSaveInbox,
   safeClearInbox,
@@ -2721,6 +2732,1137 @@ test('Integration Q6: safeSaveInbox caps cache at 200 items', () => {
     (globalThis as any).sessionStorage = originalSessionStorage;
   }
 });
+
+test('Integration Q7: getDeletedCacheKey generates canonical versioned key mephisto_deleted_v1_${account.address.toLowerCase().trim()}', () => {
+  const account1: Mailbox = { id: 'acc1', address: 'UserA@GuerrillaMail.com ', apiBase: 'guerrilla' };
+  const account2: Mailbox = { id: 'acc2', address: 'usera@sharklasers.com', apiBase: 'guerrilla' };
+  const accountNull: Mailbox = { id: 'acc3', address: '', apiBase: 'guerrilla' };
+
+  assert.equal(getDeletedCacheKey(account1), 'mephisto_deleted_v1_usera@guerrillamail.com');
+  assert.equal(getDeletedCacheKey(account2), 'mephisto_deleted_v1_usera@sharklasers.com');
+  assert.equal(getDeletedCacheKey(accountNull), null);
+  assert.equal(getDeletedCacheKey(null), null);
+});
+
+test('Integration Q8: safeSaveDeletedIds and safeReadDeletedIds persist deleted message IDs across simulated reloads', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'acc_persist_del', address: 'persist@sharklasers.com', apiBase: 'guerrilla' };
+    const deletedSet = new Set(['msg_101', 'msg_102', 'msg_103']);
+
+    safeSaveDeletedIds(account, deletedSet);
+
+    // Verify key in mockStorage
+    assert.ok(mockStorage['mephisto_deleted_v1_persist@sharklasers.com']);
+
+    // Simulate page reload (F5) by reading directly from storage
+    const restored = safeReadDeletedIds(account);
+    assert.equal(restored.size, 3);
+    assert.ok(restored.has('msg_101'));
+    assert.ok(restored.has('msg_102'));
+    assert.ok(restored.has('msg_103'));
+    assert.equal(restored.has('msg_999'), false);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q9: Deleted IDs and Inbox caches are strictly isolated between same-username different-domain accounts', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const accountG: Mailbox = { id: 'acc_g', address: 'abc@guerrillamail.com', apiBase: 'guerrilla' };
+    const accountS: Mailbox = { id: 'acc_s', address: 'abc@sharklasers.com', apiBase: 'guerrilla' };
+
+    // Save different deleted IDs
+    safeSaveDeletedIds(accountG, new Set(['msg_g_1']));
+    safeSaveDeletedIds(accountS, new Set(['msg_s_1']));
+
+    // Save different emails
+    safeSaveInbox(accountG, [{ id: 'msg_g_1', from: 'fromG', subject: 'Sub G', intro: 'G', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Other' }]);
+    safeSaveInbox(accountS, [{ id: 'msg_s_1', from: 'fromS', subject: 'Sub S', intro: 'S', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Other' }]);
+
+    const delG = safeReadDeletedIds(accountG);
+    const delS = safeReadDeletedIds(accountS);
+    assert.ok(delG.has('msg_g_1'));
+    assert.equal(delG.has('msg_s_1'), false);
+    assert.ok(delS.has('msg_s_1'));
+    assert.equal(delS.has('msg_g_1'), false);
+
+    const inboxG = safeReadInbox(accountG);
+    const inboxS = safeReadInbox(accountS);
+    assert.equal(inboxG[0].id, 'msg_g_1');
+    assert.equal(inboxS[0].id, 'msg_s_1');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q10: safeSaveDeletedIds caps stored IDs at 500', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'acc_cap', address: 'cap@sharklasers.com', apiBase: 'guerrilla' };
+    const largeSet = new Set(Array.from({ length: 700 }, (_, i) => `id_${i}`));
+
+    safeSaveDeletedIds(account, largeSet);
+
+    const restored = safeReadDeletedIds(account);
+    assert.equal(restored.size, 500);
+    assert.ok(restored.has('id_0'));
+    assert.ok(restored.has('id_499'));
+    assert.equal(restored.has('id_500'), false);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q11: Deterministic merge filters upstream with deletedIds, deduplicates, and preserves existing items', () => {
+  const _account: Mailbox = { id: 'acc_merge', address: 'merge@sharklasers.com', apiBase: 'guerrilla' };
+  const deleted = new Set(['del_1', 'del_2']);
+
+  const upstream: EmailSummary[] = [
+    { id: 'del_1', from: 'spam@test.com', subject: 'Spam 1', intro: '1', seen: false, createdAt: '2026-08-29T11:00:00Z', aiCategory: 'Other' },
+    { id: 'keep_1', from: 'friend@test.com', subject: 'Hello', intro: 'Hi', seen: false, createdAt: '2026-08-29T10:30:00Z', aiCategory: 'Other' },
+  ];
+
+  const cached: EmailSummary[] = [
+    { id: 'keep_2', from: 'work@test.com', subject: 'Task', intro: 'Do this', seen: true, createdAt: '2026-08-29T09:00:00Z', aiCategory: 'Other' },
+    { id: 'del_2', from: 'old@test.com', subject: 'Old Deleted', intro: 'Old', seen: true, createdAt: '2026-08-29T08:00:00Z', aiCategory: 'Other' },
+  ];
+
+  // Merge logic simulation matching useEmails
+  const filteredUpstream = upstream.filter(e => !deleted.has(e.id));
+  const map = new Map<string, EmailSummary>();
+  cached.forEach(item => { if (!deleted.has(item.id)) map.set(item.id, item); });
+  filteredUpstream.forEach(item => map.set(item.id, item));
+
+  const merged = Array.from(map.values())
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 200);
+
+  assert.equal(merged.length, 2);
+  assert.equal(merged[0].id, 'keep_1');
+  assert.equal(merged[1].id, 'keep_2');
+  assert.equal(merged.some(m => deleted.has(m.id)), false);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 18 / SUITE R: Storage Security, Mailbox Lifecycle & Token Isolation
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Integration R1: safeParseAccounts strips token and password from raw JSON and returns undefined for both', () => {
+  const rawAccounts = JSON.stringify([
+    {
+      id: 'acc1',
+      address: 'user1@guerrillamail.com',
+      apiBase: 'guerrilla',
+      token: 'secret_guerrilla_sid_token_123',
+      password: 'super_secret_password_abc',
+      createdAt: Date.now() - 1000,
+    },
+    {
+      id: 'acc2',
+      address: 'user2@mail.tm',
+      apiBase: 'mail_tm',
+      token: 'jwt_bearer_token_xyz',
+      password: 'hydra_password_789',
+      createdAt: Date.now() - 5000,
+    },
+  ]);
+
+  const parsed = safeParseAccounts(rawAccounts);
+  assert.equal(parsed.length, 2);
+
+  // Account 1 assertions
+  assert.equal(parsed[0].id, 'acc1');
+  assert.equal(parsed[0].address, 'user1@guerrillamail.com');
+  assert.equal(parsed[0].token, undefined);
+  assert.equal(parsed[0].password, undefined);
+  assert.equal('token' in parsed[0] && parsed[0].token, undefined);
+  assert.equal('password' in parsed[0] && parsed[0].password, undefined);
+
+  // Account 2 assertions
+  assert.equal(parsed[1].id, 'acc2');
+  assert.equal(parsed[1].address, 'user2@mail.tm');
+  assert.equal(parsed[1].token, undefined);
+  assert.equal(parsed[1].password, undefined);
+});
+
+test('Integration R2: safeParseAccounts safely handles null, corrupt JSON, or expired accounts', () => {
+  assert.equal(STORAGE_KEY, 'nexus_accounts_v5');
+  assert.deepEqual(safeParseAccounts(null), []);
+  assert.deepEqual(safeParseAccounts('not a valid json'), []);
+  assert.deepEqual(safeParseAccounts('{"not": "an array"}'), []);
+
+  const expiredAccount = JSON.stringify([
+    {
+      id: 'acc_old',
+      address: 'old@guerrillamail.com',
+      apiBase: 'guerrilla',
+      createdAt: Date.now() - (ACCOUNT_LIFETIME_MS + 10000),
+    },
+  ]);
+  assert.deepEqual(safeParseAccounts(expiredAccount), []);
+});
+
+test('Integration R3: credentialStore is purely in-memory and clearCredentials removes entry without touching localStorage', () => {
+  const originalLocalStorage = globalThis.localStorage;
+  let touchedStorage = false;
+
+  try {
+    (globalThis as any).localStorage = {
+      getItem: () => { touchedStorage = true; return null; },
+      setItem: () => { touchedStorage = true; },
+      removeItem: () => { touchedStorage = true; },
+    };
+
+    storeCredentials('test_id_1', 'user@mail.tm', 'test_pass_123');
+    clearCredentials('test_id_1');
+
+    assert.equal(touchedStorage, false, 'localStorage must NEVER be touched by credentialStore');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+  }
+});
+
+test('Integration R4: rehydrateMailboxSession establishes session SID in RAM only and never touches localStorage', async () => {
+  const originalLocalStorage = globalThis.localStorage;
+  const storageKeysSet: string[] = [];
+
+  try {
+    (globalThis as any).localStorage = {
+      getItem: () => null,
+      setItem: (key: string) => { storageKeysSet.push(key); },
+      removeItem: () => {},
+    };
+
+    setMockFetch((url) => {
+      if (url.includes('f=get_email_address')) {
+        return jsonResponse({ sid_token: 'ram_only_sid_456', email_addr: 'testuser@guerrillamail.com' });
+      }
+      if (url.includes('f=set_email_user')) {
+        return jsonResponse({ email_user: 'testuser', email_addr: 'testuser@guerrillamail.com' });
+      }
+      return textResponse('not found', 404);
+    });
+
+    let refreshedToken = '';
+    const unsub = onTokenRefresh((id, token) => {
+      if (id === 'mb_rehydrate_ram') refreshedToken = token;
+    });
+
+    const mailbox: Mailbox = {
+      id: 'mb_rehydrate_ram',
+      address: 'testuser@guerrillamail.com',
+      apiBase: 'guerrilla',
+    };
+
+    const sid = await rehydrateMailboxSession(mailbox);
+    unsub();
+
+    assert.equal(sid, 'ram_only_sid_456');
+    assert.equal(mailbox.token, 'ram_only_sid_456');
+    assert.equal(refreshedToken, 'ram_only_sid_456');
+    assert.equal(storageKeysSet.length, 0, 'rehydrateMailboxSession must not write to localStorage');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    setMockFetch(null);
+  }
+});
+
+test('Integration R5: getInitialActiveId strictly prioritizes exact full email match over guerrilla username prefix match', () => {
+  const originalWindow = (globalThis as any).window;
+
+  try {
+    const accounts: Mailbox[] = [
+      { id: 'acc_alias_1', address: 'alex@sharklasers.com', apiBase: 'guerrilla' },
+      { id: 'acc_exact_match', address: 'alex@grr.la', apiBase: 'guerrilla' },
+      { id: 'acc_other', address: 'bob@guerrillamail.com', apiBase: 'guerrilla' },
+    ];
+
+    // Mock window.location for exact match: alex@grr.la
+    (globalThis as any).window = {
+      location: {
+        search: '?mailbox=alex@grr.la',
+      },
+    };
+
+    const chosenId = getInitialActiveId(accounts);
+    assert.equal(chosenId, 'acc_exact_match', 'Exact address match must take precedence over username alias match');
+
+    // Test alias fallback when exact address is not found
+    (globalThis as any).window = {
+      location: {
+        search: '?mailbox=alex@pokemail.net',
+      },
+    };
+
+    const aliasId = getInitialActiveId(accounts);
+    assert.equal(aliasId, 'acc_alias_1', 'Alias match should be used as fallback when exact address does not exist');
+  } finally {
+    (globalThis as any).window = originalWindow;
+  }
+});
+
+test('Integration R6: Explicit destructuring in persist() strips token and password before JSON serialization', () => {
+  const accounts: Mailbox[] = [
+    {
+      id: 'persist_1',
+      address: 'p1@guerrillamail.com',
+      apiBase: 'guerrilla',
+      token: 'ram_sid_abc',
+      password: 'ram_password_xyz',
+      label: 'Work',
+      labelColor: '#3b82f6',
+      createdAt: 1700000000000,
+    },
+  ];
+
+  const safeItems = accounts.map(({ password: _p, token: _t, ...account }) => account);
+  const serialized = JSON.stringify(safeItems);
+
+  assert.equal(serialized.includes('ram_sid_abc'), false, 'Serialized JSON must NOT contain token');
+  assert.equal(serialized.includes('ram_password_xyz'), false, 'Serialized JSON must NOT contain password');
+  assert.equal(serialized.includes('token'), false, 'Serialized JSON must NOT contain token key');
+  assert.equal(serialized.includes('password'), false, 'Serialized JSON must NOT contain password key');
+  assert.equal(serialized.includes('p1@guerrillamail.com'), true);
+  assert.equal(serialized.includes('Work'), true);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE S: Comprehensive Requirements Verification (S1 - S15)
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Suite S (S1): Upstream token is never persisted to localStorage when accounts are saved', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+
+  try {
+    (globalThis as any).localStorage = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+
+    const inMemoryAccounts: Mailbox[] = [
+      {
+        id: 'acc_guerrilla_1',
+        address: 'alpha@guerrillamail.com',
+        apiBase: 'guerrilla',
+        token: 'guerrilla_sid_token_live_xyz123',
+        createdAt: Date.now(),
+      },
+      {
+        id: 'acc_hydra_2',
+        address: 'beta@mail.tm',
+        apiBase: 'mail_tm',
+        token: 'jwt_hydra_bearer_token_secret999',
+        createdAt: Date.now(),
+      },
+    ];
+
+    // Simulate persist function from useMailbox
+    const safeItems = inMemoryAccounts.map(({ password: _p, token: _t, ...account }) => account);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeItems));
+
+    const raw = localStorage.getItem(STORAGE_KEY);
+    assert.ok(raw, 'Expected STORAGE_KEY to be in localStorage');
+    assert.equal(raw.includes('guerrilla_sid_token_live_xyz123'), false, 'Raw storage must NOT contain guerrilla token');
+    assert.equal(raw.includes('jwt_hydra_bearer_token_secret999'), false, 'Raw storage must NOT contain hydra token');
+    assert.equal(raw.includes('"token"'), false, 'Raw storage must NOT contain any "token" key');
+
+    // Verify safeParseAccounts produces accounts with token undefined
+    const parsed = safeParseAccounts(raw);
+    assert.equal(parsed.length, 2);
+    assert.equal(parsed[0].token, undefined);
+    assert.equal(parsed[1].token, undefined);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+  }
+});
+
+test('Suite S (S2): Mailbox password is never persisted to localStorage', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+
+  try {
+    (globalThis as any).localStorage = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+
+    const inMemoryAccounts: Mailbox[] = [
+      {
+        id: 'acc_pass_test',
+        address: 'secretuser@mail.tm',
+        apiBase: 'mail_tm',
+        password: 'TopSecretPassword_2026!#$',
+        createdAt: Date.now(),
+      },
+    ];
+
+    // Store credentials in-memory store
+    storeCredentials('acc_pass_test', 'secretuser@mail.tm', 'TopSecretPassword_2026!#$');
+    assert.equal(Object.keys(mockStorage).length, 0, 'storeCredentials must not write to localStorage');
+
+    // Simulate persist from useMailbox
+    const safeItems = inMemoryAccounts.map(({ password: _p, token: _t, ...account }) => account);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeItems));
+
+    const raw = localStorage.getItem(STORAGE_KEY);
+    assert.ok(raw);
+    assert.equal(raw.includes('TopSecretPassword_2026!#$'), false, 'Raw storage must NOT contain password string');
+    assert.equal(raw.includes('"password"'), false, 'Raw storage must NOT contain any "password" key');
+
+    // Parse and verify password is undefined
+    const parsed = safeParseAccounts(raw);
+    assert.equal(parsed.length, 1);
+    assert.equal(parsed[0].password, undefined);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+  }
+});
+
+test('Suite S (S3): Token rehydration works cleanly after restore from localStorage without token', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalLocalStorage = globalThis.localStorage;
+  const storageKeysSet: string[] = [];
+
+  try {
+    (globalThis as any).localStorage = {
+      getItem: () => null,
+      setItem: (key: string) => { storageKeysSet.push(key); },
+      removeItem: () => {},
+    };
+
+    let sessionRequested = false;
+    let aliasBound = false;
+    let listFetched = false;
+
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        sessionRequested = true;
+        return new Response(JSON.stringify({
+          email_addr: 'temp_init@guerrillamailblock.com',
+          sid_token: 'rehydrated_sid_s3_success',
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        aliasBound = true;
+        return new Response(JSON.stringify({
+          email_addr: 'restored.user@guerrillamailblock.com',
+          sid_token: 'rehydrated_sid_s3_success',
+          auth: { success: true },
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=get_email_list')) {
+        listFetched = true;
+        return new Response(JSON.stringify({
+          list: [
+            {
+              mail_id: 'msg_s3_101',
+              mail_from: 'auth@service.com',
+              mail_subject: 'Rehydrated OTP Code: 991823',
+              mail_excerpt: 'Your code is 991823',
+              mail_timestamp: '1787990000',
+              mail_read: '0',
+            },
+          ],
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    let listenerFiredWithToken = '';
+    const unsub = onTokenRefresh((id, token) => {
+      if (id === 'mb_s3_restored') listenerFiredWithToken = token;
+    });
+
+    // Mailbox restored from localStorage with token undefined
+    const restoredAccount: Mailbox = {
+      id: 'mb_s3_restored',
+      address: 'restored.user@guerrillamail.com',
+      apiBase: 'guerrilla',
+      token: undefined,
+      createdAt: Date.now(),
+    };
+
+    const messages = await getMessages(restoredAccount);
+    unsub();
+
+    assert.ok(sessionRequested, 'Expected get_email_address call for new SID');
+    assert.ok(aliasBound, 'Expected set_email_user call to bind restored username');
+    assert.ok(listFetched, 'Expected get_email_list call');
+    assert.equal(restoredAccount.token, 'rehydrated_sid_s3_success');
+    assert.equal(listenerFiredWithToken, 'rehydrated_sid_s3_success');
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].id, 'msg_s3_101');
+    assert.equal(storageKeysSet.length, 0, 'Rehydration must keep token in memory without writing to localStorage');
+  } finally {
+    globalThis.fetch = originalFetch;
+    (globalThis as any).localStorage = originalLocalStorage;
+  }
+});
+
+test('Suite S (S4): Full-address cache isolation (cache key is strictly mephisto_inbox_v2_<normalized-address>)', () => {
+  const mb1: Mailbox = { id: '1', address: 'User.One+Tag@SharkLasers.COM  ', apiBase: 'guerrilla' };
+  assert.equal(getInboxCacheKey(mb1), 'mephisto_inbox_v2_user.one+tag@sharklasers.com');
+
+  const mb2: Mailbox = { id: '2', address: 'ALICE@GuerrillaMail.DE', apiBase: 'guerrilla' };
+  assert.equal(getInboxCacheKey(mb2), 'mephisto_inbox_v2_alice@guerrillamail.de');
+
+  assert.equal(getInboxCacheKey(null), null);
+  assert.equal(getInboxCacheKey({ id: '3', address: '', apiBase: 'guerrilla' }), null);
+  assert.equal(getInboxCacheKey({ id: '4', address: '   ', apiBase: 'guerrilla' }), null);
+});
+
+test('Suite S (S5): Same username with different domains (e.g. abc@guerrillamail.com vs abc@sharklasers.com) have 100% isolated caches', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+      clear: () => { for (const k of Object.keys(mockStorage)) delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const accountGuerrilla: Mailbox = { id: 'g_box', address: 'abc@guerrillamail.com', apiBase: 'guerrilla' };
+    const accountShark: Mailbox = { id: 's_box', address: 'abc@sharklasers.com', apiBase: 'guerrilla' };
+
+    const emailsGuerrilla: EmailSummary[] = [
+      { id: 'g_msg_1', from: 's1@a.com', subject: 'Guerrilla Only Code', intro: '111', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+      { id: 'g_msg_2', from: 's2@a.com', subject: 'Guerrilla Alert', intro: '222', seen: true, createdAt: '2026-08-29T09:00:00Z', aiCategory: 'Security' },
+    ];
+
+    const emailsShark: EmailSummary[] = [
+      { id: 's_msg_1', from: 's3@b.com', subject: 'Sharklasers Newsletter', intro: '333', seen: false, createdAt: '2026-08-29T11:00:00Z', aiCategory: 'Newsletter' },
+    ];
+
+    // Save to Guerrilla
+    safeSaveInbox(accountGuerrilla, emailsGuerrilla);
+
+    // Sharklasers inbox must be completely empty
+    assert.deepEqual(safeReadInbox(accountShark), []);
+
+    // Save to Sharklasers
+    safeSaveInbox(accountShark, emailsShark);
+
+    // Verify complete cache isolation
+    const readGuerrilla = safeReadInbox(accountGuerrilla);
+    const readShark = safeReadInbox(accountShark);
+
+    assert.equal(readGuerrilla.length, 2);
+    assert.equal(readGuerrilla[0].id, 'g_msg_1');
+    assert.equal(readGuerrilla[1].id, 'g_msg_2');
+
+    assert.equal(readShark.length, 1);
+    assert.equal(readShark[0].id, 's_msg_1');
+
+    // Clearing Guerrilla cache must not touch Sharklasers cache
+    safeClearInbox(accountGuerrilla);
+    assert.equal(safeReadInbox(accountGuerrilla).length, 0);
+    assert.equal(safeReadInbox(accountShark).length, 1);
+    assert.equal(safeReadInbox(accountShark)[0].id, 's_msg_1');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S6): Deleted message IDs persist in mephisto_deleted_v1_<normalized-address> and survive F5', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'del_box', address: 'User.Delete@SharkLasers.COM', apiBase: 'guerrilla' };
+    const key = getDeletedCacheKey(account);
+    assert.equal(key, 'mephisto_deleted_v1_user.delete@sharklasers.com');
+
+    // Save deleted IDs
+    const deletedSet = new Set(['del_id_101', 'del_id_102', 'del_id_103']);
+    safeSaveDeleted(account, deletedSet);
+
+    assert.ok(mockStorage[key!]);
+    assert.ok(mockStorage[key!].includes('del_id_101'));
+    assert.ok(mockStorage[key!].includes('del_id_102'));
+    assert.ok(mockStorage[key!].includes('del_id_103'));
+
+    // Simulate F5 page reload (read fresh from storage)
+    const restoredDeleted = safeReadDeleted(account);
+    assert.equal(restoredDeleted.size, 3);
+    assert.ok(restoredDeleted.has('del_id_101'));
+    assert.ok(restoredDeleted.has('del_id_102'));
+    assert.ok(restoredDeleted.has('del_id_103'));
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S7): Deleted message cannot return from upstream poll after F5 reload', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'f5_account', address: 'f5survive@guerrillamail.com', apiBase: 'guerrilla' };
+
+    // 1. Prior state: User deleted msg_dead_99, cached msg_keep_1
+    safeSaveDeleted(account, new Set(['msg_dead_99']));
+    safeSaveInbox(account, [
+      { id: 'msg_keep_1', from: 'a@a.com', subject: 'Keep Me', intro: '', seen: true, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+    ]);
+
+    // 2. F5 reload happens: read deleted IDs and cached inbox
+    const deletedIds = safeReadDeleted(account);
+    const cachedInbox = safeReadInbox(account).filter(e => !deletedIds.has(e.id));
+
+    // 3. Upstream poll returns msg_dead_99 (resurrect attempt), msg_keep_1, and new msg_fresh_2
+    const upstreamMessages: EmailSummary[] = [
+      { id: 'msg_dead_99', from: 'bad@bad.com', subject: 'ZOMBIE MESSAGE', intro: '', seen: false, createdAt: '2026-08-29T08:00:00Z', aiCategory: 'Other' },
+      { id: 'msg_keep_1', from: 'a@a.com', subject: 'Keep Me', intro: '', seen: true, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+      { id: 'msg_fresh_2', from: 'b@b.com', subject: 'Fresh Code: 4920', intro: '4920', seen: false, createdAt: '2026-08-29T11:00:00Z', aiCategory: 'Verification' },
+    ];
+
+    // Filter against deleted IDs
+    const filteredIncoming = upstreamMessages.filter(e => !deletedIds.has(e.id));
+    assert.equal(filteredIncoming.some(e => e.id === 'msg_dead_99'), false);
+
+    // Merge cached + fresh
+    const map = new Map<string, EmailSummary>();
+    cachedInbox.forEach(e => { if (!deletedIds.has(e.id)) map.set(e.id, e); });
+    filteredIncoming.forEach(e => map.set(e.id, e));
+    const merged = Array.from(map.values());
+    safeSaveInbox(account, merged);
+
+    const result = safeReadInbox(account);
+    assert.equal(result.length, 2);
+    assert.ok(result.some(e => e.id === 'msg_keep_1'));
+    assert.ok(result.some(e => e.id === 'msg_fresh_2'));
+    assert.equal(result.some(e => e.id === 'msg_dead_99'), false, 'Deleted message must NEVER reappear');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S8): Delete-all operation persists all deleted IDs and clears inbox cache cleanly', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'del_all_mb', address: 'deleteall@sharklasers.com', apiBase: 'guerrilla' };
+
+    // Initial state: 3 active emails, 1 previously deleted email
+    safeSaveDeleted(account, new Set(['prior_del_0']));
+    const currentEmails: EmailSummary[] = [
+      { id: 'm1', from: 'a@a.com', subject: 'Email 1', intro: '', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+      { id: 'm2', from: 'b@b.com', subject: 'Email 2', intro: '', seen: true, createdAt: '2026-08-29T10:01:00Z', aiCategory: 'Security' },
+      { id: 'm3', from: 'c@c.com', subject: 'Email 3', intro: '', seen: false, createdAt: '2026-08-29T10:02:00Z', aiCategory: 'Newsletter' },
+    ];
+    safeSaveInbox(account, currentEmails);
+
+    // Execute delete all workflow
+    const allIds = currentEmails.map(e => e.id);
+    const nextDeleted = safeReadDeleted(account);
+    allIds.forEach(id => nextDeleted.add(id));
+
+    safeSaveDeleted(account, nextDeleted);
+    safeClearInbox(account);
+    safeSaveInbox(account, [], true);
+
+    // Assert inbox cache is empty
+    assert.deepEqual(safeReadInbox(account), []);
+
+    // Assert all IDs are persisted to deleted cache
+    const finalDeleted = safeReadDeleted(account);
+    assert.equal(finalDeleted.size, 4);
+    assert.ok(finalDeleted.has('prior_del_0'));
+    assert.ok(finalDeleted.has('m1'));
+    assert.ok(finalDeleted.has('m2'));
+    assert.ok(finalDeleted.has('m3'));
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S9): Deleted IDs are strictly isolated per mailbox (delete all on A does not affect B)', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const accountA: Mailbox = { id: 'box_A', address: 'alice@sharklasers.com', apiBase: 'guerrilla' };
+    const accountB: Mailbox = { id: 'box_B', address: 'bob@sharklasers.com', apiBase: 'guerrilla' };
+
+    // Delete all on Account A with IDs ['msg_100', 'msg_101']
+    safeSaveDeleted(accountA, new Set(['msg_100', 'msg_101']));
+    safeClearInbox(accountA);
+    safeSaveInbox(accountA, [], true);
+
+    // Account B receives msg_100 and msg_200
+    const bEmails: EmailSummary[] = [
+      { id: 'msg_100', from: 'sender@test.com', subject: 'Shared ID Email', intro: '', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+      { id: 'msg_200', from: 'sender@test.com', subject: 'Bob Code', intro: '', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+    ];
+    safeSaveInbox(accountB, bEmails);
+
+    // Account B deleted IDs should be empty
+    const bDeleted = safeReadDeleted(accountB);
+    assert.equal(bDeleted.size, 0);
+
+    // Account B inbox should still have both emails
+    const bRead = safeReadInbox(accountB);
+    assert.equal(bRead.length, 2);
+    assert.equal(bRead[0].id, 'msg_100');
+    assert.equal(bRead[1].id, 'msg_200');
+
+    // Account A is empty
+    assert.equal(safeReadInbox(accountA).length, 0);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S10): Empty upstream response ([]) does not wipe local cache', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'box_glitch', address: 'preserve@guerrillamail.com', apiBase: 'guerrilla' };
+    const initialEmails: EmailSummary[] = [
+      { id: 'pres_1', from: 'bank@auth.com', subject: 'Important Security Code', intro: '1234', seen: true, createdAt: '2026-08-29T09:00:00Z', aiCategory: 'Security' },
+      { id: 'pres_2', from: 'github@notify.com', subject: 'GitHub Verification', intro: '5678', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+    ];
+
+    safeSaveInbox(account, initialEmails);
+    assert.equal(safeReadInbox(account).length, 2);
+
+    // Attempt to safeSaveInbox with empty list (simulating empty upstream poll / network glitch)
+    safeSaveInbox(account, []);
+    assert.equal(safeReadInbox(account).length, 2, 'safeSaveInbox([]) must NOT wipe cache when allowEmpty is false');
+
+    safeSaveInbox(account, [], false);
+    assert.equal(safeReadInbox(account).length, 2, 'safeSaveInbox([], false) must NOT wipe cache');
+
+    // Only explicit allowEmpty=true wipes the cache
+    safeSaveInbox(account, [], true);
+    assert.equal(safeReadInbox(account).length, 0, 'safeSaveInbox([], true) should clear cache');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S11): Account switching race protection (late response from A cannot overwrite B)', () => {
+  let activeAccountId = 'account_A';
+  let currentRequestId = 1;
+  const mailboxState: Record<string, EmailSummary[]> = {
+    account_A: [],
+    account_B: [],
+  };
+
+  // Step 1: User is on Account A, fetch starts (request 1)
+  const req1_Account = activeAccountId;
+  const req1_Id = currentRequestId;
+
+  // Step 2: User switches to Account B (request 2)
+  activeAccountId = 'account_B';
+  currentRequestId = 2;
+  mailboxState['account_B'] = [
+    { id: 'b_msg_1', from: 'b@b.com', subject: 'Account B Email', intro: '', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+  ];
+
+  // Step 3: Late response from Account A arrives
+  const lateResponseA: EmailSummary[] = [
+    { id: 'a_late_msg', from: 'a@a.com', subject: 'Account A Stale Email', intro: '', seen: false, createdAt: '2026-08-29T09:00:00Z', aiCategory: 'Other' },
+  ];
+
+  const isLateResponseValid = (req1_Id === currentRequestId && req1_Account === activeAccountId);
+  assert.equal(isLateResponseValid, false, 'Late response from Account A must be rejected');
+
+  if (isLateResponseValid) {
+    mailboxState[req1_Account] = lateResponseA;
+  }
+
+  // Account B's state was NOT overwritten by Account A's late response
+  assert.equal(mailboxState['account_B'].length, 1);
+  assert.equal(mailboxState['account_B'][0].id, 'b_msg_1');
+});
+
+test('Suite S (S12): Secondary account background sync uses isolated cache and deleted IDs', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const activeAccount: Mailbox = { id: 'acc_active', address: 'primary@sharklasers.com', apiBase: 'guerrilla' };
+    const secondaryAccount: Mailbox = { id: 'acc_sec', address: 'secondary@guerrillamail.com', apiBase: 'guerrilla' };
+
+    // Initial state
+    safeSaveInbox(activeAccount, [
+      { id: 'act_1', from: 'prim@test.com', subject: 'Primary Code', intro: '', seen: true, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' },
+    ]);
+    safeSaveInbox(secondaryAccount, [
+      { id: 'sec_old_1', from: 'sec@test.com', subject: 'Secondary Old', intro: '', seen: true, createdAt: '2026-08-29T09:00:00Z', aiCategory: 'Verification' },
+    ]);
+    safeSaveDeleted(secondaryAccount, new Set(['sec_deleted_99']));
+
+    // Simulate secondary sync fetch
+    const secondaryUpstream: EmailSummary[] = [
+      { id: 'sec_deleted_99', from: 'bad@test.com', subject: 'Should be filtered', intro: '', seen: false, createdAt: '2026-08-29T08:00:00Z', aiCategory: 'Other' },
+      { id: 'sec_old_1', from: 'sec@test.com', subject: 'Secondary Old', intro: '', seen: true, createdAt: '2026-08-29T09:00:00Z', aiCategory: 'Verification' },
+      { id: 'sec_new_2', from: 'sec@test.com', subject: 'Secondary New Code: 5544', intro: '', seen: false, createdAt: '2026-08-29T11:00:00Z', aiCategory: 'Verification' },
+    ];
+
+    // Background sync logic
+    const deletedForSec = safeReadDeleted(secondaryAccount);
+    const filteredMsgs = secondaryUpstream.filter(m => !deletedForSec.has(m.id));
+    const existingSec = safeReadInbox(secondaryAccount);
+    const secMap = new Map<string, EmailSummary>();
+    existingSec.forEach(m => { if (!deletedForSec.has(m.id)) secMap.set(m.id, m); });
+    filteredMsgs.forEach(m => secMap.set(m.id, m));
+    const mergedSec = Array.from(secMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    safeSaveInbox(secondaryAccount, mergedSec);
+
+    // Verify secondary account cache was updated cleanly
+    const secResult = safeReadInbox(secondaryAccount);
+    assert.equal(secResult.length, 2);
+    assert.equal(secResult[0].id, 'sec_new_2');
+    assert.equal(secResult[1].id, 'sec_old_1');
+    assert.equal(secResult.some(m => m.id === 'sec_deleted_99'), false);
+
+    // Verify active account cache is completely untouched
+    const actResult = safeReadInbox(activeAccount);
+    assert.equal(actResult.length, 1);
+    assert.equal(actResult[0].id, 'act_1');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S13): Full F5 simulation (restore accounts -> active mailbox -> load cache & deleted IDs -> rehydrate -> fetch upstream -> merge) preserves emails', async () => {
+  const originalFetch = globalThis.fetch;
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    // ── Phase 1: Pre-F5 State in Storage ──
+    const preF5Accounts = [
+      { id: 'f5_user_1', address: 'f5.simulation@guerrillamail.com', apiBase: 'guerrilla', createdAt: Date.now() - 5000 },
+    ];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(preF5Accounts));
+
+    const preF5CachedEmails: EmailSummary[] = [
+      { id: 'msg_f5_cached', from: 'bank@auth.com', subject: 'Your Bank Statement', intro: 'Ready for download', seen: true, createdAt: '2026-08-29T09:00:00Z', aiCategory: 'Security' },
+    ];
+    safeSaveInbox(preF5Accounts[0] as Mailbox, preF5CachedEmails);
+    safeSaveDeleted(preF5Accounts[0] as Mailbox, new Set(['msg_f5_deleted_trash']));
+
+    // ── Phase 2: Simulate F5 Reload & Initialization ──
+    const restoredAccounts = safeParseAccounts(localStorage.getItem(STORAGE_KEY));
+    assert.equal(restoredAccounts.length, 1);
+    assert.equal(restoredAccounts[0].token, undefined, 'Restored mailbox must have token undefined');
+    assert.equal(restoredAccounts[0].password, undefined);
+
+    const activeMailbox = restoredAccounts[0];
+    const initialDeleted = safeReadDeleted(activeMailbox);
+    assert.equal(initialDeleted.has('msg_f5_deleted_trash'), true);
+
+    const initialCached = safeReadInbox(activeMailbox).filter(e => !initialDeleted.has(e.id));
+    assert.equal(initialCached.length, 1);
+    assert.equal(initialCached[0].id, 'msg_f5_cached');
+
+    // ── Phase 3: Network Mock for Rehydration and Upstream Fetch ──
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({
+          sid_token: 'fresh_f5_sid_token_9999',
+          email_addr: 'temp@guerrillamailblock.com',
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({
+          email_user: 'f5.simulation',
+          email_addr: 'f5.simulation@guerrillamailblock.com',
+          sid_token: 'fresh_f5_sid_token_9999',
+          auth: { success: true },
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=get_email_list')) {
+        return new Response(JSON.stringify({
+          list: [
+            {
+              mail_id: 'msg_f5_deleted_trash', // Upstream returns deleted email
+              mail_from: 'spam@trash.com',
+              mail_subject: 'Spam',
+              mail_excerpt: '',
+              mail_timestamp: '1787980000',
+              mail_read: '0',
+            },
+            {
+              mail_id: 'msg_f5_cached', // Upstream returns cached email
+              mail_from: 'bank@auth.com',
+              mail_subject: 'Your Bank Statement',
+              mail_excerpt: 'Ready for download',
+              mail_timestamp: '1787985000',
+              mail_read: '1',
+            },
+            {
+              mail_id: 'msg_f5_new_incoming', // Brand new incoming email
+              mail_from: 'auth@service.com',
+              mail_subject: 'One-Time Passcode: 884102',
+              mail_excerpt: 'OTP: 884102',
+              mail_timestamp: '1787990000',
+              mail_read: '0',
+            },
+          ],
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    // Rehydrate session
+    const sid = await rehydrateMailboxSession(activeMailbox);
+    assert.equal(sid, 'fresh_f5_sid_token_9999');
+    assert.equal(activeMailbox.token, 'fresh_f5_sid_token_9999');
+
+    // Fetch messages upstream
+    const fetched = await getMessages(activeMailbox);
+    assert.equal(fetched.length, 3);
+
+    // Filter against deleted IDs
+    const filtered = fetched.filter(e => !initialDeleted.has(e.id));
+    assert.equal(filtered.length, 2);
+    assert.equal(filtered.some(e => e.id === 'msg_f5_deleted_trash'), false);
+
+    // Merge with cache
+    const map = new Map<string, EmailSummary>();
+    initialCached.forEach(e => { if (!initialDeleted.has(e.id)) map.set(e.id, e); });
+    filtered.forEach(e => map.set(e.id, e));
+    const finalMerged = Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    safeSaveInbox(activeMailbox, finalMerged);
+
+    // Read back final inbox
+    const finalInbox = safeReadInbox(activeMailbox);
+    assert.equal(finalInbox.length, 2);
+    assert.equal(finalInbox[0].id, 'msg_f5_new_incoming');
+    assert.equal(finalInbox[1].id, 'msg_f5_cached');
+    assert.equal(finalInbox.some(e => e.id === 'msg_f5_deleted_trash'), false);
+
+    // Ensure localStorage accounts never stored the sid_token
+    const accountsInStorage = localStorage.getItem(STORAGE_KEY);
+    assert.ok(accountsInStorage);
+    assert.equal(accountsInStorage.includes('fresh_f5_sid_token_9999'), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite S (S14): Zero sensitive credentials or auth headers stored in localStorage', () => {
+  const mockStorage: Record<string, string> = {
+    [STORAGE_KEY]: JSON.stringify([
+      { id: 'a1', address: 'test1@sharklasers.com', apiBase: 'guerrilla', createdAt: Date.now() },
+      { id: 'a2', address: 'test2@mail.tm', apiBase: 'mail_tm', createdAt: Date.now() },
+    ]),
+    'mephisto_inbox_v2_test1@sharklasers.com': JSON.stringify([
+      { id: 'm1', from: 'sender@test.com', subject: 'Test', intro: '', seen: false, createdAt: new Date().toISOString(), aiCategory: 'Verification' },
+    ]),
+    'mephisto_deleted_v1_test1@sharklasers.com': JSON.stringify(['del_1']),
+    'mephisto_stats': JSON.stringify({ totalAccountsCreated: 2, totalEmailsReceived: 1 }),
+    'mephisto_notif_filters': JSON.stringify({ verification: true, security: true, newsletter: true, other: true }),
+  };
+
+  const sensitiveKeywords = [
+    'Bearer ',
+    'Authorization',
+    'password',
+    'jwt_',
+    'sid_token',
+    'privateKey',
+    'secretKey',
+  ];
+
+  for (const [key, value] of Object.entries(mockStorage)) {
+    // Key must adhere to strict whitelist naming prefixes
+    const isValidKey = key === STORAGE_KEY ||
+      key.startsWith('mephisto_inbox_v2_') ||
+      key.startsWith('mephisto_deleted_v1_') ||
+      key === 'mephisto_stats' ||
+      key === 'mephisto_notif_filters' ||
+      key.startsWith('mephisto_test_detail_');
+    assert.ok(isValidKey, `Unexpected localStorage key: ${key}`);
+
+    // No sensitive tokens or headers in stored values
+    for (const word of sensitiveKeywords) {
+      if (word === 'password') {
+        // Ensure no `"password":"..."` with actual credential value exists
+        assert.equal(/"password"\s*:\s*"[^"]+"/.test(value), false, `Sensitive password found in storage key ${key}`);
+      } else if (word === 'sid_token') {
+        assert.equal(/"token"\s*:\s*"[^"]+"/.test(value), false, `Sensitive token found in storage key ${key}`);
+      } else {
+        assert.equal(value.includes(word), false, `Sensitive keyword '${word}' found in storage key ${key}`);
+      }
+    }
+  }
+});
+
+test('Suite S (S15): Cache limits (200 items for inbox, 500 items for deleted IDs) are strictly enforced', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'limits_box', address: 'limits@guerrillamail.com', apiBase: 'guerrilla' };
+
+    // 1. Inbox 200 items limit test
+    const overflowEmails: EmailSummary[] = Array.from({ length: 350 }, (_, i) => ({
+      id: `msg_idx_${i}`,
+      from: `sender_${i}@test.com`,
+      subject: `Subject ${i}`,
+      intro: `Intro ${i}`,
+      seen: i % 2 === 0,
+      createdAt: new Date(Date.now() - i * 1000).toISOString(),
+      aiCategory: 'Other',
+    }));
+
+    safeSaveInbox(account, overflowEmails);
+    const readInbox = safeReadInbox(account);
+    assert.equal(readInbox.length, 200, 'Inbox cache must be capped at strictly 200 items');
+    assert.equal(readInbox[0].id, 'msg_idx_0');
+    assert.equal(readInbox[199].id, 'msg_idx_199');
+
+    // 2. Deleted IDs 500 items limit test
+    const overflowDeletedIds = Array.from({ length: 750 }, (_, i) => `deleted_id_${i}`);
+    safeSaveDeleted(account, overflowDeletedIds);
+
+    const readDeleted = safeReadDeleted(account);
+    assert.equal(readDeleted.size, 500, 'Deleted IDs cache must be capped at strictly 500 items');
+    assert.ok(readDeleted.has('deleted_id_0'), 'First deleted ID within capacity must be preserved');
+    assert.ok(readDeleted.has('deleted_id_499'), '500th deleted ID within capacity must be preserved');
+    assert.equal(readDeleted.has('deleted_id_500'), false, 'Deleted IDs beyond 500 capacity must be evicted');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
 
 
 

@@ -26,27 +26,77 @@ const isPollingAllowed = (): boolean => {
 };
 
 export const getInboxCacheKey = (account: Mailbox | null): string | null => {
-    if (!account?.address) return null;
-    return `mephisto_inbox_v2_${account.address.toLowerCase().trim()}`;
+    const trimmed = account?.address?.trim()?.toLowerCase();
+    if (!trimmed) return null;
+    return `mephisto_inbox_v2_${trimmed}`;
 };
 
-export const getGuerrillaUsernameKey = (account: Mailbox | null): string | null => {
-    if (!account?.address) return null;
-    const username = account.address.split('@')[0]?.toLowerCase()?.trim();
-    return username ? `mephisto_inbox_v2_g_${username}` : null;
+export const getDeletedCacheKey = (account: Mailbox | null): string | null => {
+    const trimmed = account?.address?.trim()?.toLowerCase();
+    if (!trimmed) return null;
+    return `mephisto_deleted_v1_${trimmed}`;
+};
+
+export const safeReadDeletedIds = (account: Mailbox | null): Set<string> => {
+    if (!account?.address) return new Set();
+    const key = getDeletedCacheKey(account);
+    if (!key) return new Set();
+    try {
+        const raw = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (!raw) return new Set();
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return new Set();
+        const ids = parsed
+            .filter((item: any) => typeof item === 'string' || typeof item === 'number')
+            .map((item: any) => String(item).trim())
+            .filter(Boolean)
+            .slice(0, 500);
+        return new Set(ids);
+    } catch {
+        return new Set();
+    }
+};
+
+export const safeSaveDeletedIds = (account: Mailbox | null, ids: Set<string> | string[]) => {
+    if (!account?.address) return;
+    const key = getDeletedCacheKey(account);
+    if (!key) return;
+    try {
+        const arr = Array.from(ids)
+            .map(id => String(id).trim())
+            .filter(Boolean)
+            .slice(0, 500);
+        const json = JSON.stringify(arr);
+        localStorage.setItem(key, json);
+        sessionStorage.setItem(key, json);
+    } catch {}
+};
+
+export const safeClearDeletedIds = (account: Mailbox | null) => {
+    if (!account?.address) return;
+    const key = getDeletedCacheKey(account);
+    try {
+        if (key) {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        }
+    } catch {}
+};
+
+export {
+    safeReadDeletedIds as safeReadDeleted,
+    safeSaveDeletedIds as safeSaveDeleted,
+    safeClearDeletedIds as safeClearDeleted,
 };
 
 export const safeReadInbox = (account: Mailbox | null): EmailSummary[] => {
     if (!account?.address) return [];
     const key = getInboxCacheKey(account);
-    const gKey = getGuerrillaUsernameKey(account);
     const legacyKey = `mephisto_inbox_${account.address.toLowerCase().trim()}`;
 
     try {
         const raw = (key && localStorage.getItem(key)) ||
-                    (gKey && localStorage.getItem(gKey)) ||
                     (key && sessionStorage.getItem(key)) ||
-                    (gKey && sessionStorage.getItem(gKey)) ||
                     localStorage.getItem(legacyKey);
         if (!raw) return [];
         const parsed = JSON.parse(raw);
@@ -71,7 +121,6 @@ export const safeReadInbox = (account: Mailbox | null): EmailSummary[] => {
 export const safeSaveInbox = (account: Mailbox | null, list: EmailSummary[], allowEmpty = false) => {
     if (!account?.address) return;
     const key = getInboxCacheKey(account);
-    const gKey = getGuerrillaUsernameKey(account);
     if (!key) return;
     try {
         if (list.length === 0 && !allowEmpty) {
@@ -89,25 +138,16 @@ export const safeSaveInbox = (account: Mailbox | null, list: EmailSummary[], all
         const json = JSON.stringify(safeList);
         localStorage.setItem(key, json);
         sessionStorage.setItem(key, json);
-        if (gKey) {
-            localStorage.setItem(gKey, json);
-            sessionStorage.setItem(gKey, json);
-        }
     } catch {}
 };
 
 export const safeClearInbox = (account: Mailbox | null) => {
     if (!account?.address) return;
     const key = getInboxCacheKey(account);
-    const gKey = getGuerrillaUsernameKey(account);
     try {
         if (key) {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
-        }
-        if (gKey) {
-            localStorage.removeItem(gKey);
-            sessionStorage.removeItem(gKey);
         }
         localStorage.removeItem(`mephisto_inbox_${account.address.toLowerCase().trim()}`);
     } catch {}
@@ -120,12 +160,17 @@ export function useEmails(
     autoVerifyEnabled = false,
     onAutoVerifySuccess?: (urlLabel: string) => void
 ) {
-    const [emails, setEmails] = useState<EmailSummary[]>(() => safeReadInbox(activeAccount));
+    const [deletedIds, setDeletedIds] = useState<Set<string>>(() => safeReadDeletedIds(activeAccount));
+    const deletedIdsRef = useRef<Set<string>>(safeReadDeletedIds(activeAccount));
+
+    const [emails, setEmails] = useState<EmailSummary[]>(() => {
+        const cached = safeReadInbox(activeAccount);
+        const deleted = safeReadDeletedIds(activeAccount);
+        return cached.filter(e => !deleted.has(e.id));
+    });
     const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
     const [currentEmailDetail, setCurrentEmailDetail] = useState<EmailDetail | null>(null);
-    const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
-    const deletedIdsRef = useRef<Set<string>>(new Set());
     const [isLoadingDetail, setIsLoadingDetail] = useState(false);
     const [isLoadingEmails, setIsLoadingEmails] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
@@ -135,7 +180,9 @@ export function useEmails(
     const [notifFilters, setNotifFilters] = useState<NotificationFilter>(() => safeRead(FILTER_KEY, defaultFilters));
 
     const testEmailDetailsRef = useRef<Map<string, EmailDetail>>(new Map());
-    const previousIdsRef = useRef<Set<string>>(new Set(safeReadInbox(activeAccount).map(e => e.id)));
+    const previousIdsRef = useRef<Set<string>>(
+        new Set(safeReadInbox(activeAccount).filter(e => !safeReadDeletedIds(activeAccount).has(e.id)).map(e => e.id))
+    );
     const isFirstFetchRef = useRef(true);
     const autoVerifiedIdsRef = useRef<Set<string>>(new Set());
     const fetchRequestIdRef = useRef(0);
@@ -171,9 +218,11 @@ export function useEmails(
         detailRequestIdRef.current++;
     }, [clearPollingTimer]);
 
-    useEffect(() => { deletedIdsRef.current = deletedIds; }, [deletedIds]);
+    useEffect(() => {
+        deletedIdsRef.current = deletedIds;
+    }, [deletedIds]);
 
-    // Active account switch: immediately load cached inbox for that account so UI never blanks out
+    // Active account switch: immediately load cached inbox & deleted IDs for that account so UI never blanks out
     useEffect(() => {
         fetchRequestIdRef.current++;
         detailRequestIdRef.current++;
@@ -181,12 +230,13 @@ export function useEmails(
         consecutiveFailuresRef.current = 0;
         clearPollingTimer();
 
-        const cached = safeReadInbox(activeAccount);
+        const initialDeleted = safeReadDeletedIds(activeAccount);
+        const cached = safeReadInbox(activeAccount).filter(e => !initialDeleted.has(e.id));
         setEmails(cached);
         setSelectedEmailId(null);
         setCurrentEmailDetail(null);
-        setDeletedIds(new Set());
-        deletedIdsRef.current = new Set();
+        setDeletedIds(initialDeleted);
+        deletedIdsRef.current = initialDeleted;
         previousIdsRef.current = new Set(cached.map(e => e.id));
         isFirstFetchRef.current = true;
         autoVerifiedIdsRef.current = new Set();
@@ -501,12 +551,16 @@ export function useEmails(
                     try {
                         const msgs = await getMessages(acc);
                         if (Array.isArray(msgs)) {
+                            const deletedForAcc = safeReadDeletedIds(acc);
+                            const filteredMsgs = msgs.filter(m => !deletedForAcc.has(m.id));
                             const existing = safeReadInbox(acc);
                             const map = new Map<string, EmailSummary>();
-                            existing.forEach(m => map.set(m.id, m));
-                            msgs.forEach(m => map.set(m.id, m));
-                            const merged = Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                            safeSaveInbox(acc, merged);
+                            existing.forEach(m => { if (!deletedForAcc.has(m.id)) map.set(m.id, m); });
+                            filteredMsgs.forEach(m => map.set(m.id, m));
+                            const merged = Array.from(map.values())
+                                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                .slice(0, 200);
+                            safeSaveInbox(acc, merged, true);
                             const unread = merged.filter(m => !m.seen).length;
                             setUnreadMap(prev => prev[acc.id] === unread ? prev : { ...prev, [acc.id]: unread });
                         }
@@ -528,12 +582,17 @@ export function useEmails(
 
     const handleDeleteEmail = useCallback(async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
+        const nextDeleted = new Set(deletedIdsRef.current).add(id);
+        setDeletedIds(nextDeleted);
+        deletedIdsRef.current = nextDeleted;
+        safeSaveDeletedIds(activeAccount, nextDeleted);
+
         setEmails(prev => {
-            const next = prev.filter(email => email.id !== id);
+            const next = prev.filter(email => email.id !== id && !nextDeleted.has(email.id));
             safeSaveInbox(activeAccount, next, true);
             return next;
         });
-        setDeletedIds(prev => new Set(prev).add(id));
+
         previousIdsRef.current.delete(id);
         if (selectedEmailId === id) {
             setSelectedEmailId(null);
@@ -546,11 +605,12 @@ export function useEmails(
 
     const handleDeleteAllEmails = useCallback(async () => {
         const allIds = emails.map(e => e.id);
-        setDeletedIds(prev => {
-            const next = new Set(prev);
-            allIds.forEach(id => next.add(id));
-            return next;
-        });
+        const nextDeleted = new Set(deletedIdsRef.current);
+        allIds.forEach(id => nextDeleted.add(id));
+        setDeletedIds(nextDeleted);
+        deletedIdsRef.current = nextDeleted;
+        safeSaveDeletedIds(activeAccount, nextDeleted);
+
         previousIdsRef.current.clear();
         setEmails([]);
         safeClearInbox(activeAccount);
