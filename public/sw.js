@@ -1,78 +1,75 @@
-// MephistoMail Service Worker v1.1
+// MephistoMail Service Worker v2
 const CACHE_NAME = 'mephisto-v2';
 const STATIC_ASSETS = ['/', '/icon.png', '/logo.png'];
+const APP_ORIGIN = self.location.origin;
 
-const isSameOrigin = (url) => url.origin === self.location.origin;
-const safeNotificationUrl = (value) => {
-    try {
-        const url = new URL(typeof value === 'string' ? value : '/', self.location.origin);
-        return isSameOrigin(url) && (url.protocol === 'https:' || url.protocol === 'http:')
-            ? url.href
-            : self.location.origin + '/';
-    } catch {
-        return self.location.origin + '/';
-    }
-};
+const isSameOriginNavigation = (request) => request.method === 'GET' && request.mode === 'navigate' && new URL(request.url).origin === APP_ORIGIN;
+const isCacheableStatic = (request, response) => request.method === 'GET' && new URL(request.url).origin === APP_ORIGIN && response.ok && response.type === 'basic';
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
+    event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(() => undefined)));
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((keys) => Promise.all(
-            keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-        ))
-    );
-    self.clients.claim();
+    event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', (event) => {
     const { request } = event;
+    if (request.method !== 'GET') return;
     const url = new URL(request.url);
+    if (url.origin !== APP_ORIGIN) return;
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/') || url.searchParams.has('mailbox')) return;
 
-    if (!isSameOrigin(url) || request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
+    if (isSameOriginNavigation(request)) {
+        event.respondWith(fetch(request).catch(() => caches.match('/').then(cached => cached || Response.error())));
+        return;
+    }
 
-    event.respondWith(
-        fetch(request).then((response) => {
-            if (response.ok && response.type === 'basic') {
-                const clone = response.clone();
-                event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)));
-            }
-            return response;
-        }).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
-    );
+    event.respondWith(fetch(request).then(response => {
+        if (isCacheableStatic(request, response)) {
+            const clone = response.clone();
+            event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, clone)));
+        }
+        return response;
+    }).catch(() => caches.match(request).then(cached => cached || Response.error())));
 });
 
 self.addEventListener('push', (event) => {
     let data = { title: 'MephistoMail', body: 'Yeni bir e-posta geldi!', url: '/' };
     try {
-        if (event.data) data = { ...data, ...event.data.json() };
+        if (event.data) {
+            const parsed = event.data.json();
+            if (parsed && typeof parsed === 'object') data = { ...data, ...parsed };
+        }
     } catch {
-        if (event.data) data.body = event.data.text();
+        if (event.data) data.body = event.data.text().slice(0, 500);
     }
-
+    let target = '/';
+    try {
+        const candidate = new URL(typeof data.url === 'string' ? data.url : '/', APP_ORIGIN);
+        if (candidate.origin === APP_ORIGIN && (candidate.protocol === 'https:' || candidate.protocol === 'http:')) target = candidate.href;
+    } catch { /* keep safe default */ }
     const options = {
-        body: String(data.body || 'Yeni bir e-posta mesajınız var.').slice(0, 500),
+        body: typeof data.body === 'string' ? data.body.slice(0, 500) : 'Yeni bir e-posta mesajınız var.',
         icon: '/icon.png',
         badge: '/icon.png',
-        vibrate: [100, 50, 100],
-        data: { url: safeNotificationUrl(data.url) },
+        data: { url: target }
     };
-
-    event.waitUntil(self.registration.showNotification(String(data.title || 'MephistoMail').slice(0, 100), options));
+    event.waitUntil(self.registration.showNotification(typeof data.title === 'string' ? data.title.slice(0, 100) : 'MephistoMail', options));
 });
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const urlToOpen = safeNotificationUrl(event.notification.data?.url);
-
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            const existing = windowClients.find((client) => isSameOrigin(new URL(client.url)));
-            if (existing && 'focus' in existing) return existing.focus();
-            return clients.openWindow ? clients.openWindow(urlToOpen) : undefined;
-        })
-    );
+    let target = '/';
+    try {
+        const candidate = new URL(event.notification.data?.url || '/', APP_ORIGIN);
+        if (candidate.origin === APP_ORIGIN) target = candidate.href;
+    } catch { /* safe default */ }
+    event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+        const sameOrigin = windowClients.find(client => new URL(client.url).origin === APP_ORIGIN);
+        if (sameOrigin && 'focus' in sameOrigin) return sameOrigin.focus();
+        return clients.openWindow ? clients.openWindow(target) : undefined;
+    }));
 });
