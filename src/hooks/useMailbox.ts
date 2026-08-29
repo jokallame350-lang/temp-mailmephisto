@@ -13,26 +13,60 @@ const safeParseAccounts = (raw: string | null): Mailbox[] => {
         if (!Array.isArray(parsed)) return [];
         const now = Date.now();
         return parsed.filter((a: Mailbox) => a && typeof a.id === 'string' && typeof a.address === 'string' && (!a.createdAt || now - a.createdAt < ACCOUNT_LIFETIME_MS)).map((a: Mailbox) => {
-            const { token: _token, password: _password, ...safeAccount } = a as Mailbox;
+            const { password: _password, ...safeAccount } = a as Mailbox;
             return safeAccount as Mailbox;
         });
     } catch { return []; }
 };
 
+const getInitialAccounts = (): Mailbox[] => {
+    if (typeof window === 'undefined') return [];
+    return safeParseAccounts(localStorage.getItem(STORAGE_KEY));
+};
+
+const getInitialActiveId = (initialAccounts: Mailbox[]): string | null => {
+    if (typeof window === 'undefined' || !initialAccounts.length) return null;
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetMailbox = urlParams.get('mailbox')?.trim()?.toLowerCase();
+        if (targetMailbox && /^[^@\s]+@[^@\s]+$/.test(targetMailbox)) {
+            const targetUser = targetMailbox.split('@')[0];
+            const match = initialAccounts.find(a => 
+                a.address.toLowerCase() === targetMailbox ||
+                (a.apiBase === 'guerrilla' && a.address.split('@')[0].toLowerCase() === targetUser)
+            );
+            if (match) return match.id;
+        }
+    } catch {}
+    return initialAccounts[0].id;
+};
+
 export function useMailbox() {
-    const [accounts, setAccounts] = useState<Mailbox[]>([]);
-    const [activeAccountId, setActiveAccountId] = useState<string | null>(null);
+    const [accounts, setAccounts] = useState<Mailbox[]>(getInitialAccounts);
+    const [activeAccountId, setActiveAccountId] = useState<string | null>(() => getInitialActiveId(accounts));
     const [isLoadingAccount, setIsLoadingAccount] = useState(false);
     const isCreatingRef = useRef(false);
-    const isFirstLoadRef = useRef(true);
+    const isFirstLoadRef = useRef(accounts.length === 0);
     const mountedRef = useRef(true);
 
     useEffect(() => () => { mountedRef.current = false; }, []);
 
     const activeAccount = useMemo(() => accounts.find(a => a.id === activeAccountId) || null, [accounts, activeAccountId]);
+
+    useEffect(() => {
+        if (!activeAccount?.address || typeof window === 'undefined') return;
+        try {
+            const url = new URL(window.location.href);
+            if (url.searchParams.get('mailbox') !== activeAccount.address) {
+                url.searchParams.set('mailbox', activeAccount.address);
+                window.history.replaceState(null, '', url.toString());
+            }
+        } catch {}
+    }, [activeAccount?.address]);
+
     const persist = useCallback((items: Mailbox[]) => {
         try {
-            const safeItems = items.map(({ token: _token, password: _password, ...account }) => account);
+            const safeItems = items.map(({ password: _password, ...account }) => account);
             if (safeItems.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(safeItems)); else localStorage.removeItem(STORAGE_KEY);
         } catch {}
     }, []);
@@ -78,8 +112,19 @@ export function useMailbox() {
             const validAccounts = safeParseAccounts(typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null);
 
             if (targetMailbox && /^[^@\s]+@[^@\s]+$/.test(targetMailbox)) {
-                const existing = validAccounts.find(a => a.address.toLowerCase() === targetMailbox.toLowerCase());
-                if (existing) { if (!cancelled) { setAccounts(validAccounts); setActiveAccountId(existing.id); isFirstLoadRef.current = false; } return; }
+                const targetUser = targetMailbox.split('@')[0].toLowerCase();
+                const existing = validAccounts.find(a => 
+                    a.address.toLowerCase() === targetMailbox.toLowerCase() ||
+                    (a.apiBase === 'guerrilla' && a.address.split('@')[0].toLowerCase() === targetUser)
+                );
+                if (existing) {
+                    if (!cancelled) {
+                        setAccounts(validAccounts);
+                        setActiveAccountId(existing.id);
+                        isFirstLoadRef.current = false;
+                    }
+                    return;
+                }
                 const [username, ...domainParts] = targetMailbox.split('@');
                 const domain = domainParts.join('@').toLowerCase();
                 if (username && domain) {
@@ -99,7 +144,14 @@ export function useMailbox() {
                     return;
                 }
             }
-            if (validAccounts.length) { if (!cancelled) { setAccounts(validAccounts); setActiveAccountId(validAccounts[0].id); persist(validAccounts); isFirstLoadRef.current = false; } return; }
+            if (validAccounts.length) {
+                if (!cancelled) {
+                    setAccounts(validAccounts);
+                    setActiveAccountId(prev => prev && validAccounts.some(a => a.id === prev) ? prev : validAccounts[0].id);
+                    isFirstLoadRef.current = false;
+                }
+                return;
+            }
             if (!cancelled) await createQuickAccount(true);
             if (!cancelled) isFirstLoadRef.current = false;
         };

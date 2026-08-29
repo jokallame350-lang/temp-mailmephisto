@@ -8,9 +8,9 @@ type EmailContextType = ReturnType<typeof useEmails>;
 const EmailContext = createContext<EmailContextType | null>(null);
 
 export const EmailProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { activeAccount } = useMailboxContext();
+  const { activeAccount, accounts } = useMailboxContext();
   const { addToast } = useToast();
-  const emailValue = useEmails(activeAccount, addToast);
+  const emailValue = useEmails(activeAccount, accounts, addToast);
 
   return (
     <EmailContext.Provider value={emailValue}>

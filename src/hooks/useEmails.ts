@@ -25,13 +25,103 @@ const isPollingAllowed = (): boolean => {
     return true;
 };
 
+export const getInboxCacheKey = (account: Mailbox | null): string | null => {
+    if (!account?.address) return null;
+    return `mephisto_inbox_v2_${account.address.toLowerCase().trim()}`;
+};
+
+export const getGuerrillaUsernameKey = (account: Mailbox | null): string | null => {
+    if (!account?.address) return null;
+    const username = account.address.split('@')[0]?.toLowerCase()?.trim();
+    return username ? `mephisto_inbox_v2_g_${username}` : null;
+};
+
+export const safeReadInbox = (account: Mailbox | null): EmailSummary[] => {
+    if (!account?.address) return [];
+    const key = getInboxCacheKey(account);
+    const gKey = getGuerrillaUsernameKey(account);
+    const legacyKey = `mephisto_inbox_${account.address.toLowerCase().trim()}`;
+
+    try {
+        const raw = (key && localStorage.getItem(key)) ||
+                    (gKey && localStorage.getItem(gKey)) ||
+                    (key && sessionStorage.getItem(key)) ||
+                    (gKey && sessionStorage.getItem(gKey)) ||
+                    localStorage.getItem(legacyKey);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+            .filter((item: any) => item && typeof item.id === 'string' && item.from && item.subject !== undefined)
+            .map((item: any) => ({
+                id: String(item.id),
+                from: item.from,
+                subject: String(item.subject || ''),
+                intro: String(item.intro || ''),
+                seen: Boolean(item.seen),
+                createdAt: typeof item.createdAt === 'string' ? item.createdAt : new Date().toISOString(),
+                aiCategory: (item.aiCategory || 'Other') as any,
+            }))
+            .slice(0, 200);
+    } catch {
+        return [];
+    }
+};
+
+export const safeSaveInbox = (account: Mailbox | null, list: EmailSummary[], allowEmpty = false) => {
+    if (!account?.address) return;
+    const key = getInboxCacheKey(account);
+    const gKey = getGuerrillaUsernameKey(account);
+    if (!key) return;
+    try {
+        if (list.length === 0 && !allowEmpty) {
+            return;
+        }
+        const safeList = list.slice(0, 200).map(e => ({
+            id: String(e.id),
+            from: e.from,
+            subject: String(e.subject || ''),
+            intro: String(e.intro || ''),
+            seen: Boolean(e.seen),
+            createdAt: typeof e.createdAt === 'string' ? e.createdAt : new Date().toISOString(),
+            aiCategory: e.aiCategory || 'Other',
+        }));
+        const json = JSON.stringify(safeList);
+        localStorage.setItem(key, json);
+        sessionStorage.setItem(key, json);
+        if (gKey) {
+            localStorage.setItem(gKey, json);
+            sessionStorage.setItem(gKey, json);
+        }
+    } catch {}
+};
+
+export const safeClearInbox = (account: Mailbox | null) => {
+    if (!account?.address) return;
+    const key = getInboxCacheKey(account);
+    const gKey = getGuerrillaUsernameKey(account);
+    try {
+        if (key) {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        }
+        if (gKey) {
+            localStorage.removeItem(gKey);
+            sessionStorage.removeItem(gKey);
+        }
+        localStorage.removeItem(`mephisto_inbox_${account.address.toLowerCase().trim()}`);
+    } catch {}
+};
+
 export function useEmails(
     activeAccount: Mailbox | null,
+    allAccounts: Mailbox[] = [],
     onNewEmail?: (from: string, subject: string) => void,
     autoVerifyEnabled = false,
     onAutoVerifySuccess?: (urlLabel: string) => void
 ) {
-    const [emails, setEmails] = useState<EmailSummary[]>([]);
+    const [emails, setEmails] = useState<EmailSummary[]>(() => safeReadInbox(activeAccount));
+    const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
     const [currentEmailDetail, setCurrentEmailDetail] = useState<EmailDetail | null>(null);
     const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
@@ -45,7 +135,8 @@ export function useEmails(
     const [notifFilters, setNotifFilters] = useState<NotificationFilter>(() => safeRead(FILTER_KEY, defaultFilters));
 
     const testEmailDetailsRef = useRef<Map<string, EmailDetail>>(new Map());
-    const previousIdsRef = useRef<Set<string>>(new Set());
+    const previousIdsRef = useRef<Set<string>>(new Set(safeReadInbox(activeAccount).map(e => e.id)));
+    const isFirstFetchRef = useRef(true);
     const autoVerifiedIdsRef = useRef<Set<string>>(new Set());
     const fetchRequestIdRef = useRef(0);
     const detailRequestIdRef = useRef(0);
@@ -82,7 +173,7 @@ export function useEmails(
 
     useEffect(() => { deletedIdsRef.current = deletedIds; }, [deletedIds]);
 
-    // Active account switch: immediately invalidate pending in-flight requests, reset backoff, clear timers and mailbox data
+    // Active account switch: immediately load cached inbox for that account so UI never blanks out
     useEffect(() => {
         fetchRequestIdRef.current++;
         detailRequestIdRef.current++;
@@ -90,16 +181,18 @@ export function useEmails(
         consecutiveFailuresRef.current = 0;
         clearPollingTimer();
 
-        setEmails([]);
+        const cached = safeReadInbox(activeAccount);
+        setEmails(cached);
         setSelectedEmailId(null);
         setCurrentEmailDetail(null);
         setDeletedIds(new Set());
         deletedIdsRef.current = new Set();
-        previousIdsRef.current = new Set();
+        previousIdsRef.current = new Set(cached.map(e => e.id));
+        isFirstFetchRef.current = true;
         autoVerifiedIdsRef.current = new Set();
         setFetchError(null);
         setProgress(0);
-    }, [activeAccount?.id, clearPollingTimer]);
+    }, [activeAccount, clearPollingTimer]);
 
     useEffect(() => { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch {} }, [stats]);
     useEffect(() => { try { localStorage.setItem(FILTER_KEY, JSON.stringify(notifFilters)); } catch {} }, [notifFilters]);
@@ -188,9 +281,10 @@ export function useEmails(
             const currentDeleted = deletedIdsRef.current;
             const filtered = fetched.filter(e => !currentDeleted.has(e.id));
             const previousIds = previousIdsRef.current;
-            const newEmails = filtered.filter(e => !previousIds.has(e.id));
+            const isFirstFetch = isFirstFetchRef.current;
+            const newEmails = isFirstFetch ? [] : filtered.filter(e => !previousIds.has(e.id));
 
-            if (previousIds.size > 0 && newEmails.length) {
+            if (!isFirstFetch && previousIds.size > 0 && newEmails.length) {
                 notifyNewEmails(newEmails);
                 newEmails.forEach(e => {
                     const from = typeof e.from === 'string' ? e.from : e.from?.name || e.from?.address || 'unknown';
@@ -206,16 +300,22 @@ export function useEmails(
                 }
             }
 
+            isFirstFetchRef.current = false;
+
             if (!mountedRef.current || fetchRequestIdRef.current !== currentRequestId || activeAccountIdRef.current !== currentAccountId) {
                 return;
             }
 
             previousIdsRef.current = new Set(filtered.map(e => e.id));
             setEmails(prev => {
+                const cached = safeReadInbox(activeAccount);
                 const map = new Map<string, EmailSummary>();
+                cached.forEach(item => { if (!currentDeleted.has(item.id)) map.set(item.id, item); });
                 prev.forEach(item => { if (!currentDeleted.has(item.id)) map.set(item.id, item); });
                 filtered.forEach(item => map.set(item.id, item));
-                return Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                const merged = Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                safeSaveInbox(activeAccount, merged);
+                return merged;
             });
         } catch (err: unknown) {
             if (!mountedRef.current || fetchRequestIdRef.current !== currentRequestId || activeAccountIdRef.current !== currentAccountId) {
@@ -317,7 +417,12 @@ export function useEmails(
             };
 
             testEmailDetailsRef.current.set(testSummary.id, testDetail);
-            setEmails(prev => [testSummary, ...prev.filter(item => item.id !== testSummary.id)]);
+            try { sessionStorage.setItem(`mephisto_test_detail_${testSummary.id}`, JSON.stringify(testDetail)); } catch {}
+            setEmails(prev => {
+                const next = [testSummary, ...prev.filter(item => item.id !== testSummary.id)];
+                safeSaveInbox(activeAccount, next);
+                return next;
+            });
             notifyNewEmails([testSummary]);
             const from = typeof testSummary.from === 'string' ? testSummary.from : testSummary.from?.name || testSummary.from?.address || 'security@verify-service.com';
             onNewEmailRef.current?.(from, testSummary.subject);
@@ -325,7 +430,7 @@ export function useEmails(
 
         window.addEventListener('mephisto-test-otp', handleTestOtpEvent);
         return () => window.removeEventListener('mephisto-test-otp', handleTestOtpEvent);
-    }, [notifyNewEmails]);
+    }, [activeAccount, notifyNewEmails]);
 
     useEffect(() => {
         if (!selectedEmailId || !activeAccount) {
@@ -340,6 +445,19 @@ export function useEmails(
             setIsLoadingDetail(false);
             return;
         }
+
+        try {
+            const rawTest = sessionStorage.getItem(`mephisto_test_detail_${selectedEmailId}`);
+            if (rawTest) {
+                const parsed = JSON.parse(rawTest);
+                if (parsed && parsed.id === selectedEmailId) {
+                    testEmailDetailsRef.current.set(selectedEmailId, parsed);
+                    setCurrentEmailDetail(parsed);
+                    setIsLoadingDetail(false);
+                    return;
+                }
+            }
+        } catch {}
 
         const currentAccountId = activeAccount.id;
         const currentDetailId = ++detailRequestIdRef.current;
@@ -368,9 +486,53 @@ export function useEmails(
         };
     }, [selectedEmailId, activeAccount]);
 
+    // Background polling for all secondary open accounts so mail sent to any open mailbox is captured
+    useEffect(() => {
+        if (!allAccounts || allAccounts.length <= 1) return;
+        let isSyncing = false;
+
+        const syncSecondaryAccounts = async () => {
+            if (isSyncing || !mountedRef.current || !isPollingAllowed()) return;
+            isSyncing = true;
+            try {
+                const secondary = allAccounts.filter(acc => acc.id !== activeAccount?.id);
+                for (const acc of secondary) {
+                    if (!mountedRef.current) break;
+                    try {
+                        const msgs = await getMessages(acc);
+                        if (Array.isArray(msgs)) {
+                            const existing = safeReadInbox(acc);
+                            const map = new Map<string, EmailSummary>();
+                            existing.forEach(m => map.set(m.id, m));
+                            msgs.forEach(m => map.set(m.id, m));
+                            const merged = Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                            safeSaveInbox(acc, merged);
+                            const unread = merged.filter(m => !m.seen).length;
+                            setUnreadMap(prev => prev[acc.id] === unread ? prev : { ...prev, [acc.id]: unread });
+                        }
+                    } catch {}
+                }
+            } finally {
+                isSyncing = false;
+            }
+        };
+
+        const interval = window.setInterval(syncSecondaryAccounts, 8000);
+        const initialTimer = window.setTimeout(syncSecondaryAccounts, 1500);
+
+        return () => {
+            window.clearInterval(interval);
+            window.clearTimeout(initialTimer);
+        };
+    }, [allAccounts, activeAccount?.id]);
+
     const handleDeleteEmail = useCallback(async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
-        setEmails(prev => prev.filter(email => email.id !== id));
+        setEmails(prev => {
+            const next = prev.filter(email => email.id !== id);
+            safeSaveInbox(activeAccount, next, true);
+            return next;
+        });
         setDeletedIds(prev => new Set(prev).add(id));
         previousIdsRef.current.delete(id);
         if (selectedEmailId === id) {
@@ -391,6 +553,8 @@ export function useEmails(
         });
         previousIdsRef.current.clear();
         setEmails([]);
+        safeClearInbox(activeAccount);
+        safeSaveInbox(activeAccount, [], true);
         setSelectedEmailId(null);
         setCurrentEmailDetail(null);
         if (activeAccount) {
@@ -425,6 +589,7 @@ export function useEmails(
         searchQuery,
         stats,
         notifFilters,
+        unreadMap,
         setSearchQuery,
         setSelectedEmailId,
         setNotifFilters,

@@ -96,7 +96,15 @@ import {
   getProviderInfo,
   safeFetch,
   getAttachment,
+  rehydrateMailboxSession,
+  MailboxFetchError,
 } from '../src/services/mailService.ts';
+import {
+  getInboxCacheKey,
+  safeReadInbox,
+  safeSaveInbox,
+  safeClearInbox,
+} from '../src/hooks/useEmails.ts';
 import { Mailbox, EmailDetail, EmailSummary } from '../src/types.ts';
 
 // ─── Deterministic HTTP Test Seam ──────────────────────────────────────────
@@ -1394,7 +1402,7 @@ test('Integration E2: Hydra (mail_tm) inbox maps hydra:member list properly', as
 });
 
 // ─── F. Malformed Inbox Response Handling ─────────────────────────────────
-test('Integration F1: Guerrilla API returns non-JSON or corrupt schema gracefully without unhandled exceptions', async () => {
+test('Integration F1: Guerrilla API returns non-JSON or corrupt schema and throws MailboxFetchError instead of swallowing to []', async () => {
   const mailbox: Mailbox = {
     id: 'corrupt_sid',
     address: 'corrupt@guerrillamail.com',
@@ -1413,8 +1421,10 @@ test('Integration F1: Guerrilla API returns non-JSON or corrupt schema gracefull
   });
 
   try {
-    const messages = await getMessages(mailbox);
-    assert.deepEqual(messages, []);
+    await assert.rejects(
+      async () => { await getMessages(mailbox); },
+      (err: any) => err instanceof MailboxFetchError
+    );
   } finally {
     cleanupIntegrationSeam();
   }
@@ -2216,5 +2226,502 @@ test('Integration O8: Guerrilla Mail empty subject fallback displays excerpt cle
     globalThis.fetch = originalFetch;
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Suite P: Session Rehydration, Error Propagation & Mailbox Fetch Security
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Integration P1: rehydrateMailboxSession establishes fresh SID and binds username for restored mailbox', async () => {
+  const originalFetch = globalThis.fetch;
+  const calls: string[] = [];
+
+  try {
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      calls.push(urlStr);
+
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({
+          email_addr: 'random_init@guerrillamailblock.com',
+          sid_token: 'rehydrated_sid_99182',
+          alias: 'alias_random'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({
+          email_addr: 'cyber.amxmq564@guerrillamailblock.com',
+          sid_token: 'rehydrated_sid_99182',
+          auth: { success: true, error_codes: [] }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      return new Response('{}', { status: 200 });
+    };
+
+    const restoredMailbox: Mailbox = {
+      id: 'acc_persisted_1',
+      address: 'cyber.amxmq564@guerrillamail.de',
+      apiBase: 'guerrilla',
+      token: undefined,
+      createdAt: Date.now()
+    };
+
+    let notifiedToken = '';
+    const unsub = onTokenRefresh((id, token) => {
+      if (id === restoredMailbox.id) notifiedToken = token;
+    });
+
+    const newSid = await rehydrateMailboxSession(restoredMailbox);
+    unsub();
+
+    assert.equal(newSid, 'rehydrated_sid_99182');
+    assert.equal(restoredMailbox.token, 'rehydrated_sid_99182');
+    assert.equal(notifiedToken, 'rehydrated_sid_99182');
+    assert.equal(restoredMailbox.address, 'cyber.amxmq564@guerrillamail.de');
+    assert.ok(calls.some(c => c.includes('f=get_email_address')));
+    assert.ok(calls.some(c => c.includes('f=set_email_user') && c.includes('email_user=cyber.amxmq564')));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Integration P2: rehydrateMailboxSession throws MailboxFetchError when upstream rejects binding', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({ sid_token: 'sid_fail_test' }), { status: 200 });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({ error_codes: ['alias_taken'] }), { status: 200 });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    const mailbox: Mailbox = {
+      id: 'acc_fail_01',
+      address: 'baduser@guerrillamail.com',
+      apiBase: 'guerrilla',
+      token: undefined
+    };
+
+    await assert.rejects(
+      async () => { await rehydrateMailboxSession(mailbox); },
+      (err: any) => err instanceof MailboxFetchError && err.code === 'REHYDRATION_FAILED'
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Integration P3: getMessages on token-less mailbox rehydrates session and retrieves messages seamlessly', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({
+          email_addr: 'temp_init@guerrillamailblock.com',
+          sid_token: 'sid_rehydrate_inbox_test'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({
+          email_addr: 'ninja.2spmy895@guerrillamailblock.com',
+          sid_token: 'sid_rehydrate_inbox_test',
+          auth: { success: true }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=get_email_list')) {
+        return new Response(JSON.stringify({
+          list: [
+            {
+              mail_id: '9901',
+              mail_from: 'jokallame0@gmail.com',
+              mail_subject: 'Verification Code',
+              mail_excerpt: 'Your code is 884192',
+              mail_timestamp: '1787989999',
+              mail_read: '0'
+            }
+          ]
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    const restoredMailbox: Mailbox = {
+      id: 'acc_ninja_01',
+      address: 'ninja.2spmy895@sharklasers.com',
+      apiBase: 'guerrilla',
+      token: undefined
+    };
+
+    const messages = await getMessages(restoredMailbox);
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].id, '9901');
+    assert.equal(messages[0].subject, 'Verification Code');
+    assert.equal(restoredMailbox.token, 'sid_rehydrate_inbox_test');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Integration P4: getMessages throws MailboxFetchError on upstream network/API failure and never returns []', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => new Response('Internal Server Error', { status: 500 });
+
+    const mailbox: Mailbox = {
+      id: 'acc_err_01',
+      address: 'test.err@guerrillamail.com',
+      apiBase: 'guerrilla',
+      token: undefined
+    };
+
+    await assert.rejects(
+      async () => { await getMessages(mailbox); },
+      (err: any) => err instanceof MailboxFetchError
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Integration P5: getMessages retries session rehydration once when session is expired', async () => {
+  const originalFetch = globalThis.fetch;
+  let attempts = 0;
+  try {
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_list') && attempts === 0) {
+        attempts++;
+        return new Response(JSON.stringify({ error_codes: ['invalid_sid'] }), { status: 200 });
+      }
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({ sid_token: 'fresh_sid_retry' }), { status: 200 });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({ auth: { success: true } }), { status: 200 });
+      }
+      if (urlStr.includes('f=get_email_list') && attempts > 0) {
+        return new Response(JSON.stringify({
+          list: [{ mail_id: '5544', mail_from: 'user@example.com', mail_subject: 'Recovered Message' }]
+        }), { status: 200 });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    const mailbox: Mailbox = {
+      id: 'acc_retry_01',
+      address: 'user.retry@guerrillamail.com',
+      apiBase: 'guerrilla',
+      token: 'old_expired_sid'
+    };
+
+    const messages = await getMessages(mailbox);
+    assert.equal(messages.length, 1);
+    assert.equal(messages[0].id, '5544');
+    assert.equal(mailbox.token, 'fresh_sid_retry');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Integration P6: getMessageDetail with missing token rehydrates and returns full email detail', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({
+          email_addr: 'temp@guerrillamailblock.com',
+          sid_token: 'sid_detail_rehydrate'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({
+          email_addr: 'user.detail@guerrillamailblock.com',
+          sid_token: 'sid_detail_rehydrate',
+          auth: { success: true }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=fetch_email')) {
+        return new Response(JSON.stringify({
+          mail_id: '8877',
+          mail_from: 'service@security.org',
+          mail_subject: 'Your Access Key',
+          mail_body: '<p>Secret key: 991823</p>',
+          mail_excerpt: 'Secret key: 991823'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    const mailbox: Mailbox = {
+      id: 'acc_detail_01',
+      address: 'user.detail@guerrillamail.info',
+      apiBase: 'guerrilla',
+      token: undefined
+    };
+
+    const detail = await getMessageDetail(mailbox, '8877');
+    assert.ok(detail);
+    assert.equal(detail.id, '8877');
+    assert.equal(detail.subject, 'Your Access Key');
+    assert.ok(detail.html?.[0]?.includes('Secret key: 991823'));
+    assert.equal(mailbox.token, 'sid_detail_rehydrate');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('Integration P7: deleteMessage with missing token rehydrates session and executes deletion', async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        return new Response(JSON.stringify({
+          email_addr: 'temp@guerrillamailblock.com',
+          sid_token: 'sid_del_rehydrate'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=set_email_user')) {
+        return new Response(JSON.stringify({
+          email_addr: 'user.del@guerrillamailblock.com',
+          sid_token: 'sid_del_rehydrate',
+          auth: { success: true }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (urlStr.includes('f=del_email')) {
+        return new Response(JSON.stringify({ deleted_ids: ['9988'] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      return new Response('{}', { status: 200 });
+    };
+
+    const mailbox: Mailbox = {
+      id: 'acc_del_01',
+      address: 'user.del@guerrillamail.biz',
+      apiBase: 'guerrilla',
+      token: undefined
+    };
+
+    const res = await deleteMessage(mailbox, '9988');
+    assert.equal(res, true);
+    assert.equal(mailbox.token, 'sid_del_rehydrate');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Suite Q: Per-Mailbox Inbox Persistence, Cache Isolation & Non-Destructive Merge
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Integration Q1: safeSaveInbox and safeReadInbox persist EmailSummary[] with versioned key', () => {
+  // Clear any existing items in mock/global storage
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+      clear: () => { for (const k of Object.keys(mockStorage)) delete mockStorage[k]; }
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const accountA: Mailbox = { id: 'acc_A', address: 'alpha@sharklasers.com', apiBase: 'guerrilla' };
+    const emailsA: EmailSummary[] = [
+      { id: '101', from: 'gmail@sender.com', subject: 'Code A', intro: 'Code A', seen: false, createdAt: '2026-08-29T10:00:00.000Z', aiCategory: 'Verification' },
+      { id: '102', from: 'security@verify.com', subject: 'Alert A', intro: 'Alert A', seen: true, createdAt: '2026-08-29T09:00:00.000Z', aiCategory: 'Security' }
+    ];
+
+    safeSaveInbox(accountA, emailsA);
+
+    const keyA = getInboxCacheKey(accountA);
+    assert.equal(keyA, 'mephisto_inbox_v2_alpha@sharklasers.com');
+    assert.ok(mockStorage[keyA!]);
+
+    const restored = safeReadInbox(accountA);
+    assert.equal(restored.length, 2);
+    assert.equal(restored[0].id, '101');
+    assert.equal(restored[1].id, '102');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q2: safeSaveInbox does not overwrite existing cache with [] unless allowEmpty is true', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const accountA: Mailbox = { id: 'acc_A', address: 'beta@guerrillamail.com', apiBase: 'guerrilla' };
+    const emailsA: EmailSummary[] = [
+      { id: '201', from: 'sender@gmail.com', subject: 'Preserved Code', intro: '123456', seen: false, createdAt: '2026-08-29T10:00:00.000Z', aiCategory: 'Verification' }
+    ];
+
+    safeSaveInbox(accountA, emailsA);
+    assert.equal(safeReadInbox(accountA).length, 1);
+
+    // Call safeSaveInbox with [] without allowEmpty -> must NOT wipe cache
+    safeSaveInbox(accountA, []);
+    assert.equal(safeReadInbox(accountA).length, 1);
+    assert.equal(safeReadInbox(accountA)[0].id, '201');
+
+    // Call safeSaveInbox with [] and allowEmpty = true -> should clear cache
+    safeSaveInbox(accountA, [], true);
+    assert.equal(safeReadInbox(accountA).length, 0);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q3: Mailbox A and Mailbox B caches are strictly isolated', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const accountA: Mailbox = { id: 'acc_A', address: 'userA@guerrillamail.com', apiBase: 'guerrilla' };
+    const accountB: Mailbox = { id: 'acc_B', address: 'userB@sharklasers.com', apiBase: 'guerrilla' };
+
+    safeSaveInbox(accountA, [{ id: 'A1', from: 'gmailA@mail.com', subject: 'Mail A', intro: 'A', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' }]);
+    safeSaveInbox(accountB, [{ id: 'B1', from: 'gmailB@mail.com', subject: 'Mail B', intro: 'B', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' }]);
+
+    const cacheA = safeReadInbox(accountA);
+    const cacheB = safeReadInbox(accountB);
+
+    assert.equal(cacheA.length, 1);
+    assert.equal(cacheA[0].id, 'A1');
+
+    assert.equal(cacheB.length, 1);
+    assert.equal(cacheB[0].id, 'B1');
+
+    // Zero cross leakage
+    assert.notEqual(cacheA[0].id, cacheB[0].id);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q4: safeClearInbox clears cache for the targeted account only', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const accountA: Mailbox = { id: 'acc_A', address: 'userA@guerrillamail.com', apiBase: 'guerrilla' };
+    const accountB: Mailbox = { id: 'acc_B', address: 'userB@sharklasers.com', apiBase: 'guerrilla' };
+
+    safeSaveInbox(accountA, [{ id: 'A1', from: 'a@mail.com', subject: 'A', intro: 'A', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' }]);
+    safeSaveInbox(accountB, [{ id: 'B1', from: 'b@mail.com', subject: 'B', intro: 'B', seen: false, createdAt: '2026-08-29T10:00:00Z', aiCategory: 'Verification' }]);
+
+    safeClearInbox(accountA);
+
+    assert.equal(safeReadInbox(accountA).length, 0);
+    assert.equal(safeReadInbox(accountB).length, 1);
+    assert.equal(safeReadInbox(accountB)[0].id, 'B1');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q5: Corrupt or invalid JSON falls back to [] without crashing', () => {
+  const mockStorage: Record<string, string> = {
+    'mephisto_inbox_v2_corrupt@guerrillamail.com': '{ not valid json'
+  };
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'acc_corrupt', address: 'corrupt@guerrillamail.com', apiBase: 'guerrilla' };
+    const result = safeReadInbox(account);
+    assert.deepEqual(result, []);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Integration Q6: safeSaveInbox caps cache at 200 items', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = { id: 'acc_many', address: 'many@guerrillamail.com', apiBase: 'guerrilla' };
+    const manyEmails: EmailSummary[] = Array.from({ length: 300 }, (_, i) => ({
+      id: String(i),
+      from: 'test@sender.com',
+      subject: `Subject ${i}`,
+      intro: `Intro ${i}`,
+      seen: false,
+      createdAt: new Date(Date.now() - i * 1000).toISOString(),
+      aiCategory: 'Other'
+    }));
+
+    safeSaveInbox(account, manyEmails);
+    const read = safeReadInbox(account);
+    assert.equal(read.length, 200);
+    assert.equal(read[0].id, '0');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+
 
 

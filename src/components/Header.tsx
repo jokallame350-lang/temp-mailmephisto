@@ -24,13 +24,14 @@ interface HeaderProps {
   isVip?: boolean;
   onNewAccount?: () => void;
   onOpenCustom?: () => void;
+  unreadCounts?: Record<string, number>;
 }
 
 const Header: React.FC<HeaderProps> = ({
   accounts, currentAccount, onSwitchAccount, onDeleteAccount,
   lang, setLang, theme, setTheme, onOpenQR, onOpenPass, onOpenExtension,
   onOpenStats, onOpenFilters, onOpenLabels, onOpenVip, isVip = false,
-  onNewAccount, onOpenCustom
+  onNewAccount, onOpenCustom, unreadCounts
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -304,12 +305,18 @@ const Header: React.FC<HeaderProps> = ({
               <span className="text-[10px] sm:text-[11px] text-slate-200 font-mono max-w-[80px] sm:max-w-[120px] md:max-w-[160px] truncate font-bold">
                 {currentAccount ? currentAccount.address : t.noAccount}
               </span>
-              <span className="text-[8px] text-slate-500 uppercase tracking-wider font-black group-hover:text-red-500 transition-colors">
+              <span className="text-[8px] text-slate-500 uppercase tracking-wider font-black group-hover:text-red-500 transition-colors flex items-center gap-1">
                 {accounts.length} {t.activeLabel}
+                {Object.values(unreadCounts || {}).some(v => v > 0) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                )}
               </span>
             </div>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-900 border border-white/5 flex items-center justify-center group-hover:border-red-500/30 transition-colors flex-shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-900 border border-white/5 flex items-center justify-center group-hover:border-red-500/30 transition-colors flex-shrink-0 relative">
               <User className="w-4 h-4 text-slate-400 group-hover:text-red-500" />
+              {Object.values(unreadCounts || {}).some(v => v > 0) && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-orange-500 border border-black" />
+              )}
             </div>
             <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -320,10 +327,20 @@ const Header: React.FC<HeaderProps> = ({
                 {accounts.length > 0 ? accounts.map((acc) => (
                   <div key={acc.id} onClick={() => { onSwitchAccount(acc.id); setIsOpen(false); }} className={`group flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all border border-transparent ${currentAccount?.id === acc.id ? 'bg-red-500/10 border-red-500/20' : 'hover:bg-white/5'}`}>
                     <div className="flex items-center gap-3 overflow-hidden">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black ${currentAccount?.id === acc.id ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black relative ${currentAccount?.id === acc.id ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
                         {acc.address.substring(0, 1).toUpperCase()}
+                        {Boolean(unreadCounts?.[acc.id] && unreadCounts[acc.id] > 0) && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-black shadow">
+                            {unreadCounts![acc.id]}
+                          </span>
+                        )}
                       </div>
-                      <span className={`text-[10px] font-mono truncate ${currentAccount?.id === acc.id ? 'text-white' : 'text-slate-400'}`}>{acc.address}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className={`text-[10px] font-mono truncate ${currentAccount?.id === acc.id ? 'text-white font-bold' : 'text-slate-400'}`}>{acc.address}</span>
+                        {Boolean(unreadCounts?.[acc.id] && unreadCounts[acc.id] > 0) && (
+                          <span className="text-[8px] text-orange-400 font-bold">{unreadCounts![acc.id]} {lang === 'tr' ? 'yeni e-posta' : 'new email'}</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={(e) => copyToClipboard(acc.address, acc.id, e)} className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400">{copiedId === acc.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}</button>
