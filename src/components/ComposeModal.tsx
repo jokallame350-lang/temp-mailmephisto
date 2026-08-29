@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, X, Paperclip, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { Send, X, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { ComposeMailData } from '../types';
 import { sendEmail } from '../services/mailService';
 import { Language, translations } from '../translations';
@@ -56,13 +56,20 @@ export const ComposeModal: React.FC<ComposeModalProps> = ({
     setErrorMsg(null);
 
     try {
-      const success = await sendEmail({
-        from: senderAddress,
-        to: to.trim(),
-        subject: subject.trim(),
-        text: body.trim(),
-        mailboxId,
-      });
+      const success = await sendEmail(
+        {
+          id: mailboxId,
+          address: senderAddress,
+          apiBase: 'guerrilla',
+        },
+        {
+          from: senderAddress,
+          to: to.trim(),
+          subject: subject.trim(),
+          text: body.trim(),
+          mailboxId,
+        },
+      );
 
       if (success) {
         onSuccessToast(t.composeSuccessToast);
