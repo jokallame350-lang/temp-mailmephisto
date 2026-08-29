@@ -6,13 +6,13 @@ export interface Mailbox {
   apiBase: string;
   token?: string;
   password?: string;
-  label?: string;        // Alias label (sosyal medya, alışveriş vb.)
-  labelColor?: string;   // Alias label rengi
-  createdAt?: number;    // Oluşturulma zamanı (timestamp)
-  autoDeleteMinutes?: number; // Otomatik silme süresi
-  isCustomDomain?: boolean; // Özel alan adı (Custom Domain) bayrağı
-  customDomainName?: string; // İlgili alan adı
-  minMailId?: number;    // Oluşturulma anındaki en yüksek mail_id (izolasyon için)
+  label?: string;
+  labelColor?: string;
+  createdAt?: number;
+  autoDeleteMinutes?: number;
+  isCustomDomain?: boolean;
+  customDomainName?: string;
+  minMailId?: number;
 }
 
 export interface EmailSummary {
@@ -33,9 +33,9 @@ export interface EmailDetail extends EmailSummary {
   html?: string[];
   hasAttachments: boolean;
   attachments: EmailAttachment[];
-  headerFields?: Record<string, string>; // Raw email headers (Message-ID, To, Cc, etc.)
-  blockedTrackersCount?: number; // Engellenen gizli takip pikseli sayısı
-  blockedTrackerDomains?: string[]; // Engellenen takip domainleri
+  headerFields?: Record<string, string>;
+  blockedTrackersCount?: number;
+  blockedTrackerDomains?: string[];
 }
 
 export interface EmailAttachment {
@@ -44,6 +44,11 @@ export interface EmailAttachment {
   contentType: string;
   size: number;
   downloadUrl?: string;
+  disposition?: 'inline' | 'attachment' | string;
+  contentId?: string;
+  detectedContentType?: string;
+  blocked?: boolean;
+  blockReason?: string;
 }
 
 export interface ComposeMailData {
@@ -53,7 +58,6 @@ export interface ComposeMailData {
   inReplyToId?: string;
 }
 
-// İstatistik tipi
 export interface AppStats {
   totalAccountsCreated: number;
   totalEmailsReceived: number;
@@ -61,7 +65,6 @@ export interface AppStats {
   lastActivity: number;
 }
 
-// Bildirim filtre tipi
 export interface NotificationFilter {
   verification: boolean;
   security: boolean;
@@ -69,7 +72,6 @@ export interface NotificationFilter {
   other: boolean;
 }
 
-// Auto-forward kuralı
 export interface ForwardRule {
   id: string;
   fromPattern: string;
