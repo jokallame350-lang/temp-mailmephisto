@@ -1,70 +1,9 @@
-# MephistoMail - Technical SEO & Performance Optimized robots.txt
-# Canonical Domain: https://mephistomail.site
-
-# Major Search Engine Crawlers & Ad Reviewers
-User-agent: Mediapartners-Google
-Allow: /
-
-User-agent: AdsBot-Google
-Allow: /
-
-User-agent: Googlebot
-Allow: /
-
-User-agent: Googlebot-Image
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-Crawl-delay: 2
-
-User-agent: Yandex
-Allow: /
-Crawl-delay: 3
-
-User-agent: DuckDuckBot
-Allow: /
-Crawl-delay: 2
-
-User-agent: Baiduspider
-Allow: /
-Crawl-delay: 5
-
-User-agent: facebot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: LinkedInBot
-Allow: /
-
-User-agent: Applebot
-Allow: /
-
-# Block aggressive SEO scrapers
-User-agent: AhrefsBot
-Disallow: /
-
-User-agent: SemrushBot
-Disallow: /
-
-User-agent: MJ12bot
-Disallow: /
-
-User-agent: DotBot
-Disallow: /
-
-User-agent: BLEXBot
-Disallow: /
-
-# Default Rule for All Other Crawlers
+# MephistoMail crawler policy
 User-agent: *
 Allow: /
-Crawl-delay: 3
+Disallow: /api/
+Disallow: /admin/
+Disallow: /extension/
 
-# Sitemap Declaration
+# Keep private mailbox/API surfaces out of search indexes.
 Sitemap: https://mephistomail.site/sitemap.xml
-
-# Canonical Host Specification
-Host: https://mephistomail.site
