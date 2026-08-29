@@ -12,7 +12,10 @@ const safeParseAccounts = (raw: string | null): Mailbox[] => {
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
         const now = Date.now();
-        return parsed.filter((a: Mailbox) => a && typeof a.id === 'string' && typeof a.address === 'string' && (!a.createdAt || now - a.createdAt < ACCOUNT_LIFETIME_MS));
+        return parsed.filter((a: Mailbox) => a && typeof a.id === 'string' && typeof a.address === 'string' && (!a.createdAt || now - a.createdAt < ACCOUNT_LIFETIME_MS)).map((a: Mailbox) => {
+            const { token: _token, password: _password, ...safeAccount } = a as Mailbox;
+            return safeAccount as Mailbox;
+        });
     } catch { return []; }
 };
 
@@ -24,7 +27,12 @@ export function useMailbox() {
     const isFirstLoadRef = useRef(true);
 
     const activeAccount = useMemo(() => accounts.find(a => a.id === activeAccountId) || null, [accounts, activeAccountId]);
-    const persist = useCallback((items: Mailbox[]) => { try { if (items.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); else localStorage.removeItem(STORAGE_KEY); } catch {} }, []);
+    const persist = useCallback((items: Mailbox[]) => {
+        try {
+            const safeItems = items.map(({ token: _token, password: _password, ...account }) => account);
+            if (safeItems.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(safeItems)); else localStorage.removeItem(STORAGE_KEY);
+        } catch {}
+    }, []);
 
     const getMagicUrl = useCallback((address?: string) => {
         const targetAddress = address || activeAccount?.address;
