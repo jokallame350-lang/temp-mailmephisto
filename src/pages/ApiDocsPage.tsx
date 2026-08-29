@@ -113,7 +113,21 @@ const ApiDocsPage: React.FC<ApiDocsPageProps> = ({ lang }) => {
         }
     };
 
+    const [notifyEmail, setNotifyEmail] = useState('');
+    const [notified, setNotified] = useState(false);
+
     const txt = t[lang];
+
+    const handleNotify = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!notifyEmail || !notifyEmail.includes('@')) return;
+        try {
+            localStorage.setItem('mephisto_api_waitlist', notifyEmail.trim());
+        } catch {
+            // Ignore storage errors
+        }
+        setNotified(true);
+    };
 
     return (
         <div className="min-h-screen bg-[#0a0a0f] text-white">
@@ -133,20 +147,47 @@ const ApiDocsPage: React.FC<ApiDocsPageProps> = ({ lang }) => {
 
             {/* Hero */}
             <section className="py-16 px-6">
-                <div className="max-w-4xl mx-auto text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/10 border border-purple-500/10 flex items-center justify-center mx-auto mb-6">
+                <div className="max-w-4xl mx-auto text-center space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/10 border border-purple-500/10 flex items-center justify-center mx-auto mb-2">
                         <Code2 size={28} className="text-purple-400" />
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight">
                         {txt.title}
                     </h1>
-                    <p className="text-slate-400 text-lg max-w-2xl mx-auto mb-6">
+                    <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto">
                         {txt.subtitle}
                     </p>
                     {/* Coming Soon Badge */}
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm font-bold">
                         <Zap size={14} />
                         {txt.comingSoon}
+                    </div>
+
+                    {/* Interactive Notify Form */}
+                    <div className="pt-4 max-w-md mx-auto">
+                        {notified ? (
+                            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs font-semibold text-emerald-400 flex items-center justify-center gap-2">
+                                <CheckCircle size={16} />
+                                <span>{lang === 'tr' ? 'Talebiniz alındı! Lansmanda bilgilendirileceksiniz.' : 'Registered! You will be notified on public API launch.'}</span>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleNotify} className="flex gap-2">
+                                <input
+                                    type="email"
+                                    required
+                                    value={notifyEmail}
+                                    onChange={e => setNotifyEmail(e.target.value)}
+                                    placeholder={txt.notifyPlaceholder}
+                                    className="flex-1 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50"
+                                />
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all shrink-0"
+                                >
+                                    {txt.notifyButton}
+                                </button>
+                            </form>
+                        )}
                     </div>
                 </div>
             </section>

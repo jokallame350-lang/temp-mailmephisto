@@ -1,7 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-// ─── Import REAL Production Code ──────────────────────────────────────────
+// ─── 1. Locales Imports ───────────────────────────────────────────────────
+import { en } from '../src/locales/en.ts';
+import { tr } from '../src/locales/tr.ts';
+import { de } from '../src/locales/de.ts';
+import { es } from '../src/locales/es.ts';
+import { fr } from '../src/locales/fr.ts';
+import { it } from '../src/locales/it.ts';
+import { pt } from '../src/locales/pt.ts';
+import { ru } from '../src/locales/ru.ts';
+import { ar } from '../src/locales/ar.ts';
+import { translations } from '../src/translations.ts';
+
+// ─── 2. Production Utilities Imports ───────────────────────────────────────
 import {
   sanitizeAttachmentFilename,
   normalizeMimeType,
@@ -19,6 +31,44 @@ import {
   extractOTP,
 } from '../src/utils/otp.ts';
 
+import {
+  generateEmailPrintHTML,
+  PRINT_LABELS,
+  LOCALE_MAP,
+} from '../src/utils/exportMail.ts';
+
+import {
+  calculateAdaptiveBackoff,
+} from '../src/utils/pollingBackoff.ts';
+
+import {
+  generateSecurePassword,
+  calculatePasswordStrength,
+} from '../src/utils/passwordGenerator.ts';
+
+import {
+  KNOWN_DISPOSABLE_DOMAINS,
+  isDisposableEmail,
+  analyzeDisposableEmail,
+} from '../src/utils/disposableChecker.ts';
+
+import {
+  generateLuhnCard,
+  validateLuhnChecksum,
+  generateTestCard,
+} from '../src/utils/cardGenerator.ts';
+
+import {
+  encryptBurnNote,
+  decryptBurnNote,
+  createBurnNoteUrl,
+} from '../src/utils/burnNote.ts';
+
+import {
+  generateDeterministicIdentity,
+} from '../src/utils/identity.ts';
+
+// ─── 3. Mail Service Imports ───────────────────────────────────────────────
 import {
   determineCategory,
   formatSenderName,
@@ -45,8 +95,9 @@ import {
   analyzeEmailAI,
   getProviderInfo,
   safeFetch,
+  getAttachment,
 } from '../src/services/mailService.ts';
-import { Mailbox } from '../src/types.ts';
+import { Mailbox, EmailDetail } from '../src/types.ts';
 
 // ─── Deterministic HTTP Test Seam ──────────────────────────────────────────
 type FetchMockHandler = (url: string, init?: RequestInit) => Promise<Response> | Response;
@@ -86,7 +137,510 @@ function textResponse(text: string, status = 200, headers: Record<string, string
   });
 }
 
-// ─── 1. Email Categorization (determineCategory) ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 1: All 9 Locales Key Completeness & Translation Parity
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Locales 1: en.ts contains complete set of base keys (>200 keys)', () => {
+  const enKeys = Object.keys(en);
+  assert.ok(enKeys.length >= 200, `Expected at least 200 keys, found ${enKeys.length}`);
+  assert.ok('refresh' in en);
+  assert.ok('inbox' in en);
+  assert.ok('heroTitle' in en);
+  assert.ok('faq1Q' in en);
+  assert.ok('privacyTitle' in en);
+});
+
+test('Locales 2: All 9 individual locale modules have 0 missing keys matching en.ts', () => {
+  const enKeys = Object.keys(en);
+  const locales = { en, tr, de, es, fr, it, pt, ru, ar };
+
+  for (const [langName, locObj] of Object.entries(locales)) {
+    const locKeys = new Set(Object.keys(locObj));
+    const missingKeys = enKeys.filter(k => !locKeys.has(k));
+
+    assert.deepEqual(
+      missingKeys,
+      [],
+      `Locale '${langName}' is missing ${missingKeys.length} key(s): ${missingKeys.slice(0, 10).join(', ')}`
+    );
+    assert.equal(
+      Object.keys(locObj).length,
+      enKeys.length,
+      `Locale '${langName}' key count (${Object.keys(locObj).length}) does not match en.ts (${enKeys.length})`
+    );
+  }
+});
+
+test('Locales 3: translations export bundle has all 9 locales complete and populated', () => {
+  const requiredLanguages = ['en', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'ru', 'ar'] as const;
+  const enKeys = Object.keys(en);
+
+  for (const lang of requiredLanguages) {
+    assert.ok(lang in translations, `translations bundle missing key '${lang}'`);
+    const dict = (translations as any)[lang];
+    assert.ok(dict, `translations.${lang} is nullish`);
+
+    const missingKeys = enKeys.filter(k => !(k in dict));
+    assert.deepEqual(
+      missingKeys,
+      [],
+      `translations.${lang} has missing keys: ${missingKeys.slice(0, 5).join(', ')}`
+    );
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 2: Attachment Retrieval via getAttachment() for Hydra / Mail.tm
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Attachment Retrieval 1: Successfully retrieves attachment Blob for Hydra (Mail.tm)', async () => {
+  const mailbox: Mailbox = {
+    id: 'hydra_att_user',
+    address: 'user@mail.tm',
+    apiBase: 'mail_tm',
+    token: 'jwt_valid_token_xyz',
+  };
+
+  let requestedUrl = '';
+  let authHeader = '';
+
+  setMockFetch((url, init) => {
+    requestedUrl = url;
+    authHeader = (init?.headers as any)?.Authorization || '';
+    if (url.includes('/messages/msg_991/attachment/att_882')) {
+      return new Response(new Uint8Array([0x25, 0x50, 0x44, 0x46]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/pdf' },
+      });
+    }
+    return new Response('Not Found', { status: 404 });
+  });
+
+  try {
+    const blob = await getAttachment(mailbox, 'msg_991', 'att_882');
+    assert.ok(blob, 'Expected blob to be returned');
+    assert.equal(blob.size, 4);
+    assert.ok(requestedUrl.includes('/messages/msg_991/attachment/att_882'));
+    assert.equal(authHeader, 'Bearer jwt_valid_token_xyz');
+  } finally {
+    setMockFetch(null);
+  }
+});
+
+test('Attachment Retrieval 2: Returns null on HTTP 404 or 500 error', async () => {
+  const mailbox: Mailbox = {
+    id: 'hydra_att_err',
+    address: 'user@mail.tm',
+    apiBase: 'mail_tm',
+    token: 'jwt_token',
+  };
+
+  setMockFetch(() => textResponse('Internal Server Error', 500));
+
+  try {
+    const res500 = await getAttachment(mailbox, 'msg_err', 'att_err');
+    assert.equal(res500, null);
+  } finally {
+    setMockFetch(null);
+  }
+
+  setMockFetch(() => textResponse('Not Found', 404));
+
+  try {
+    const res404 = await getAttachment(mailbox, 'msg_err', 'att_err');
+    assert.equal(res404, null);
+  } finally {
+    setMockFetch(null);
+  }
+});
+
+test('Attachment Retrieval 3: Returns null for Guerrilla Mail provider (provider guard)', async () => {
+  let networkCalled = false;
+  setMockFetch(() => {
+    networkCalled = true;
+    return jsonResponse({});
+  });
+
+  const guerrillaMb: Mailbox = {
+    id: 'g_user',
+    address: 'test@sharklasers.com',
+    apiBase: 'guerrilla',
+    token: 'sid_123',
+  };
+
+  try {
+    const res = await getAttachment(guerrillaMb, 'msg_1', 'att_1');
+    assert.equal(res, null);
+    assert.equal(networkCalled, false, 'Guerrilla provider should short-circuit without network call');
+  } finally {
+    setMockFetch(null);
+  }
+});
+
+test('Attachment Retrieval 4: Returns null on missing or invalid parameters', async () => {
+  const validMb: Mailbox = { id: 'm', address: 'a@mail.tm', apiBase: 'mail_tm', token: 't' };
+
+  assert.equal(await getAttachment(null as any, 'msg', 'att'), null);
+  assert.equal(await getAttachment({ ...validMb, token: '' }, 'msg', 'att'), null);
+  assert.equal(await getAttachment(validMb, '', 'att'), null);
+  assert.equal(await getAttachment(validMb, 'msg', ''), null);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 3: Multi-Language Print Email Formatting (exportMail.ts)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const sampleEmailDetail: EmailDetail = {
+  id: 'msg_print_test',
+  from: { address: 'security@bank.com', name: 'Security Team' },
+  subject: 'Urgent: Account Verification',
+  intro: 'Your confirmation code is 882910',
+  seen: true,
+  createdAt: '2026-08-29T08:30:00.000Z',
+  aiCategory: 'Verification',
+  html: ['<p>Your one-time code is <b>882910</b></p><script>alert("evil")</script>'],
+  hasAttachments: false,
+  attachments: [],
+};
+
+test('Print Export 1: generateEmailPrintHTML supports all 9 locales with correct labels and direction', () => {
+  const expectedLabels = [
+    { lang: 'en' as const, from: 'From', date: 'Date', cat: 'Category', dir: 'ltr' },
+    { lang: 'tr' as const, from: 'Kimden', date: 'Tarih', cat: 'Kategori', dir: 'ltr' },
+    { lang: 'de' as const, from: 'Von', date: 'Datum', cat: 'Kategorie', dir: 'ltr' },
+    { lang: 'es' as const, from: 'De', date: 'Fecha', cat: 'Categoría', dir: 'ltr' },
+    { lang: 'fr' as const, from: 'De', date: 'Date', cat: 'Catégorie', dir: 'ltr' },
+    { lang: 'it' as const, from: 'Da', date: 'Data', cat: 'Categoria', dir: 'ltr' },
+    { lang: 'pt' as const, from: 'De', date: 'Data', cat: 'Categoria', dir: 'ltr' },
+    { lang: 'ru' as const, from: 'От', date: 'Дата', cat: 'Категория', dir: 'ltr' },
+    { lang: 'ar' as const, from: 'من', date: 'التاريخ', cat: 'الفئة', dir: 'rtl' },
+  ];
+
+  for (const exp of expectedLabels) {
+    const html = generateEmailPrintHTML(sampleEmailDetail, exp.lang);
+    assert.ok(html.includes(`dir="${exp.dir}"`), `Expected dir="${exp.dir}" for lang ${exp.lang}`);
+    assert.ok(html.includes(`<strong>${exp.from}:</strong>`), `Missing '${exp.from}:' for lang ${exp.lang}`);
+    assert.ok(html.includes(`<strong>${exp.date}:</strong>`), `Missing '${exp.date}:' for lang ${exp.lang}`);
+    assert.ok(html.includes(`<strong>${exp.cat}:</strong>`), `Missing '${exp.cat}:' for lang ${exp.lang}`);
+    assert.ok(html.includes('MephistoMail Privacy Shield'));
+  }
+});
+
+test('Print Export 2: generateEmailPrintHTML provides fallback subject per language when missing', () => {
+  const emptySubjectEmail: EmailDetail = {
+    ...sampleEmailDetail,
+    subject: '',
+  };
+
+  const htmlEn = generateEmailPrintHTML(emptySubjectEmail, 'en');
+  assert.ok(htmlEn.includes('(No Subject)'));
+
+  const htmlTr = generateEmailPrintHTML(emptySubjectEmail, 'tr');
+  assert.ok(htmlTr.includes('(Konu Yok)'));
+
+  const htmlDe = generateEmailPrintHTML(emptySubjectEmail, 'de');
+  assert.ok(htmlDe.includes('(Kein Betreff)'));
+
+  const htmlAr = generateEmailPrintHTML(emptySubjectEmail, 'ar');
+  assert.ok(htmlAr.includes('(بلا موضوع)'));
+});
+
+test('Print Export 3: generateEmailPrintHTML sanitizes dangerous HTML script tags', () => {
+  const html = generateEmailPrintHTML(sampleEmailDetail, 'en');
+  // DOMPurify strips <script> tags
+  assert.equal(html.includes('<script>'), false);
+  assert.equal(html.includes('alert("evil")'), false);
+  assert.ok(html.includes('882910'));
+});
+
+test('Print Export 4: PRINT_LABELS and LOCALE_MAP contain all 9 languages', () => {
+  const langs = ['en', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'ru', 'ar'] as const;
+  for (const l of langs) {
+    assert.ok(l in PRINT_LABELS);
+    assert.ok(PRINT_LABELS[l].from);
+    assert.ok(PRINT_LABELS[l].date);
+    assert.ok(PRINT_LABELS[l].category);
+    assert.ok(l in LOCALE_MAP);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 4: Adaptive Polling & Exponential Backoff Calculation
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Adaptive Polling 1: Returns base interval (10,000ms) on initial / active state', () => {
+  const interval = calculateAdaptiveBackoff({ consecutiveEmptyPolls: 0, isBackgroundTab: false });
+  assert.equal(interval, 10000);
+});
+
+test('Adaptive Polling 2: Applies exponential backoff on consecutive empty polls', () => {
+  const poll0 = calculateAdaptiveBackoff({ consecutiveEmptyPolls: 0 });
+  const poll1 = calculateAdaptiveBackoff({ consecutiveEmptyPolls: 1 });
+  const poll2 = calculateAdaptiveBackoff({ consecutiveEmptyPolls: 2 });
+  const poll3 = calculateAdaptiveBackoff({ consecutiveEmptyPolls: 3 });
+
+  assert.equal(poll0, 10000);
+  assert.equal(poll1, 15000); // 10000 * 1.5
+  assert.equal(poll2, 22500); // 10000 * 1.5^2
+  assert.equal(poll3, 33750); // 10000 * 1.5^3
+});
+
+test('Adaptive Polling 3: Caps backoff at maxIntervalMs (60,000ms)', () => {
+  const poll10 = calculateAdaptiveBackoff({ consecutiveEmptyPolls: 10, maxIntervalMs: 60000 });
+  assert.equal(poll10, 60000);
+});
+
+test('Adaptive Polling 4: Uses background interval (30,000ms) when tab is hidden', () => {
+  const bgPoll0 = calculateAdaptiveBackoff({ isBackgroundTab: true, consecutiveEmptyPolls: 0 });
+  assert.equal(bgPoll0, 30000);
+
+  const bgPoll1 = calculateAdaptiveBackoff({ isBackgroundTab: true, consecutiveEmptyPolls: 1 });
+  assert.equal(bgPoll1, 45000); // 30000 * 1.5
+});
+
+test('Adaptive Polling 5: Rate limit state respects remaining rate limit window', () => {
+  const interval = calculateAdaptiveBackoff({
+    isRateLimited: true,
+    rateLimitRemainingMs: 25000,
+    baseIntervalMs: 10000,
+  });
+  assert.equal(interval, 25000);
+});
+
+test('Adaptive Polling 6: Applies deterministic jitter when jitterRatio is specified', () => {
+  // Deterministic RNG that returns maximum positive offset (rng = 1 => offset = +10%)
+  const maxJitter = calculateAdaptiveBackoff({
+    consecutiveEmptyPolls: 0,
+    baseIntervalMs: 10000,
+    jitterRatio: 0.1,
+    rng: () => 1,
+  });
+  assert.equal(maxJitter, 11000);
+
+  // Deterministic RNG that returns maximum negative offset (rng = 0 => offset = -10%)
+  const minJitter = calculateAdaptiveBackoff({
+    consecutiveEmptyPolls: 0,
+    baseIntervalMs: 10000,
+    jitterRatio: 0.1,
+    rng: () => 0,
+  });
+  assert.equal(minJitter, 9000);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 5: Password Generator & Strength Scoring
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Password Generator 1: Generates passwords with exact requested length', () => {
+  assert.equal(generateSecurePassword({ length: 8 }).length, 8);
+  assert.equal(generateSecurePassword({ length: 16 }).length, 16);
+  assert.equal(generateSecurePassword({ length: 32 }).length, 32);
+  assert.equal(generateSecurePassword({ length: 64 }).length, 64);
+});
+
+test('Password Generator 2: Respects character set inclusion flags', () => {
+  const digitsOnly = generateSecurePassword({
+    length: 20,
+    includeLowercase: false,
+    includeUppercase: false,
+    includeNumbers: true,
+    includeSymbols: false,
+  });
+  assert.match(digitsOnly, /^[0-9]+$/);
+
+  const uppercaseOnly = generateSecurePassword({
+    length: 20,
+    includeLowercase: false,
+    includeUppercase: true,
+    includeNumbers: false,
+    includeSymbols: false,
+  });
+  assert.match(uppercaseOnly, /^[A-Z]+$/);
+});
+
+test('Password Generator 3: calculatePasswordStrength scores from 0 (weak) to 5 (strong)', () => {
+  assert.equal(calculatePasswordStrength(''), 0);
+  assert.equal(calculatePasswordStrength('abc'), 0);
+  assert.equal(calculatePasswordStrength('abcdefgh'), 1); // >= 8 chars
+  assert.equal(calculatePasswordStrength('abcdefghijkl'), 2); // >= 12 chars
+  assert.equal(calculatePasswordStrength('Abcdefghijkl'), 3); // upper + lower
+  assert.equal(calculatePasswordStrength('Abcdefgh99!#'), 4); // len 12 + numbers + symbols
+  assert.equal(calculatePasswordStrength('Abcdefghijklmnop99!#'), 5); // >= 16 chars + all charsets
+});
+
+test('Password Generator 4: Produces non-repeating cryptographically varied outputs', () => {
+  const set = new Set<string>();
+  for (let i = 0; i < 50; i++) {
+    set.add(generateSecurePassword({ length: 16 }));
+  }
+  assert.equal(set.size, 50, 'All 50 generated passwords should be unique');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 6: Disposable Email Domain Checker
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Disposable Checker 1: KNOWN_DISPOSABLE_DOMAINS contains standard temporary providers', () => {
+  assert.ok(KNOWN_DISPOSABLE_DOMAINS.has('sharklasers.com'));
+  assert.ok(KNOWN_DISPOSABLE_DOMAINS.has('guerrillamail.com'));
+  assert.ok(KNOWN_DISPOSABLE_DOMAINS.has('mail.tm'));
+  assert.ok(KNOWN_DISPOSABLE_DOMAINS.has('tempmail.org'));
+  assert.ok(KNOWN_DISPOSABLE_DOMAINS.has('10minutemail.com'));
+});
+
+test('Disposable Checker 2: isDisposableEmail identifies known and keyword-based disposable addresses', () => {
+  assert.equal(isDisposableEmail('test@sharklasers.com'), true);
+  assert.equal(isDisposableEmail('alice@mail.tm'), true);
+  assert.equal(isDisposableEmail('temp-123@mycustomtempdomain.xyz'), true);
+  assert.equal(isDisposableEmail('burner@randomservice.net'), true);
+  assert.equal(isDisposableEmail('user@trashmail.com'), true);
+});
+
+test('Disposable Checker 3: isDisposableEmail rejects standard legitimate domains', () => {
+  assert.equal(isDisposableEmail('john.doe@gmail.com'), false);
+  assert.equal(isDisposableEmail('alex@outlook.com'), false);
+  assert.equal(isDisposableEmail('contact@yahoo.com'), false);
+  assert.equal(isDisposableEmail('security@proton.me'), false);
+  assert.equal(isDisposableEmail(''), false);
+});
+
+test('Disposable Checker 4: analyzeDisposableEmail produces detailed risk score and classification', () => {
+  const disposableAnalysis = analyzeDisposableEmail('spammer@sharklasers.com');
+  assert.equal(disposableAnalysis.isDisposable, true);
+  assert.equal(disposableAnalysis.riskScore, 95);
+  assert.ok(disposableAnalysis.mxStatus.includes('Ephemeral') || disposableAnalysis.mxStatus.includes('Volatile'));
+
+  const legitimateAnalysis = analyzeDisposableEmail('ceo@gmail.com');
+  assert.equal(legitimateAnalysis.isDisposable, false);
+  assert.equal(legitimateAnalysis.riskScore, 5);
+  assert.ok(legitimateAnalysis.mxStatus.includes('Standard MX'));
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 7: Credit Card Generator & Luhn Algorithm Checksum
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Card Generator 1: generateLuhnCard produces valid check digits for Visa, Mastercard, Amex, Discover', () => {
+  const visa = generateLuhnCard('4532', 16);
+  assert.equal(visa.length, 16);
+  assert.ok(visa.startsWith('4532'));
+  assert.equal(validateLuhnChecksum(visa), true);
+
+  const mastercard = generateLuhnCard('5425', 16);
+  assert.equal(mastercard.length, 16);
+  assert.ok(mastercard.startsWith('5425'));
+  assert.equal(validateLuhnChecksum(mastercard), true);
+
+  const amex = generateLuhnCard('3782', 15);
+  assert.equal(amex.length, 15);
+  assert.ok(amex.startsWith('3782'));
+  assert.equal(validateLuhnChecksum(amex), true);
+
+  const discover = generateLuhnCard('6011', 16);
+  assert.equal(discover.length, 16);
+  assert.ok(discover.startsWith('6011'));
+  assert.equal(validateLuhnChecksum(discover), true);
+});
+
+test('Card Generator 2: validateLuhnChecksum rejects invalid or corrupted card numbers', () => {
+  const valid = generateLuhnCard('4532', 16);
+  // Mutate last digit
+  const lastDigit = parseInt(valid[valid.length - 1], 10);
+  const corrupted = valid.slice(0, -1) + ((lastDigit + 1) % 10).toString();
+  assert.equal(validateLuhnChecksum(corrupted), false);
+
+  assert.equal(validateLuhnChecksum(''), false);
+  assert.equal(validateLuhnChecksum('12345'), false);
+  assert.equal(validateLuhnChecksum('0000000000000001'), false);
+});
+
+test('Card Generator 3: generateTestCard returns complete valid test card details', () => {
+  const card = generateTestCard('visa');
+  assert.equal(card.brand, 'VISA');
+  assert.ok(card.cardNumber.startsWith('4532'));
+  assert.equal(validateLuhnChecksum(card.cardNumber), true);
+  assert.ok(Number(card.expMonth) >= 1 && Number(card.expMonth) <= 12);
+  assert.ok(Number(card.expYear) >= 2026);
+  assert.equal(card.cvv.length, 3);
+  assert.ok(card.holder.includes(' '));
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 8: Burn Note Ephemeral Encryption & Decryption Roundtrip
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Burn Note 1: Encrypts and decrypts UTF-8, emojis, and multiline secret text flawlessly', () => {
+  const sampleNotes = [
+    'SuperSecretPassword123!',
+    'Gizli Mesaj: Türkçe karakterler çğıöşü ÇĞİÖŞÜ',
+    'Secret with emojis: 🔥🔐🚀⚡ and symbols #!@$%^&*()',
+    'Multiline\nsecret\r\ncredentials\nwith spaces',
+    '{"apiKey":"sk-proj-992817264810","secret":"xyz"}',
+  ];
+
+  for (const original of sampleNotes) {
+    const encrypted = encryptBurnNote(original);
+    assert.ok(encrypted.length > 0);
+    const decrypted = decryptBurnNote(encrypted);
+    assert.equal(decrypted, original, `Decryption mismatch for: ${original}`);
+  }
+});
+
+test('Burn Note 2: Handles hash fragments (#) and invalid payloads gracefully', () => {
+  const encrypted = encryptBurnNote('Hello World');
+  assert.equal(decryptBurnNote(`#${encrypted}`), 'Hello World');
+  assert.equal(decryptBurnNote(''), '');
+  assert.equal(decryptBurnNote('invalid_non_base64_###'), '');
+});
+
+test('Burn Note 3: createBurnNoteUrl formats valid browser URL with hash fragment', () => {
+  const url = createBurnNoteUrl('https://mephistomail.site', 'MySecret123');
+  assert.ok(url.startsWith('https://mephistomail.site/burn-note#'));
+  const hash = url.split('#')[1];
+  assert.equal(decryptBurnNote(hash), 'MySecret123');
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 9: Deterministic Identity Generator
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Deterministic Identity 1: Produces strictly deterministic output for identical email', () => {
+  const email = 'alex.tester@example.com';
+  const id1 = generateDeterministicIdentity(email);
+  const id2 = generateDeterministicIdentity(email);
+
+  assert.deepEqual(id1, id2);
+  assert.equal(id1.name, id2.name);
+  assert.equal(id1.phone, id2.phone);
+  assert.equal(id1.birthday, id2.birthday);
+  assert.equal(id1.address, id2.address);
+});
+
+test('Deterministic Identity 2: Different email inputs generate distinct identities', () => {
+  const idA = generateDeterministicIdentity('alice@example.com');
+  const idB = generateDeterministicIdentity('bob@anotherdomain.org');
+
+  assert.notEqual(idA.name, idB.name);
+  assert.notEqual(idA.phone, idB.phone);
+});
+
+test('Deterministic Identity 3: Output conforms to expected format standards', () => {
+  const id = generateDeterministicIdentity('sample.user@mephistomail.site');
+
+  assert.ok(id.name && id.name.includes(' '));
+  assert.match(id.birthday, /^\d{4}-\d{2}-\d{2}$/);
+  assert.match(id.phone, /^\+1 \(\d{3}\) \d{3}-\d{4}$/);
+  assert.equal(id.country, 'United States');
+  assert.ok(id.city);
+  assert.ok(id.job);
+  assert.ok(id.address.includes(id.city));
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 10: Email Categorization (determineCategory)
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('determineCategory identifies Verification emails (EN & TR)', () => {
   assert.equal(determineCategory('Your verification code is 123456', 'auth@service.com', ''), 'Verification');
   assert.equal(determineCategory('Hesap Doğrulama Kodu', 'no-reply@instagram.com', 'Lütfen onaylayın'), 'Verification');
@@ -114,7 +668,10 @@ test('determineCategory handles Other and empty/null inputs gracefully', () => {
   assert.equal(determineCategory(undefined as any, undefined as any, undefined as any), 'Other');
 });
 
-// ─── 2. Sender Name Formatting (formatSenderName) ────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 11: Sender Name Formatting (formatSenderName)
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('formatSenderName recognizes prominent tech brands', () => {
   assert.equal(formatSenderName('security@instagram.com'), 'Instagram');
   assert.equal(formatSenderName('notifications@github.com'), 'GitHub');
@@ -140,7 +697,10 @@ test('formatSenderName handles unknown and edge cases', () => {
   assert.equal(formatSenderName('alexander@customdomain.io'), 'Alexander');
 });
 
-// ─── 3. Smart Subject Formatting (formatSmartSubject) ────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 12: Smart Subject Formatting (formatSmartSubject)
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('formatSmartSubject preserves valid clean subjects', () => {
   assert.equal(formatSmartSubject('Your Order #10293 has shipped', '', 'orders@store.com'), 'Your Order #10293 has shipped');
   assert.equal(formatSmartSubject('Welcome to MephistoMail!', 'Get started now', 'team@mephistomail.site'), 'Welcome to MephistoMail!');
@@ -160,7 +720,10 @@ test('formatSmartSubject truncates long excerpt fallbacks to 45 chars', () => {
   assert.ok(result.length <= 48);
 });
 
-// ─── 4. OTP / PIN Code Extraction (extractOTP) ───────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 13: OTP / PIN Code Extraction (extractOTP)
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('extractOTP extracts 4 to 8 digit verification codes', () => {
   assert.equal(extractOTP('Your verification code is 849201. Do not share.'), '849201');
   assert.equal(extractOTP('Doğrulama kodunuz: #948210'), '948210');
@@ -176,7 +739,10 @@ test('extractOTP handles empty, null, and non-code strings safely', () => {
   assert.equal(extractOTP('Hello, how are you today? Let us meet at 5pm.'), null);
 });
 
-// ─── 5. Action Links & Verification URLs (extractActionLinks) ────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 14: Action Links & Verification URLs (extractActionLinks)
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('isSafeVerificationUrl validates safe HTTPS destinations and rejects unsafe protocols', () => {
   assert.equal(isSafeVerificationUrl('https://example.com/verify?token=abc123xyz'), true);
   assert.equal(isSafeVerificationUrl('http://example.com/verify'), false); // HTTP rejected
@@ -206,7 +772,10 @@ test('extractActionLinks rejects malicious, non-HTTPS or non-action links', () =
   assert.equal(extractActionLinks(undefined as any), null);
 });
 
-// ─── 6. Attachment Security (attachmentSecurity) ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 15: Attachment Security (attachmentSecurity)
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('sanitizeAttachmentFilename prevents directory traversal and control chars', () => {
   assert.equal(sanitizeAttachmentFilename('../../evil.exe\u0000'), 'evil.exe');
   assert.equal(sanitizeAttachmentFilename('..\\..\\malware.dll'), 'malware.dll');
@@ -257,14 +826,20 @@ test('validateAttachmentResponse detects response MIME and size mismatches', () 
   }
 });
 
-// ─── 7. HTML Entity Decoding (decodeHTMLEntities) ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 16: HTML Entity Decoding (decodeHTMLEntities)
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('decodeHTMLEntities converts HTML entities correctly', () => {
   assert.equal(decodeHTMLEntities('&lt;b&gt;Hello &amp; Welcome&lt;/b&gt;'), '<b>Hello & Welcome</b>');
   assert.equal(decodeHTMLEntities('Don&#039;t worry &quot;friend&quot; &apos;tag&apos; &nbsp;'), "Don't worry \"friend\" 'tag'  ");
   assert.equal(decodeHTMLEntities(''), '');
 });
 
-// ─── 8. Guerrilla Domains & Provider Type Guards ─────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 17: Guerrilla Domains & Provider Type Guards
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('isGuerrilla correctly identifies Guerrilla provider string', () => {
   assert.equal(isGuerrilla('guerrilla'), true);
   assert.equal(isGuerrilla('mail_tm'), false);
@@ -278,7 +853,10 @@ test('GUERRILLA_DOMAINS contains active high-reputation domain pool', () => {
   assert.ok(GUERRILLA_DOMAINS.includes('grr.la'));
 });
 
-// ─── 9. Additional Mail Service Unit Coverage ─────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE 18: Additional Mail Service Unit Coverage
+// ═══════════════════════════════════════════════════════════════════════════
+
 test('storeCredentials, clearCredentials, and AI helpers operate cleanly', async () => {
   storeCredentials('test_mb_1', 'user@guerrilla.com', 'supersecret');
   clearCredentials('test_mb_1');

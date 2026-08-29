@@ -268,15 +268,17 @@ export const tr = {
   vipKeyInvalid: 'Geçersiz kod. Test için MEPHISTO-VIP-PRO-2026 kullanın.',
 
   // Forwarding Modal (Ghost Bridge)
-  ghostForwardTitle: 'Hayalet Yönlendirme',
-  ghostForwardDesc: 'Gelen mailleri geçici olarak 48 saatliğine gerçek adresinize yönlendirir. Süre dolunca bu köprü kendini imha eder.',
-  ghostBetaTitle: 'Beta Özellik (İstemci Taraflı)',
-  ghostBetaDesc: 'Gizliliğinizi korumak için yönlendirme şu anda doğrudan tarayıcınızda gerçekleştirilir. MephistoMail sekmesi açık kalmalıdır.',
+  ghostForwardTitle: 'Hayalet Yönlendirme (Özel Beta)',
+  ghostForwardDesc: 'Geçici e-posta yönlendirme tercihlerinizi yapılandırın. Giden SMTP röle altyapısı şu an özel kapalı test ve kurulum aşamasındadır.',
+  ghostBetaTitle: 'Özel Beta / Altyapı Kurulumu',
+  ghostBetaDesc: 'Spam ve kötüye kullanımı önlemek amacıyla sunucu taraflı SMTP aktarımı altyapı hazırlığındadır. Yönlendirme hedefi belirlediğinizde tercihiniz yerel olarak kaydedilir ve sunucu aktivasyonu için sıraya alınır.',
   ghostSourceLabel: 'Kaynak (Kullan-At)',
   ghostSelectAddress: 'Bir adres seçin',
-  ghostDestLabel: 'Hedef (Gerçek)',
-  ghostActiveRule: 'Yönlendirme Kuralı Aktif!',
-  ghostActivateBtn: 'Hayalet Köprüyü Başlat',
+  ghostDestLabel: 'Hedef (Gerçek Adres)',
+  ghostActiveRule: 'Tercih Kaydedildi (Sırada Bekliyor)',
+  ghostActivateBtn: 'Yönlendirme Tercihini Sıraya Al',
+  ghostQueuedNotice: 'Tercih yerel olarak kaydedildi. Sunucu röle altyapısı açıldığında aktifleştirilmek üzere sıraya alındı.',
+  ghostRemovePrefBtn: 'Tercihi Temizle',
 
   // Identity Modal (Burner Identity)
   identityTitle: 'Sahte Kimlik',

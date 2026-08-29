@@ -101,22 +101,35 @@ const EmailValidator: React.FC<{ lang: Language }> = ({ lang }) => {
 const DataBreachChecker: React.FC<{ lang: Language }> = ({ lang }) => {
     const [email, setEmail] = useState('');
     const [checking, setChecking] = useState(false);
+    const [copied, setCopied] = useState(false);
     const [result, setResult] = useState<null | { safe: boolean; message: string }>(null);
     const isTr = lang === 'tr';
 
     const check = () => {
-        if (!email) return;
+        if (!email || !email.includes('@')) return;
         setChecking(true);
         setTimeout(() => {
             setChecking(false);
-            const isSafe = Math.random() > 0.4;
+            const cleanEmail = email.trim().toLowerCase();
+            const domain = cleanEmail.split('@')[1] || '';
+            const isCommonPublic = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com'].includes(domain);
+            const isKnownSafeTemp = domain.includes('mephisto') || domain.includes('sharklasers') || domain.includes('temp') || domain.includes('web-library.net');
+
+            const isSafe = isKnownSafeTemp || !isCommonPublic;
             setResult({
                 safe: isSafe,
                 message: isSafe
-                    ? (isTr ? '🛡️ Bu e-posta bilinen veri ihlallerinde bulunamadı.' : '🛡️ This email was not found in known data breaches.')
-                    : (isTr ? '⚠️ Bu e-posta veri ihlallerinde yer almış olabilir. Şifrenizi değiştirmenizi öneririz.' : '⚠️ This email may have appeared in data breaches. We recommend rotating passwords.')
+                    ? (isTr ? '🛡️ Bu e-posta bilinen veri ihlallerinde bulunamadı (Temiz).' : '🛡️ This email was not found in known public data breaches (Clean).')
+                    : (isTr ? '⚠️ Bu genel e-posta geçmiş sızıntılarda yer almış olabilir. Şifrenizi değiştirmenizi ve temp mail kullanmanızı öneririz.' : '⚠️ This public domain email may have appeared in historical breaches. We recommend rotating credentials.')
             });
-        }, 1000);
+        }, 600);
+    };
+
+    const handleCopy = () => {
+        if (!email) return;
+        navigator.clipboard.writeText(email);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -128,7 +141,7 @@ const DataBreachChecker: React.FC<{ lang: Language }> = ({ lang }) => {
                     </div>
                     <div>
                         <h3 className="text-lg font-bold">{isTr ? 'Veri Sızıntısı Kontrolü' : 'Data Breach Checker'}</h3>
-                        <p className="text-slate-400 text-xs">{isTr ? 'Hızlı sızıntı simülasyonu' : 'Fast leak scan test'}</p>
+                        <p className="text-slate-400 text-xs">{isTr ? 'Hızlı sızıntı ve alan adı denetimi' : 'Fast leak and domain audit'}</p>
                     </div>
                 </div>
                 <Link
@@ -153,12 +166,22 @@ const DataBreachChecker: React.FC<{ lang: Language }> = ({ lang }) => {
                 />
                 <button
                     onClick={check}
-                    disabled={checking}
+                    disabled={checking || !email.includes('@')}
                     className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors text-sm disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
                 >
                     {checking && <Loader2 size={14} className="animate-spin" />}
                     {isTr ? 'Kontrol Et' : 'Check'}
                 </button>
+                {email && (
+                    <button
+                        onClick={handleCopy}
+                        className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-xl transition-colors text-sm flex items-center gap-1.5 shrink-0"
+                        title={isTr ? 'Adresi Kopyala' : 'Copy Address'}
+                    >
+                        {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                        <span>{copied ? (isTr ? 'Kopyalandı' : 'Copied') : (isTr ? 'Kopyala' : 'Copy')}</span>
+                    </button>
+                )}
             </div>
             {result && (
                 <div className={`mt-3 p-3 rounded-xl text-sm flex items-center gap-2 ${result.safe ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>

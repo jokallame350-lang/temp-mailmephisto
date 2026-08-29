@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
-import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
+import { getMessages, getMessageDetail, deleteMessage, deleteAllMessages, getRateLimitRemainingMs } from '../services/mailService';
 import { playNotificationSound } from '../utils/audioNotification';
 import { extractActionLinks } from '../utils/actionLinks';
 
-const REFRESH_INTERVAL = 10000;
-const REFRESH_INTERVAL_HIDDEN = 30000;
+const BASE_POLL_INTERVAL = 10000;
+const MAX_POLL_INTERVAL = 60000;
+const BACKOFF_FACTOR = 1.5;
 const STATS_KEY = 'mephisto_stats';
 const FILTER_KEY = 'mephisto_notif_filters';
 
@@ -13,6 +14,16 @@ const defaultStats: AppStats = { totalAccountsCreated: 0, totalEmailsReceived: 0
 const defaultFilters: NotificationFilter = { verification: true, security: true, newsletter: true, other: true };
 
 const safeRead = <T,>(key: string, fallback: T): T => { try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : fallback; } catch { return fallback; } };
+
+const isPollingAllowed = (): boolean => {
+    if (typeof document !== 'undefined' && (document.hidden || document.visibilityState === 'hidden')) {
+        return false;
+    }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        return false;
+    }
+    return true;
+};
 
 export function useEmails(
     activeAccount: Mailbox | null,
@@ -40,6 +51,11 @@ export function useEmails(
     const activeAccountIdRef = useRef<string | null>(null);
     const mountedRef = useRef(true);
 
+    const isFetchingRef = useRef(false);
+    const consecutiveFailuresRef = useRef(0);
+    const pollingTimeoutRef = useRef<number | null>(null);
+    const fetchEmailsRef = useRef<() => Promise<void>>(() => Promise.resolve());
+
     const onNewEmailRef = useRef(onNewEmail);
     const onAutoVerifySuccessRef = useRef(onAutoVerifySuccess);
     const autoVerifyEnabledRef = useRef(autoVerifyEnabled);
@@ -49,18 +65,30 @@ export function useEmails(
     autoVerifyEnabledRef.current = autoVerifyEnabled;
     activeAccountIdRef.current = activeAccount?.id || null;
 
+    const clearPollingTimer = useCallback(() => {
+        if (pollingTimeoutRef.current !== null) {
+            window.clearTimeout(pollingTimeoutRef.current);
+            pollingTimeoutRef.current = null;
+        }
+    }, []);
+
     useEffect(() => () => {
         mountedRef.current = false;
+        clearPollingTimer();
         fetchRequestIdRef.current++;
         detailRequestIdRef.current++;
-    }, []);
+    }, [clearPollingTimer]);
 
     useEffect(() => { deletedIdsRef.current = deletedIds; }, [deletedIds]);
 
-    // Active account switch: immediately invalidate pending in-flight requests and clear stale mailbox data
+    // Active account switch: immediately invalidate pending in-flight requests, reset backoff, clear timers and mailbox data
     useEffect(() => {
         fetchRequestIdRef.current++;
         detailRequestIdRef.current++;
+        isFetchingRef.current = false;
+        consecutiveFailuresRef.current = 0;
+        clearPollingTimer();
+
         setEmails([]);
         setSelectedEmailId(null);
         setCurrentEmailDetail(null);
@@ -70,7 +98,7 @@ export function useEmails(
         autoVerifiedIdsRef.current = new Set();
         setFetchError(null);
         setProgress(0);
-    }, [activeAccount?.id]);
+    }, [activeAccount?.id, clearPollingTimer]);
 
     useEffect(() => { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch {} }, [stats]);
     useEffect(() => { try { localStorage.setItem(FILTER_KEY, JSON.stringify(notifFilters)); } catch {} }, [notifFilters]);
@@ -108,8 +136,41 @@ export function useEmails(
         }
     }, []);
 
+    const scheduleNextPoll = useCallback((customDelay?: number) => {
+        clearPollingTimer();
+        if (!mountedRef.current || !activeAccountIdRef.current) return;
+        if (!isPollingAllowed()) return;
+
+        let delay = customDelay;
+        if (delay === undefined) {
+            const failures = consecutiveFailuresRef.current;
+            const base = failures === 0
+                ? BASE_POLL_INTERVAL
+                : Math.min(MAX_POLL_INTERVAL, Math.round(BASE_POLL_INTERVAL * Math.pow(BACKOFF_FACTOR, failures)));
+            const rateLimitMs = activeAccount ? getRateLimitRemainingMs(activeAccount.apiBase) : 0;
+            delay = Math.max(base, rateLimitMs);
+        }
+
+        pollingTimeoutRef.current = window.setTimeout(() => {
+            pollingTimeoutRef.current = null;
+            fetchEmailsRef.current();
+        }, delay);
+    }, [activeAccount, clearPollingTimer]);
+
     const fetchEmails = useCallback(async () => {
+        if (isFetchingRef.current) return;
         if (!activeAccount) return;
+        if (!isPollingAllowed()) return;
+
+        const rateLimitRemaining = getRateLimitRemainingMs(activeAccount.apiBase);
+        if (rateLimitRemaining > 0) {
+            const waitSec = Math.max(1, Math.ceil(rateLimitRemaining / 1000));
+            setFetchError(`Rate limited. Retry after ${waitSec}s`);
+            scheduleNextPoll(rateLimitRemaining + 500);
+            return;
+        }
+
+        isFetchingRef.current = true;
         const currentAccountId = activeAccount.id;
         const currentRequestId = ++fetchRequestIdRef.current;
 
@@ -119,6 +180,9 @@ export function useEmails(
                 return;
             }
             if (!Array.isArray(fetched)) return;
+
+            consecutiveFailuresRef.current = 0;
+            setFetchError(null);
 
             const currentDeleted = deletedIdsRef.current;
             const filtered = fetched.filter(e => !currentDeleted.has(e.id));
@@ -152,20 +216,28 @@ export function useEmails(
                 filtered.forEach(item => map.set(item.id, item));
                 return Array.from(map.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             });
-            setFetchError(null);
         } catch (err: unknown) {
             if (!mountedRef.current || fetchRequestIdRef.current !== currentRequestId || activeAccountIdRef.current !== currentAccountId) {
                 return;
             }
+            consecutiveFailuresRef.current += 1;
             const message = err instanceof Error ? err.message : String(err || '');
             if (message) setFetchError(message);
+        } finally {
+            isFetchingRef.current = false;
+            if (mountedRef.current && activeAccountIdRef.current === currentAccountId) {
+                scheduleNextPoll();
+            }
         }
-    }, [activeAccount, autoVerifyEmail, notifyNewEmails]);
+    }, [activeAccount, autoVerifyEmail, notifyNewEmails, scheduleNextPoll]);
+
+    fetchEmailsRef.current = fetchEmails;
 
     const handleManualRefresh = useCallback(async () => {
         if (!activeAccount) return;
         setIsLoadingEmails(true);
         setProgress(25);
+        clearPollingTimer();
         await fetchEmails();
         if (!mountedRef.current) return;
         setProgress(100);
@@ -175,28 +247,42 @@ export function useEmails(
                 setProgress(0);
             }
         }, 300);
-    }, [activeAccount, fetchEmails]);
+    }, [activeAccount, clearPollingTimer, fetchEmails]);
 
+    // Polling lifecycle: manage visibility, network state, and initial/recurring fetches
     useEffect(() => {
         if (!activeAccount) return;
-        return subscribeToMailboxEvents(activeAccount, fetchEmails);
-    }, [activeAccount, fetchEmails]);
 
-    useEffect(() => {
-        if (!activeAccount) return;
-        fetchEmails();
-        let intervalId = window.setInterval(fetchEmails, document.hidden ? REFRESH_INTERVAL_HIDDEN : REFRESH_INTERVAL);
-        const handleVisibility = () => {
-            window.clearInterval(intervalId);
-            intervalId = window.setInterval(fetchEmails, document.hidden ? REFRESH_INTERVAL_HIDDEN : REFRESH_INTERVAL);
-            if (!document.hidden) fetchEmails();
+        const handleResume = () => {
+            if (isPollingAllowed()) {
+                clearPollingTimer();
+                fetchEmailsRef.current();
+            } else {
+                clearPollingTimer();
+            }
         };
-        document.addEventListener('visibilitychange', handleVisibility);
+
+        const handleOffline = () => {
+            clearPollingTimer();
+        };
+
+        document.addEventListener('visibilitychange', handleResume);
+        window.addEventListener('online', handleResume);
+        window.addEventListener('offline', handleOffline);
+        window.addEventListener('focus', handleResume);
+
+        if (isPollingAllowed()) {
+            fetchEmailsRef.current();
+        }
+
         return () => {
-            window.clearInterval(intervalId);
-            document.removeEventListener('visibilitychange', handleVisibility);
+            clearPollingTimer();
+            document.removeEventListener('visibilitychange', handleResume);
+            window.removeEventListener('online', handleResume);
+            window.removeEventListener('offline', handleOffline);
+            window.removeEventListener('focus', handleResume);
         };
-    }, [activeAccount, fetchEmails]);
+    }, [activeAccount, clearPollingTimer]);
 
     useEffect(() => {
         if (!selectedEmailId || !activeAccount) {
@@ -257,7 +343,11 @@ export function useEmails(
         setSelectedEmailId(null);
         setCurrentEmailDetail(null);
         if (activeAccount) {
-            await Promise.allSettled(allIds.map(id => deleteMessage(activeAccount, id)));
+            try {
+                await deleteAllMessages(activeAccount);
+            } catch (err) {
+                console.warn('Batch delete all emails failed:', err);
+            }
         }
     }, [emails, activeAccount]);
 

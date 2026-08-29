@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Flame, Copy, Check, Lock, EyeOff, Link as LinkIcon, FileText, FileSpreadsheet, Zap } from 'lucide-react';
+import { Flame, Copy, Check, Lock, EyeOff, Link as LinkIcon, FileText, FileSpreadsheet, Zap, Trash2, ShieldAlert } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
@@ -14,13 +14,39 @@ const BurnNotePage: React.FC<BurnNotePageProps> = ({ lang }) => {
   const [noteText, setNoteText] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedReceived, setCopiedReceived] = useState(false);
   const [copiedMagic, setCopiedMagic] = useState(false);
+  const [receivedNote, setReceivedNote] = useState<string | null>(null);
+  const [isBurned, setIsBurned] = useState(false);
 
   const isTr = lang === 'tr';
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash ? window.location.hash.substring(1) : '';
+    if (hash && hash.length > 2) {
+      try {
+        const decoded = decodeURIComponent(atob(hash));
+        if (decoded) {
+          setReceivedNote(decoded);
+        }
+      } catch {
+        // Ignore invalid base64
+      }
+    }
+  }, []);
+
+  const handleBurnReceivedNote = () => {
+    setReceivedNote(null);
+    setIsBurned(true);
+    if (typeof window !== 'undefined' && window.history) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  };
+
   const handleCreateNote = () => {
     if (!noteText.trim()) return;
-    const hash = btoa(encodeURIComponent(noteText));
+    const hash = btoa(encodeURIComponent(noteText.trim()));
     const url = `${window.location.origin}/burn-note#${hash}`;
     setGeneratedLink(url);
   };
@@ -131,6 +157,52 @@ const BurnNotePage: React.FC<BurnNotePageProps> = ({ lang }) => {
               : 'Create an encrypted one-time note that self-destructs after reading.'}
           </p>
         </div>
+
+        {/* Received Decrypted Note Display */}
+        {receivedNote && (
+          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-red-500/40 bg-red-950/20 space-y-6 max-w-2xl mx-auto shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 font-bold text-red-400 text-sm">
+                <ShieldAlert className="w-5 h-5 text-red-400" />
+                <span>{isTr ? 'Gizli Not Açıldı (1 Kez Görüntüleme)' : 'Secret Note Decrypted (Single View)'}</span>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(receivedNote);
+                  setCopiedReceived(true);
+                  setTimeout(() => setCopiedReceived(false), 2000);
+                }}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
+              >
+                {copiedReceived ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedReceived ? (isTr ? 'Kopyalandı' : 'Copied') : (isTr ? 'Kopyala' : 'Copy')}</span>
+              </button>
+            </div>
+
+            <div className="p-4 bg-black/80 border border-white/10 rounded-2xl font-mono text-sm text-slate-100 whitespace-pre-wrap leading-relaxed select-all">
+              {receivedNote}
+            </div>
+
+            <button
+              onClick={handleBurnReceivedNote}
+              className="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{isTr ? 'Notu Kalıcı Olarak İmha Et' : 'Burn & Destroy Note Permanently'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Burned Notice */}
+        {isBurned && !receivedNote && (
+          <div className="p-6 rounded-3xl bg-slate-900/80 border border-white/10 text-center space-y-3 max-w-2xl mx-auto animate-fade-in">
+            <Flame className="w-10 h-10 text-red-500 mx-auto animate-bounce" />
+            <h3 className="text-lg font-bold text-white">{isTr ? 'Not Başarıyla İmha Edildi' : 'Note Permanently Destroyed'}</h3>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              {isTr ? 'Bu gizli notun içeriği tarayıcı hafızasından ve URL parametrelerinden tamamen silinmiştir.' : 'The secret message was erased from memory and the URL hash was purged.'}
+            </p>
+          </div>
+        )}
 
         <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-6 max-w-2xl mx-auto">
           <textarea

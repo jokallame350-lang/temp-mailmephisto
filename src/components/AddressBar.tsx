@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import { Mailbox } from '../types';
-import { Copy, RefreshCw, Check, Globe, Loader2, Timer, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, FileText, FileSpreadsheet, ChevronDown, Search, X } from 'lucide-react';
+import { Copy, RefreshCw, Check, Globe, Loader2, Timer, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, FileText, FileSpreadsheet, ChevronDown, Search, X, Ghost } from 'lucide-react';
 import { translations, Language } from '../translations';
 import { fetchDomains, GUERRILLA_DOMAINS } from '../services/mailService';
 
@@ -35,10 +35,10 @@ interface AddressBarProps {
   mailbox: Mailbox | null; isLoading: boolean; isRefreshing: boolean; onRefresh: () => void; onChange: () => void; onDelete: () => void;
   progress: number; lang: Language; onChangeDomain?: (domain: string) => void; onCreateCustom?: () => void; onIdentity?: () => void;
   onForwarding?: () => void; onShareDrop?: () => void; onExtendTimer?: () => void; onOpenCustomDomain?: () => void;
-  onOpenCompose?: () => void; autoVerifyEnabled?: boolean; onToggleAutoVerify?: () => void; onCopyMagicUrl?: () => void;
+  autoVerifyEnabled?: boolean; onToggleAutoVerify?: () => void; onCopyMagicUrl?: () => void;
 }
 
-const AddressBar: React.FC<AddressBarProps> = ({ mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete: _onDelete, progress, lang, onChangeDomain, onIdentity, onShareDrop, onOpenCustomDomain: _onOpenCustomDomain, onCopyMagicUrl }) => {
+const AddressBar: React.FC<AddressBarProps> = ({ mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete: _onDelete, progress, lang, onChangeDomain, onIdentity, onForwarding, onShareDrop, onOpenCustomDomain: _onOpenCustomDomain, onCopyMagicUrl }) => {
   const t = translations[lang];
   const [copied, setCopied] = useState(false), [copiedLink, setCopiedLink] = useState(false);
   const [isDomainOpen, setIsDomainOpen] = useState(false), [domainList, setDomainList] = useState<string[]>(GUERRILLA_DOMAINS), [domainSearch, setDomainSearch] = useState('');
@@ -95,6 +95,7 @@ const AddressBar: React.FC<AddressBarProps> = ({ mailbox, isLoading, isRefreshin
       <button onClick={onRefresh} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#111] text-slate-200 border border-white/10 rounded-full font-bold text-xs min-h-[44px]"><RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} /><span>{t.refresh}</span></button>
       <button onClick={onChange} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#111] text-slate-200 border border-white/10 rounded-full font-bold text-xs min-h-[44px]"><RefreshCw className="w-4 h-4" /><span>{lang === 'tr' ? 'Yeni' : 'New'}</span></button>
       {onIdentity && <button onClick={onIdentity} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white/[0.03] text-slate-400 border border-white/10 rounded-xl font-bold text-xs min-h-[44px]"><UserCheck className="w-4 h-4" /><span>{lang === 'tr' ? 'Kimlik' : 'Identity'}</span></button>}
+      {onForwarding && <button onClick={onForwarding} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl font-bold text-xs min-h-[44px]" title={lang === 'tr' ? 'Hayalet Yönlendirme (Beta)' : 'Ghost Forwarding (Beta)'}><Ghost className="w-4 h-4 text-rose-500" /><span>{lang === 'tr' ? 'Yönlendirme' : 'Forward'}</span></button>}
       <button onClick={handleTestOtpTrigger} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 rounded-xl font-bold text-xs min-h-[44px]" title={lang === 'tr' ? 'Yerel test OTP' : 'Local OTP test'}><Zap className="w-4 h-4" /><span>Test OTP</span></button>
       <button onClick={exportMailboxTxt} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl font-bold text-xs min-h-[44px]"><FileText className="w-4 h-4" /><span>TXT</span></button>
       <button onClick={exportMailboxCsv} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl font-bold text-xs min-h-[44px]"><FileSpreadsheet className="w-4 h-4" /><span>CSV</span></button>

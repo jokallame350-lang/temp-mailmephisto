@@ -1531,11 +1531,41 @@ export const markMessageRead = async (
 };
 
 export const getAttachment = async (
-  _mailbox: Mailbox,
-  _messageId: string,
-  _attachmentId: string
+  mailbox: Mailbox,
+  messageId: string,
+  attachmentId: string
 ): Promise<Blob | null> => {
-  return null;
+  if (!mailbox?.token || !messageId || !attachmentId) {
+    return null;
+  }
+
+  if (isGuerrilla(mailbox.apiBase)) {
+    return null;
+  }
+
+  const apiBase = getApiBase(mailbox.apiBase);
+
+  try {
+    const res = await safeFetch(
+      `${apiBase}/messages/${encodeURIComponent(
+        messageId
+      )}/attachment/${encodeURIComponent(attachmentId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${mailbox.token}`,
+          Accept: '*/*',
+        },
+      },
+      mailbox.apiBase,
+      mailbox.id
+    );
+
+    if (!res.ok) return null;
+
+    return await res.blob();
+  } catch {
+    return null;
+  }
 };
 
 export const analyzeEmailAI = async (

@@ -268,15 +268,17 @@ export const en = {
   vipKeyInvalid: 'Invalid key. Try MEPHISTO-VIP-PRO-2026.',
 
   // Forwarding Modal (Ghost Bridge)
-  ghostForwardTitle: 'Ghost Forwarding',
-  ghostForwardDesc: 'Securely forward incoming mails to your real address for up to 48 hours. When the time expires, the bridge self-destructs.',
-  ghostBetaTitle: 'Beta Feature (Client-Side)',
-  ghostBetaDesc: 'To protect your privacy, forwarding is currently handled directly in your browser. The MephistoMail tab must remain open.',
-  ghostSourceLabel: 'Source (Dispose)',
+  ghostForwardTitle: 'Ghost Forwarding (Private Beta)',
+  ghostForwardDesc: 'Configure temporary email relay preferences. Outbound SMTP forwarding is currently queued under private infrastructure rollout.',
+  ghostBetaTitle: 'Private Beta / Infrastructure Setup',
+  ghostBetaDesc: 'Server-side SMTP relay requires dedicated isolated infrastructure to prevent spam and relay abuse. Saving your forwarding target registers your preference locally and queues it for server activation.',
+  ghostSourceLabel: 'Source (Disposable)',
   ghostSelectAddress: 'Select an address',
-  ghostDestLabel: 'Destination (Real)',
-  ghostActiveRule: 'Forwarding Rule Active!',
-  ghostActivateBtn: 'Activate Ghost Bridge',
+  ghostDestLabel: 'Destination (Real Target)',
+  ghostActiveRule: 'Preference Saved (Queued for Beta)',
+  ghostActivateBtn: 'Queue Forwarding Preference',
+  ghostQueuedNotice: 'Preference registered locally. Forwarding is queued for server relay activation.',
+  ghostRemovePrefBtn: 'Clear Preference',
 
   // Identity Modal (Burner Identity)
   identityTitle: 'Burner Identity',

@@ -18,6 +18,7 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
   const [copied, setCopied] = useState(false);
   const [copiedMagic, setCopiedMagic] = useState(false);
   const [copiedSingleIndex, setCopiedSingleIndex] = useState<number | null>(null);
+  const [copiedEmailOnlyIndex, setCopiedEmailOnlyIndex] = useState<number | null>(null);
 
   const handleGenerateBulk = async () => {
     setLoading(true);
@@ -266,11 +267,13 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(email);
+                          setCopiedEmailOnlyIndex(idx);
+                          setTimeout(() => setCopiedEmailOnlyIndex(null), 1500);
                         }}
                         className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
-                        title="Copy email address"
+                        title={lang === 'tr' ? 'E-postayı Kopyala' : 'Copy email address'}
                       >
-                        <Copy className="w-3.5 h-3.5" />
+                        {copiedEmailOnlyIndex === idx ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       </button>
                     </div>
                   </div>

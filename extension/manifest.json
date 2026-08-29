@@ -26,6 +26,7 @@
   ],
   "host_permissions": [
     "https://api.mail.gw/*",
-    "https://api.mail.tm/*"
+    "https://api.mail.tm/*",
+    "https://api.guerrillamail.com/*"
   ]
 }

@@ -391,7 +391,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           <button onClick={() => downloadAsTXT(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-blue-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? '1-Tık TXT İndir (.txt)' : '1-Click Export TXT'} aria-label="Export TXT">
             <FileText className="w-4 h-4" />
           </button>
-          <button onClick={() => printEmailContent(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'} aria-label="Print or Download PDF">
+          <button onClick={() => printEmailContent(email, lang)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'} aria-label="Print or Download PDF">
             <Printer className="w-4 h-4" />
           </button>
         </div>

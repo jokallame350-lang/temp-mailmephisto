@@ -12,14 +12,14 @@ export type Language = 'en' | 'tr' | 'es' | 'de' | 'fr' | 'it' | 'pt' | 'ru' | '
 export type TranslationSchema = typeof en;
 export const fallbackTranslations = en;
 
-export const translations = {
+export const translations: Record<Language, TranslationSchema> = {
   en,
   tr,
-  es: { ...en, ...es },
-  de: { ...en, ...de },
-  fr: { ...en, ...fr },
-  it: { ...en, ...it },
-  pt: { ...en, ...pt },
-  ru: { ...en, ...ru },
-  ar: { ...en, ...ar },
+  es,
+  de,
+  fr,
+  it,
+  pt,
+  ru,
+  ar,
 };
