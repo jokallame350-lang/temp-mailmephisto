@@ -78,6 +78,8 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
     setTimeout(() => setCopiedMagic(false), 2000);
   };
 
+  const [otpToast, setOtpToast] = useState<string | null>(null);
+
   const handleTestOtp = (email: string) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     window.dispatchEvent(new CustomEvent('mephisto-test-otp', {
@@ -91,7 +93,8 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
         date: new Date().toLocaleTimeString()
       }
     }));
-    alert(isTr ? `⚡ ${email} adresi için Test OTP (${otpCode}) Gönderildi!` : `⚡ Test OTP (${otpCode}) Sent for ${email}!`);
+    setOtpToast(isTr ? `⚡ ${email} adresi için Test OTP (${otpCode}) Gönderildi!` : `⚡ Test OTP (${otpCode}) Sent for ${email}!`);
+    setTimeout(() => setOtpToast(null), 4000);
   };
 
   const handleExportTxt = () => {
@@ -139,7 +142,12 @@ export const DisposableCheckerPage: React.FC<DisposableCheckerPageProps> = ({ la
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col font-sans selection:bg-red-500/30 selection:text-red-300">
+    <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col font-sans selection:bg-red-500/30 selection:text-red-300 relative">
+      {otpToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md flex items-center gap-2 text-xs font-bold animate-in fade-in">
+          <span>{otpToast}</span>
+        </div>
+      )}
       <SEOHead lang={lang} />
 
       <Header

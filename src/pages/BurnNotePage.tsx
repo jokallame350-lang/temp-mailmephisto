@@ -66,6 +66,8 @@ const BurnNotePage: React.FC<BurnNotePageProps> = ({ lang }) => {
     setTimeout(() => setCopiedMagic(false), 2000);
   };
 
+  const [otpToast, setOtpToast] = useState<string | null>(null);
+
   const handleTestOtp = () => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     window.dispatchEvent(new CustomEvent('mephisto-test-otp', {
@@ -79,7 +81,8 @@ const BurnNotePage: React.FC<BurnNotePageProps> = ({ lang }) => {
         date: new Date().toLocaleTimeString()
       }
     }));
-    alert(isTr ? `⚡ Gizli Not Test OTP (${otpCode}) Gönderildi!` : `⚡ Secret Burn Note Test OTP (${otpCode}) Triggered!`);
+    setOtpToast(isTr ? `⚡ Gizli Not Test OTP (${otpCode}) Gönderildi!` : `⚡ Secret Burn Note Test OTP (${otpCode}) Triggered!`);
+    setTimeout(() => setOtpToast(null), 4000);
   };
 
   const handleExportTxt = () => {
@@ -121,7 +124,12 @@ const BurnNotePage: React.FC<BurnNotePageProps> = ({ lang }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-200 flex flex-col font-['Sora']">
+    <div className="min-h-screen bg-[#050505] text-slate-200 flex flex-col font-['Sora'] relative">
+      {otpToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-orange-500/20 border border-orange-500/40 text-orange-200 px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md flex items-center gap-2 text-xs font-bold animate-in fade-in">
+          <span>{otpToast}</span>
+        </div>
+      )}
       <SEOHead
         title={isTr ? 'Şifreli Not Oluştur (Privnote) | MephistoMail' : 'Self-Destructing Burn Notes | MephistoMail'}
         description={isTr ? 'Okunduktan sonra kendini yok eden şifreli gizli mesaj oluşturun.' : 'Create encrypted self-destructing secret notes that vanish after reading.'}

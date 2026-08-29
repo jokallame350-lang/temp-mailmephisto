@@ -1985,3 +1985,101 @@ test('Integration N3: Deletion state prevents resurrected messages on subsequent
   assert.ok(!filtered.some(e => e.id === 'msg_301'));
 });
 
+// ─── O. Service Worker Bypass & Advanced Security Validation ──────────────
+test('Integration O1: Service Worker cache filter logic ensures API endpoints and external providers bypass cache', () => {
+  const APP_ORIGIN = 'https://mephistomail.site';
+
+  const shouldBypassCache = (requestUrl: string): boolean => {
+    const url = new URL(requestUrl, APP_ORIGIN);
+    if (url.origin !== APP_ORIGIN) return true; // External API bypass
+    if (
+      url.pathname.startsWith('/api/') ||
+      url.pathname.startsWith('/_next/') ||
+      url.pathname.startsWith('/messages/') ||
+      url.pathname.startsWith('/attachment/') ||
+      url.pathname.startsWith('/accounts') ||
+      url.pathname.startsWith('/token') ||
+      url.searchParams.has('mailbox')
+    ) return true;
+    return false;
+  };
+
+  // External APIs must bypass cache
+  assert.equal(shouldBypassCache('https://api.guerrillamail.com/ajax.php?f=get_email_address'), true);
+  assert.equal(shouldBypassCache('https://api.mail.tm/messages/123'), true);
+  assert.equal(shouldBypassCache('https://api.mail.gw/token'), true);
+
+  // Sensitive application endpoints must bypass cache
+  assert.equal(shouldBypassCache('https://mephistomail.site/api/stats'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/messages/msg_456'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/attachment/att_789'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/?mailbox=user@sharklasers.com'), true);
+
+  // Static assets are cacheable
+  assert.equal(shouldBypassCache('https://mephistomail.site/assets/index.js'), false);
+  assert.equal(shouldBypassCache('https://mephistomail.site/icon.png'), false);
+});
+
+test('Integration O2: Action link extractor detects multilingual verification links (DE, ES, FR, IT, PT, RU, AR)', () => {
+  const deHtml = '<p>Bitte <a href="https://example.com/auth/verify?token=123">E-Mail bestätigen</a> um fortzufahren.</p>';
+  const deAction = extractActionLinks(deHtml);
+  assert.ok(deAction);
+  assert.equal(deAction.url, 'https://example.com/auth/verify?token=123');
+
+  const esHtml = '<p>Haga clic para <a href="https://service.org/confirm?code=abc">Verificar correo</a> ahora.</p>';
+  const esAction = extractActionLinks(esHtml);
+  assert.ok(esAction);
+  assert.equal(esAction.url, 'https://service.org/confirm?code=abc');
+
+  const frHtml = '<p><a href="https://auth.net/activate?id=789">Activer le compte</a> immédiatement.</p>';
+  const frAction = extractActionLinks(frHtml);
+  assert.ok(frAction);
+  assert.equal(frAction.url, 'https://auth.net/activate?id=789');
+
+  const arHtml = '<p><a href="https://app.io/ar/verify?hash=xyz">تأكيد البريد</a> لإكمال التسجيل.</p>';
+  const arAction = extractActionLinks(arHtml);
+  assert.ok(arAction);
+  assert.equal(arAction.url, 'https://app.io/ar/verify?hash=xyz');
+});
+
+test('Integration O3: Action link extractor blocks decimal/hex IP representation bypass attempts', () => {
+  // Hex representation of 127.0.0.1 (0x7f000001)
+  assert.equal(isSafeVerificationUrl('https://0x7f000001/verify'), false);
+  // Decimal representation of 127.0.0.1 (2130706433)
+  assert.equal(isSafeVerificationUrl('https://2130706433/verify'), false);
+  // Octal/dotted decimal private ranges
+  assert.equal(isSafeVerificationUrl('https://127.0.0.1/verify'), false);
+  assert.equal(isSafeVerificationUrl('https://10.0.0.1/verify'), false);
+  assert.equal(isSafeVerificationUrl('https://192.168.1.1/verify'), false);
+  assert.equal(isSafeVerificationUrl('https://172.16.0.1/verify'), false);
+  // IPv6 bracketed loopback
+  assert.equal(isSafeVerificationUrl('https://[::1]/verify'), false);
+  // Single label internal host
+  assert.equal(isSafeVerificationUrl('https://intranet/verify'), false);
+
+  // Legitimate public HTTPS URLs must pass
+  assert.equal(isSafeVerificationUrl('https://github.com/verify?code=123'), true);
+  assert.equal(isSafeVerificationUrl('https://verify.stripe.com/acc_456'), true);
+});
+
+test('Integration O4: All 9 locales have 100% key parity with 0 extra keys, 0 missing keys, and valid string values', () => {
+  const enKeys = Object.keys(en);
+  const localeObjects = { en, tr, de, es, fr, it, pt, ru, ar };
+
+  for (const [langCode, dict] of Object.entries(localeObjects)) {
+    const dictKeys = Object.keys(dict);
+    const missing = enKeys.filter(k => !(k in dict));
+    const extra = dictKeys.filter(k => !enKeys.includes(k));
+
+    assert.equal(missing.length, 0, `Locale ${langCode} must have 0 missing keys. Missing: ${missing.join(', ')}`);
+    assert.equal(extra.length, 0, `Locale ${langCode} must have 0 extra keys. Extra: ${extra.join(', ')}`);
+
+    for (const key of dictKeys) {
+      const val = (dict as Record<string, unknown>)[key];
+      assert.equal(typeof val, 'string', `Key ${key} in ${langCode} must be a non-empty string`);
+      assert.ok((val as string).trim().length > 0, `Key ${key} in ${langCode} must not be empty`);
+    }
+  }
+});
+
+

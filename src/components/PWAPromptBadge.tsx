@@ -17,6 +17,7 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => 
   const [isIOS, setIsIOS] = useState<boolean>(false);
   const [installed, setInstalled] = useState<boolean>(false);
   const [showToast, setShowToast] = useState<boolean>(false);
+  const [instructionBanner, setInstructionBanner] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if running in standalone mode (already installed)
@@ -80,18 +81,19 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => 
       }
       setDeferredPrompt(null);
     } else if (isIOS) {
-      alert(
+      setInstructionBanner(
         lang === 'tr'
-          ? '📱 iOS Safari İpucu: Alt kısımdaki Paylaş (Share) simgesine dokunun ve "Ana Ekrana Ekle" seçeneğini tıklayın.'
-          : '📱 iOS Safari Tip: Tap the Share icon at the bottom of Safari and select "Add to Home Screen".'
+          ? '📱 iOS Safari: Alt kısımdaki Paylaş (Share) simgesine dokunun ve "Ana Ekrana Ekle"yi seçin.'
+          : '📱 iOS Safari: Tap Share at the bottom of Safari and select "Add to Home Screen".'
       );
+      setTimeout(() => setInstructionBanner(null), 6000);
     } else {
-      // Desktop / Android without native prompt event: instruct bookmark / chrome install
-      alert(
+      setInstructionBanner(
         lang === 'tr'
-          ? '💡 MephistoMail Uygulamasını Yükleyin: Tarayıcı menüsünden (⋮) "Uygulamayı Yükle" veya "Ana Ekrana Ekle" seçeneğini tıklayın.'
-          : '💡 Install MephistoMail App: Click browser menu (⋮) and choose "Install App" or "Add to Home Screen".'
+          ? '💡 Yükleme: Tarayıcı menüsünden (⋮) "Uygulamayı Yükle" veya "Ana Ekrana Ekle"yi tıklayın.'
+          : '💡 Install: Click browser menu (⋮) and choose "Install App" or "Add to Home Screen".'
       );
+      setTimeout(() => setInstructionBanner(null), 6000);
     }
   }, [deferredPrompt, isIOS, lang]);
 
@@ -101,6 +103,18 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => 
     const nextWeek = Date.now() + 3 * 24 * 60 * 60 * 1000;
     localStorage.setItem('mephisto_pwa_dismissed_until', nextWeek.toString());
   }, []);
+
+  if (instructionBanner) {
+    return (
+      <div className="fixed bottom-4 right-4 z-50 max-w-sm bg-orange-500/20 border border-orange-500/40 text-orange-200 px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md flex items-center gap-2 text-xs font-semibold animate-in fade-in">
+        <Smartphone className="w-4 h-4 text-orange-400 shrink-0" />
+        <span className="flex-1">{instructionBanner}</span>
+        <button onClick={() => setInstructionBanner(null)} className="p-1 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
 
   if (showToast) {
     return (

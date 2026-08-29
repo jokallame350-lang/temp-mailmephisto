@@ -104,6 +104,8 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
     URL.revokeObjectURL(url);
   };
 
+  const [otpToast, setOtpToast] = useState<string | null>(null);
+
   const handleTestOtpForEmail = (email: string) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     window.dispatchEvent(new CustomEvent('mephisto-test-otp', {
@@ -117,11 +119,17 @@ const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
         date: new Date().toLocaleTimeString()
       }
     }));
-    alert(lang === 'tr' ? `⚡ ${email} için Test OTP (${otpCode}) Gönderildi!` : `⚡ Test OTP (${otpCode}) Sent for ${email}!`);
+    setOtpToast(lang === 'tr' ? `⚡ ${email} için Test OTP (${otpCode}) Gönderildi!` : `⚡ Test OTP (${otpCode}) Sent for ${email}!`);
+    setTimeout(() => setOtpToast(null), 4000);
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-200 flex flex-col font-['Sora']">
+    <div className="min-h-screen bg-[#050505] text-slate-200 flex flex-col font-['Sora'] relative">
+      {otpToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-green-500/20 border border-green-500/40 text-green-400 px-4 py-3 rounded-2xl shadow-xl backdrop-blur-md flex items-center gap-2 text-xs font-bold animate-in fade-in">
+          <span>{otpToast}</span>
+        </div>
+      )}
       <SEOHead
         title={lang === 'tr' ? 'Toplu E-posta Oluşturucu | MephistoMail' : 'Bulk Temp Mail Generator | MephistoMail'}
         description={lang === 'tr' ? 'Tek tıkla 5-20 adet geçici e-posta adresi oluşturun ve kopyalayın.' : 'Generate 5 to 20 disposable temporary email addresses in bulk with 1 click.'}

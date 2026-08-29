@@ -22,13 +22,14 @@ export const isSafeVerificationUrl = (value: string): boolean => {
     const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
     if (!hostname || BLOCKED_HOSTS.has(hostname)) return false;
     if (BLOCKED_TLDS.some(tld => hostname.endsWith(tld))) return false;
+    // Decimal / hex / single-integer IP representations
+    if (/^(0x[0-9a-f]+|\d+)$/i.test(hostname)) return false;
     if (PRIVATE_IPV4.test(hostname) || hostname.includes(':') || hostname.startsWith('[') || hostname.endsWith(']')) return false;
     if (!hostname.includes('.')) return false; // Block single-label internal hosts (e.g., "router", "intranet")
     if (url.origin === 'null') return false;
     return true;
   } catch { return false; }
 };
-
 
 /**
  * Extracts an explicit email-verification link only.
@@ -41,10 +42,26 @@ export const extractActionLinks = (htmlText?: string): { url: string; label: str
   if (!/<a\b/i.test(htmlText)) { actionLinkCache.set(htmlText, null); return null; }
 
   const verificationWords = [
+    // English
     'verify email', 'verify your email', 'email verification', 'verify account',
     'confirm email', 'confirm your email', 'confirmation email', 'activate account',
-    'activate your account', 'doğrulama', 'doğrula', 'e-postanı doğrula',
-    'e-posta doğrulama', 'onayla e-posta', 'hesabı etkinleştir'
+    'activate your account',
+    // Turkish
+    'doğrulama', 'doğrula', 'e-postanı doğrula', 'e-posta doğrulama', 'onayla e-posta', 'hesabı etkinleştir',
+    // German
+    'e-mail bestätigen', 'konto aktivieren', 'verifizieren', 'bestätigen sie',
+    // Spanish
+    'verificar correo', 'confirmar correo', 'activar cuenta', 'verificar mi cuenta',
+    // French
+    'vérifier l\'e-mail', 'confirmer l\'e-mail', 'activer le compte', 'activer mon compte',
+    // Italian
+    'verifica email', 'conferma email', 'attiva account', 'conferma il tuo indirizzo',
+    // Portuguese
+    'verificar email', 'confirmar email', 'ativar conta', 'confirmar sua conta',
+    // Russian
+    'подтвердить email', 'подтвердить почту', 'активировать аккаунт', 'подтвердите адрес',
+    // Arabic
+    'تأكيد البريد', 'تفعيل الحساب', 'التحقق من البريد'
   ];
 
   try {
