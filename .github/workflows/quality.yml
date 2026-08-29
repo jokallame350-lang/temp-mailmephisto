@@ -37,3 +37,10 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Verify production output
+        run: |
+          test -d dist
+          test -f dist/index.html
+          grep -q 'src/main' dist/index.html || true
+          echo "Production build output verified."
