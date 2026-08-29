@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mailbox } from '../types';
-import { Tag, X, Clock, Palette, Trash2, Copy, Check, FileSpreadsheet, FileCode } from 'lucide-react';
+import { Tag, X, Clock, Palette, Copy, Check, FileSpreadsheet, FileCode } from 'lucide-react';
 import { Language, translations } from '../translations';
 
 interface AliasManagerModalProps {

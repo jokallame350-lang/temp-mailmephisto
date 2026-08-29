@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Mail, MessageSquare, Send, Shield, Clock, Globe, CheckCircle, Github, Twitter, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Mail, MessageSquare, Send, Shield, Clock, Globe, CheckCircle, Github, ExternalLink } from 'lucide-react';
 import { Language } from '../translations';
 import SEOPageMeta from '../components/SEOPageMeta';
 

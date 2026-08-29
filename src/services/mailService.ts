@@ -1,4 +1,4 @@
-import { Mailbox, EmailSummary, EmailDetail, AICategory } from '../types';
+import { Mailbox, EmailSummary, EmailDetail, AICategory, EmailAttachment } from '../types';
 
 const HYDRA_PROVIDERS: Record<string, string> = {
   mail_tm: 'https://api.mail.tm',
@@ -134,7 +134,17 @@ export const getRateLimitRemainingMs = (
   );
 };
 
-const safeFetch = async (
+export const clearRateLimit = (provider?: string) => {
+  if (provider) {
+    delete rateLimitState[provider];
+  } else {
+    for (const key of Object.keys(rateLimitState)) {
+      delete rateLimitState[key];
+    }
+  }
+};
+
+export const safeFetch = async (
   url: string,
   options?: RequestInit,
   provider = 'mail_tm',
@@ -142,18 +152,32 @@ const safeFetch = async (
   retried = false
 ): Promise<Response> => {
   if (isRateLimited(provider)) {
+    const waitSec = Math.max(1, Math.ceil(getRateLimitRemainingMs(provider) / 1000));
     throw new Error(
-      `Rate limited. Retry after ${Math.ceil(
-        getRateLimitRemainingMs(provider) / 1000
-      )}s`
+      `Rate limited. Retry after ${waitSec}s`
     );
   }
 
   const controller = new AbortController();
-
+  const timeoutMs = 8000;
   const timeoutId = setTimeout(() => {
-    controller.abort();
-  }, 8000);
+    controller.abort(new Error('Request timeout'));
+  }, timeoutMs);
+
+  let unhookSignal: (() => void) | undefined;
+  if (options?.signal) {
+    if (options.signal.aborted) {
+      clearTimeout(timeoutId);
+      controller.abort(options.signal.reason);
+    } else {
+      const onAbort = () => {
+        clearTimeout(timeoutId);
+        controller.abort(options.signal?.reason);
+      };
+      options.signal.addEventListener('abort', onAbort, { once: true });
+      unhookSignal = () => options.signal?.removeEventListener('abort', onAbort);
+    }
+  }
 
   let res: Response;
 
@@ -162,8 +186,14 @@ const safeFetch = async (
       ...options,
       signal: controller.signal,
     });
+  } catch (err: any) {
+    if (controller.signal.aborted && !options?.signal?.aborted) {
+      throw new Error(`Request timeout (${url})`);
+    }
+    throw err;
   } finally {
     clearTimeout(timeoutId);
+    unhookSignal?.();
   }
 
   if (
@@ -209,15 +239,20 @@ const safeFetch = async (
       };
     }
 
-    const retryAfter = Number.parseInt(
-      res.headers.get('Retry-After') || '',
-      10
-    );
+    const retryHeader = res.headers.get('Retry-After');
+    let waitMs = 60000;
 
-    const waitMs =
-      Number.isFinite(retryAfter) && retryAfter >= 0
-        ? Math.min(retryAfter * 1000, 300000)
-        : 60000;
+    if (retryHeader) {
+      const retryAfter = Number.parseInt(retryHeader, 10);
+      if (Number.isFinite(retryAfter) && retryAfter >= 0) {
+        waitMs = Math.min(retryAfter * 1000, 300000);
+      } else {
+        const parsedDate = new Date(retryHeader).getTime();
+        if (!isNaN(parsedDate) && parsedDate > Date.now()) {
+          waitMs = Math.min(parsedDate - Date.now(), 300000);
+        }
+      }
+    }
 
     rateLimitState[provider] = {
       hit: true,
@@ -441,21 +476,18 @@ export const GUERRILLA_DOMAINS = [
 export const getGuerrillaDomains = async (): Promise<string[]> => {
   const domains = new Set<string>();
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, 3500);
+
   try {
-    const controller = new AbortController();
-
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, 3500);
-
     const res = await fetch(
       `${GUERRILLA_API}?f=get_email_address&lang=en`,
       {
         signal: controller.signal,
       }
-    ).catch(() => null);
-
-    clearTimeout(timeoutId);
+    );
 
     if (res?.ok) {
       const data = await res.json().catch(() => null);
@@ -468,7 +500,11 @@ export const getGuerrillaDomains = async (): Promise<string[]> => {
         domains.add(domain);
       }
     }
-  } catch {}
+  } catch {
+    // Offline or timeout fallback
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   GUERRILLA_DOMAINS.forEach((domain) => {
     domains.add(domain);
@@ -493,7 +529,7 @@ const createGuerrillaMailbox = async (
     );
   }
 
-  const data = await res.json();
+  const data = await res.json().catch(() => null);
 
   const sid =
     typeof data?.sid_token === 'string'
@@ -529,7 +565,13 @@ const createGuerrillaMailbox = async (
     }
 
     const setData = await setRes.json().catch(() => null);
-    if (!setData || typeof setData.email_user !== 'string') {
+    if (
+      !setData ||
+      typeof setData.email_user !== 'string' ||
+      !setData.email_user ||
+      setData.error_codes ||
+      setData.error
+    ) {
       throw new Error(
         'İstenen özel kullanıcı adı upstream servis tarafından kabul edilmedi.'
       );
@@ -609,7 +651,7 @@ const getGuerrillaMessages = async (
 
       if (!r.ok) return [];
 
-      const d = await r.json();
+      const d = await r.json().catch(() => null);
 
       sid = d?.sid_token;
 
@@ -687,13 +729,13 @@ const getGuerrillaMessages = async (
       }
     }
 
+    if (!data || !Array.isArray(data.list)) {
+      return [];
+    }
+
     const seen = new Set<string>();
 
-    const list = (
-      Array.isArray(data?.list)
-        ? data.list
-        : []
-    ).filter((msg: any) => {
+    const list = data.list.filter((msg: any) => {
       const id = String(msg?.mail_id || '');
 
       if (!id || seen.has(id)) {
@@ -756,9 +798,10 @@ const getGuerrillaMessages = async (
 
 const getGuerrillaMessageDetail = async (
   mailbox: Mailbox,
-  messageId: string
+  messageId: string,
+  retried = false
 ): Promise<EmailDetail | null> => {
-  const sid = mailbox.token;
+  let sid = mailbox.token;
 
   if (!sid || !messageId) return null;
 
@@ -771,9 +814,37 @@ const getGuerrillaMessageDetail = async (
       'guerrilla'
     );
 
-    if (!res.ok) return null;
+    const msg = res.ok ? await res.json().catch(() => null) : null;
 
-    const msg = await res.json();
+    if ((!res.ok || !msg?.mail_id || msg.error_codes) && !retried) {
+      const renew = await safeFetch(
+        `${GUERRILLA_API}?f=get_email_address&lang=en`,
+        undefined,
+        'guerrilla'
+      );
+
+      if (renew.ok) {
+        const rd = await renew.json().catch(() => null);
+        if (rd?.sid_token) {
+          sid = rd.sid_token;
+          mailbox.token = sid;
+          emitTokenRefresh(mailbox.id, sid);
+
+          const username = mailbox.address?.split('@')[0] || '';
+          if (username) {
+            await safeFetch(
+              `${GUERRILLA_API}?f=set_email_user&email_user=${encodeURIComponent(
+                username
+              )}&lang=en&sid_token=${encodeURIComponent(sid)}`,
+              undefined,
+              'guerrilla'
+            );
+          }
+
+          return getGuerrillaMessageDetail(mailbox, messageId, true);
+        }
+      }
+    }
 
     if (!msg?.mail_id) return null;
 
@@ -790,6 +861,39 @@ const getGuerrillaMessageDetail = async (
         ? msg.mail_from
         : 'unknown';
 
+    const createdAt = parseGuerrillaDate(msg);
+
+    const headerFields: Record<string, string> = {
+      From: fromAddr,
+      Subject: subject,
+      Date: createdAt,
+    };
+
+    if (msg.mail_recipient || mailbox.address) {
+      headerFields.To = msg.mail_recipient || mailbox.address;
+    }
+
+    if (msg.mail_id) {
+      headerFields['Message-ID'] = String(msg.mail_id);
+    }
+
+    if (msg.reply_to) {
+      headerFields['Reply-To'] = msg.reply_to;
+    }
+
+    if (msg.content_type) {
+      headerFields['Content-Type'] = msg.content_type;
+    }
+
+    const attachments: EmailAttachment[] = Array.isArray(msg.attachments)
+      ? msg.attachments.map((a: any) => ({
+          id: String(a.id || a.mail_id || ''),
+          filename: a.filename || a.name || 'attachment',
+          size: a.size || 0,
+          contentType: a.contentType || a.type || 'application/octet-stream',
+        }))
+      : [];
+
     return {
       id: String(msg.mail_id),
       from: {
@@ -800,7 +904,7 @@ const getGuerrillaMessageDetail = async (
       subject,
       intro,
       seen: true,
-      createdAt: parseGuerrillaDate(msg),
+      createdAt,
       aiCategory: determineCategory(
         subject,
         fromAddr,
@@ -809,10 +913,10 @@ const getGuerrillaMessageDetail = async (
       html: msg.mail_body
         ? [String(msg.mail_body)]
         : [],
-      text: undefined,
-      hasAttachments: false,
-      attachments: [],
-      headerFields: {},
+      text: msg.mail_body_plain || undefined,
+      hasAttachments: Boolean((msg.att && Number(msg.att) > 0) || attachments.length > 0),
+      attachments,
+      headerFields,
     };
   } catch {
     return null;
@@ -850,8 +954,13 @@ let cachedDomains: {
 
 let isFetchingDomains = false;
 
+export const clearDomainCache = () => {
+  cachedDomains = null;
+  isFetchingDomains = false;
+};
+
 export const fetchDomains = async () => {
-  if (cachedDomains?.domains.length) {
+  if (cachedDomains?.domains?.length) {
     return cachedDomains;
   }
 
@@ -913,7 +1022,7 @@ export const generateMailbox =
       domainProviderMap,
     } = await fetchDomains();
 
-    const list = domains.filter(
+    const list = (domains || []).filter(
       (d) => d !== 'mephistomail.site'
     );
 
@@ -921,10 +1030,10 @@ export const generateMailbox =
       list.length ? list : GUERRILLA_DOMAINS;
 
     const domain =
-      domainList[randomInt(domainList.length)];
+      domainList[randomInt(domainList.length)] || GUERRILLA_DOMAINS[0];
 
     const provider =
-      domainProviderMap[domain] || 'guerrilla';
+      (domainProviderMap && domainProviderMap[domain]) || 'guerrilla';
 
     const prefixes = [
       'matrix',
@@ -1012,7 +1121,11 @@ export const generateMailbox =
       );
     }
 
-    const tokenData = await tokenRes.json();
+    const tokenData = await tokenRes.json().catch(() => null);
+
+    if (!tokenData || typeof tokenData.token !== 'string' || !tokenData.token) {
+      throw new Error('Geçersiz token yanıtı alındı');
+    }
 
     return {
       id: tokenData.id || address,
@@ -1031,6 +1144,8 @@ export const createCustomMailbox =
     provider: string
   ): Promise<Mailbox> => {
     if (
+      !username ||
+      !domain ||
       !/^[a-zA-Z0-9._-]{1,64}$/.test(username) ||
       !/^[a-zA-Z0-9.-]{1,253}$/.test(domain) ||
       domain.startsWith('.') ||
@@ -1108,7 +1223,11 @@ export const createCustomMailbox =
       );
     }
 
-    const tokenData = await tokenRes.json();
+    const tokenData = await tokenRes.json().catch(() => null);
+
+    if (!tokenData || typeof tokenData.token !== 'string' || !tokenData.token) {
+      throw new Error('Geçersiz token yanıtı alındı');
+    }
 
     return {
       id: tokenData.id || address,
@@ -1116,20 +1235,71 @@ export const createCustomMailbox =
       apiBase: provider,
       token: tokenData.token,
       password,
+      createdAt: Date.now(),
     };
   };
 
 export const getMessages = async (
   mailbox: Mailbox
 ): Promise<EmailSummary[]> => {
-  if (
-    mailbox.token &&
-    isGuerrilla(mailbox.apiBase)
-  ) {
+  if (!mailbox.token) return [];
+
+  if (isGuerrilla(mailbox.apiBase)) {
     return getGuerrillaMessages(mailbox);
   }
 
-  return [];
+  const apiBase = getApiBase(mailbox.apiBase);
+
+  try {
+    const res = await safeFetch(
+      `${apiBase}/messages`,
+      {
+        headers: {
+          Authorization: `Bearer ${mailbox.token}`,
+        },
+      },
+      mailbox.apiBase,
+      mailbox.id
+    );
+
+    if (!res.ok) return [];
+
+    const data = await res.json().catch(() => null);
+    const rawList = Array.isArray(data?.['hydra:member'])
+      ? data['hydra:member']
+      : Array.isArray(data)
+      ? data
+      : [];
+
+    return rawList.map((msg: any) => {
+      const fromAddr = msg.from?.address || 'unknown';
+      const subject = formatSmartSubject(
+        msg.subject || '',
+        msg.intro || '',
+        fromAddr
+      );
+      const intro = msg.intro || '';
+
+      return {
+        id: String(msg.id),
+        from: {
+          address: fromAddr,
+          name: msg.from?.name || formatSenderName(fromAddr),
+        },
+        subject,
+        intro: intro || 'Görüntülenecek önizleme yok',
+        seen: Boolean(msg.seen),
+        createdAt: msg.createdAt || new Date().toISOString(),
+        aiCategory: determineCategory(
+          subject,
+          fromAddr,
+          intro
+        ),
+      };
+    });
+  } catch {
+    return [];
+  }
 };
 
 export const getMessageDetail = async (
@@ -1149,79 +1319,55 @@ export const getMessageDetail = async (
 
   const apiBase = getApiBase(mailbox.apiBase);
 
-  const res = await safeFetch(
-    `${apiBase}/messages/${encodeURIComponent(
-      messageId
-    )}`,
-    {
-      headers: {
-        Authorization: `Bearer ${mailbox.token}`,
+  try {
+    const res = await safeFetch(
+      `${apiBase}/messages/${encodeURIComponent(
+        messageId
+      )}`,
+      {
+        headers: {
+          Authorization: `Bearer ${mailbox.token}`,
+        },
       },
-    },
-    mailbox.apiBase,
-    mailbox.id
-  );
+      mailbox.apiBase,
+      mailbox.id
+    );
 
-  if (!res.ok) return null;
+    if (!res.ok) return null;
 
-  const msg = await res.json();
+    const msg = await res.json().catch(() => null);
+    if (!msg || !msg.id) return null;
 
-  const headerFields: Record<string, string> = {
-    From: msg.from?.address || 'unknown',
-    Subject: msg.subject || '',
-    Date: msg.createdAt || '',
-  };
+    const headerFields: Record<string, string> = {
+      From: msg.from?.address || 'unknown',
+      Subject: msg.subject || '',
+      Date: msg.createdAt || '',
+    };
 
-  if (msg.to?.length) {
-    headerFields.To = msg.to
-      .map((t: any) => t.address)
-      .join(', ');
-  }
+    if (msg.to?.length) {
+      headerFields.To = msg.to
+        .map((t: any) => t.address)
+        .join(', ');
+    }
 
-  if (msg.cc?.length) {
-    headerFields.Cc = msg.cc
-      .map((c: any) => c.address)
-      .join(', ');
-  }
+    if (msg.cc?.length) {
+      headerFields.Cc = msg.cc
+        .map((c: any) => c.address)
+        .join(', ');
+    }
 
-  if (msg.msgid) {
-    headerFields['Message-ID'] = msg.msgid;
-  }
+    if (msg.msgid) {
+      headerFields['Message-ID'] = msg.msgid;
+    }
 
-  if (msg.size) {
-    headerFields.Size = `${msg.size} bytes`;
-  }
+    if (msg.size) {
+      headerFields.Size = `${msg.size} bytes`;
+    }
 
-  return {
-    id: msg.id,
-    from: {
-      address:
-        msg.from?.address || 'unknown',
-      name:
-        msg.from?.name ||
-        msg.from?.address ||
-        'unknown',
-    },
-    subject: msg.subject || '',
-    intro: msg.intro || '',
-    seen: true,
-    createdAt: msg.createdAt,
-    aiCategory: determineCategory(
-      msg.subject || '',
-      msg.from?.address || '',
-      msg.intro || ''
-    ),
-    html: msg.html ? [msg.html] : [],
-    text: msg.text,
-    hasAttachments:
-      Array.isArray(msg.attachments) &&
-      msg.attachments.length > 0,
-    attachments: Array.isArray(
-      msg.attachments
-    )
+    const attachments: EmailAttachment[] = Array.isArray(msg.attachments)
       ? msg.attachments.map((a: any) => ({
-          id: a.id,
-          name:
+          id: String(a.id || ''),
+          filename:
             a.filename ||
             a.name ||
             'attachment',
@@ -1230,9 +1376,37 @@ export const getMessageDetail = async (
             a.contentType ||
             'application/octet-stream',
         }))
-      : [],
-    headerFields: headerFields,
-  };
+      : [];
+
+    return {
+      id: String(msg.id),
+      from: {
+        address:
+          msg.from?.address || 'unknown',
+        name:
+          msg.from?.name ||
+          msg.from?.address ||
+          'unknown',
+      },
+      subject: msg.subject || '',
+      intro: msg.intro || '',
+      seen: true,
+      createdAt: msg.createdAt,
+      aiCategory: determineCategory(
+        msg.subject || '',
+        msg.from?.address || '',
+        msg.intro || ''
+      ),
+      html: msg.html ? (Array.isArray(msg.html) ? msg.html : [String(msg.html)]) : [],
+      text: msg.text,
+      hasAttachments:
+        attachments.length > 0,
+      attachments,
+      headerFields,
+    };
+  } catch {
+    return null;
+  }
 };
 
 export const deleteMessage = async (
@@ -1277,6 +1451,25 @@ export const deleteAllMessages = async (
   mailbox: Mailbox
 ): Promise<boolean> => {
   const messages = await getMessages(mailbox);
+  if (messages.length === 0) return true;
+
+  if (isGuerrilla(mailbox.apiBase) && mailbox.token) {
+    try {
+      const query = messages
+        .map((m) => `email_ids[]=${encodeURIComponent(m.id)}`)
+        .join('&');
+      const res = await safeFetch(
+        `${GUERRILLA_API}?f=del_email&${query}&sid_token=${encodeURIComponent(
+          mailbox.token
+        )}`,
+        undefined,
+        'guerrilla'
+      );
+      if (res.ok) return true;
+    } catch {
+      // fallback to individual delete
+    }
+  }
 
   const results = await Promise.allSettled(
     messages.map((m) =>
@@ -1367,13 +1560,23 @@ export const getProviderInfo = (
 });
 
 export const getWorkerStats = async () => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, 5000);
+
   try {
     const r = await fetch(
-      `${WORKER_API}/api/stats`
+      `${WORKER_API}/api/stats`,
+      {
+        signal: controller.signal,
+      }
     );
 
     return r.ok ? await r.json() : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 };

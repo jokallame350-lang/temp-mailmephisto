@@ -48,7 +48,7 @@ export const playNotificationSound = (): void => {
     masterGain.gain.setValueAtTime(0.18, startTime);
     masterGain.connect(ctx.destination);
 
-    const addTone = (frequency: number, at: number, duration: number, peak: number, overtone = false) => {
+    const addTone = (frequency: number, at: number, duration: number, peak: number, _overtone = false) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';

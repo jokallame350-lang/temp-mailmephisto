@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, RefreshCw, Copy, Check, ShieldCheck } from 'lucide-react';
 import { translations, Language } from '../translations';
 
@@ -12,7 +12,7 @@ const PasswordGenModal: React.FC<PasswordGenModalProps> = ({ isOpen, onClose, la
   const [includeSymbols, setIncludeSymbols] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  const generatePassword = () => {
+  const generatePassword = useCallback(() => {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const numbers = '0123456789';
     const symbols = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
@@ -23,9 +23,9 @@ const PasswordGenModal: React.FC<PasswordGenModalProps> = ({ isOpen, onClose, la
     for (let i = 0; i < length; i++) generated += validChars.charAt(Math.floor(Math.random() * validChars.length));
     setPassword(generated);
     setCopied(false);
-  };
+  }, [length, includeNumbers, includeSymbols]);
 
-  useEffect(() => { if (isOpen) generatePassword(); }, [isOpen, length, includeNumbers, includeSymbols]);
+  useEffect(() => { if (isOpen) generatePassword(); }, [isOpen, generatePassword]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(password);

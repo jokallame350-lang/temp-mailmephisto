@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { EmailDetail } from '../types';
-import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File, List, Smartphone, Printer, FileType, Reply, ShieldCheck, FileJson } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Download, Code, Eye, Forward, Copy, Check, CheckCircle2, Paperclip, FileText, Image, File, List, Smartphone, Printer, FileType, ShieldCheck, FileJson } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { translations, Language } from '../translations';
 import { sanitizeAndBlockTrackers } from '../utils/trackerBlocker';
@@ -12,11 +12,12 @@ interface EmailViewerProps {
   onBack: () => void;
   lang: Language;
   token?: string;
-  onReply?: (initialData: { to: string; subject: string; body: string }) => void;
+  onReply?: (_initialData: { to: string; subject: string; body: string }) => void;
 }
 
 import { extractActionLinks } from '../utils/actionLinks';
 import { extractOTP } from '../utils/otp';
+import { sanitizeAttachmentFilename, isBlockedAttachment } from '../utils/attachmentSecurity';
 
 // Dosya tipine göre ikon
 const getFileIcon = (contentType: string) => {
@@ -32,7 +33,7 @@ const formatSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang, token, onReply }) => {
+const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang, token, onReply: _onReply }) => {
   const t = translations[lang];
   const [viewSource, setViewSource] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
@@ -44,13 +45,39 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
   // Ek dosya indirme
   const handleDownloadAttachment = useCallback(async (att: EmailDetail['attachments'][0]) => {
     if (!email) return;
+    const filename = att.filename || (att as any).name || 'attachment';
+    const contentType = att.contentType || 'application/octet-stream';
+    const safeFilename = sanitizeAttachmentFilename(filename);
+
+    if (isBlockedAttachment(safeFilename, contentType)) {
+      console.warn('Blocked hazardous attachment download:', safeFilename);
+      return;
+    }
+
     try {
       const url = att.downloadUrl || `https://api.mail.tm/messages/${email.id}/attachment/${att.id}`;
       const lowerUrl = url.toLowerCase().trim();
-      if (lowerUrl.startsWith('file:') || lowerUrl.startsWith('file:/') || lowerUrl.startsWith('file://')) {
-        console.warn('Blocked file:/// attachment download URL:', url);
+      if (
+        lowerUrl.startsWith('file:') ||
+        lowerUrl.startsWith('file:/') ||
+        lowerUrl.startsWith('file://') ||
+        lowerUrl.startsWith('javascript:') ||
+        lowerUrl.startsWith('data:') ||
+        lowerUrl.startsWith('blob:') ||
+        lowerUrl.startsWith('content:') ||
+        lowerUrl.startsWith('chrome:') ||
+        lowerUrl.startsWith('resource:') ||
+        lowerUrl.startsWith('about:') ||
+        lowerUrl.startsWith('vbscript:')
+      ) {
+        console.warn('Blocked unsafe attachment download URL:', url);
         return;
       }
+      if (!lowerUrl.startsWith('https://') && !lowerUrl.startsWith('http://')) {
+        console.warn('Invalid attachment protocol:', url);
+        return;
+      }
+
       const headers: Record<string, string> = { 'Accept': '*/*' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -61,16 +88,13 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = att.filename;
+      a.download = safeFilename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.warn('Attachment download failed:', err);
-      if (att.downloadUrl && (att.downloadUrl.startsWith('http://') || att.downloadUrl.startsWith('https://'))) {
-        window.open(att.downloadUrl, '_blank', 'noopener,noreferrer');
-      }
     }
   }, [email, token]);
 
@@ -86,7 +110,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       } else {
         raw = email.text || '';
       }
-    } catch (e) {
+    } catch {
       raw = email.text || '';
     }
 
@@ -97,6 +121,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       const attrHook = (node: Element, data: any) => {
         if (data.attrValue) {
           const val = data.attrValue.trim().toLowerCase();
+          const isHref = data.attrName === 'href';
           if (
             val.startsWith('file:') ||
             val.startsWith('file:/') ||
@@ -107,15 +132,17 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             val.startsWith('filesystem:') ||
             val.startsWith('javascript:') ||
             val.startsWith('vbscript:') ||
-            val.startsWith('about:')
+            val.startsWith('about:') ||
+            (isHref && (val.startsWith('data:') || val.startsWith('blob:')))
           ) {
             data.attrValue = '';
           }
-          if (data.attrName === 'style' && (val.includes('file:') || val.includes('content:') || val.includes('chrome:'))) {
+          if (data.attrName === 'style' && (val.includes('file:') || val.includes('content:') || val.includes('chrome:') || val.includes('javascript:') || val.includes('vbscript:'))) {
             data.attrValue = data.attrValue
               .replace(/url\(['"]?file:[^'"]+['"]?\)/gi, 'none')
               .replace(/url\(['"]?content:[^'"]+['"]?\)/gi, 'none')
-              .replace(/url\(['"]?chrome:[^'"]+['"]?\)/gi, 'none');
+              .replace(/url\(['"]?chrome:[^'"]+['"]?\)/gi, 'none')
+              .replace(/url\(['"]?javascript:[^'"]+['"]?\)/gi, 'none');
           }
         }
       };
@@ -125,6 +152,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
           const el = node as Element;
           if (el.tagName === 'A') {
             el.setAttribute('rel', 'noopener noreferrer');
+            el.setAttribute('target', '_blank');
             const href = el.getAttribute('href');
             if (href) {
               const cleanHref = href.trim().toLowerCase();
@@ -136,7 +164,10 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
                 cleanHref.startsWith('chrome:') ||
                 cleanHref.startsWith('resource:') ||
                 cleanHref.startsWith('javascript:') ||
-                cleanHref.startsWith('vbscript:')
+                cleanHref.startsWith('vbscript:') ||
+                cleanHref.startsWith('data:') ||
+                cleanHref.startsWith('blob:') ||
+                cleanHref.startsWith('about:')
               ) {
                 el.removeAttribute('href');
               }
@@ -150,11 +181,11 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
 
       const sanitized = DOMPurify.sanitize(cleanHtml, {
         USE_PROFILES: { html: true },
-        FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button'],
-        FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit'],
+        FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'textarea', 'button', 'select', 'option', 'optgroup', 'fieldset', 'label', 'output', 'applet', 'meta', 'link', 'base', 'frame', 'frameset', 'style', 'portal'],
+        FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'onsubmit', 'onchange', 'onkeydown', 'onkeypress', 'onkeyup', 'onmouseenter', 'onmouseleave', 'onmousedown', 'onmouseup', 'onpointerdown', 'onpointerup', 'formaction', 'action', 'xlink:href'],
         ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|data:image\/(?:png|jpeg|jpg|gif|svg\+xml|webp);base64,)/i,
         ALLOW_DATA_ATTR: false,
-        ADD_ATTR: ['target'],
+        ADD_ATTR: ['target', 'rel'],
       });
 
       DOMPurify.removeHook('uponSanitizeAttribute');
@@ -224,7 +255,10 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             lower.startsWith('data:') ||
             lower.startsWith('blob:') ||
             lower.startsWith('content:') ||
-            lower.startsWith('chrome:')
+            lower.startsWith('chrome:') ||
+            lower.startsWith('resource:') ||
+            lower.startsWith('about:') ||
+            lower.startsWith('vbscript:')
           ) {
             console.warn('Blocked unsafe protocol link navigation:', cleanHref);
             return;
@@ -251,40 +285,21 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       const htmlContent = email.html ? (typeof email.html[0] === 'string' ? email.html[0] : '') : '';
       return extractActionLinks(htmlContent);
     } catch { return null; }
-  }, [email?.id, email?.html]);
+  }, [email]);
 
-  if (loading) {
-    return (
-      <div className="flex-grow flex flex-col items-center justify-center space-y-4" role="status" aria-live="polite">
-        <div className="w-full max-w-md px-8 space-y-4 animate-pulse" aria-hidden="true">
-          <div className="h-6 bg-white/5 rounded-lg w-3/4" />
-          <div className="h-4 bg-white/5 rounded-lg w-1/2" />
-          <div className="h-px bg-white/5 my-4" />
-          <div className="space-y-2">
-            <div className="h-3 bg-white/5 rounded w-full" />
-            <div className="h-3 bg-white/5 rounded w-5/6" />
-            <div className="h-3 bg-white/5 rounded w-4/6" />
-          </div>
-        </div>
-        <div className="text-xs text-slate-500 font-mono animate-pulse">{t.decrypting}</div>
-      </div>
-    );
-  }
-
-  if (!email) return null;
-
-  const fromAddress = typeof email.from === 'string'
+  const fromAddress = typeof email?.from === 'string'
     ? email.from
-    : (email.from && typeof email.from === 'object' ? String(email.from.address || 'unknown') : 'unknown');
+    : (email?.from && typeof email.from === 'object' ? String(email.from.address || 'unknown') : 'unknown');
 
-  const fromName = typeof email.from === 'string'
+  const fromName = typeof email?.from === 'string'
     ? email.from
-    : (email.from && typeof email.from === 'object' ? String(email.from.name || email.from.address || 'unknown') : 'unknown');
+    : (email?.from && typeof email.from === 'object' ? String(email.from.name || email.from.address || 'unknown') : 'unknown');
 
   const otpCode = useMemo(() => {
+    if (!email) return null;
     const textContent = `${email.subject || ''} ${email.text || email.intro || ''} ${email.html && email.html[0] ? (typeof email.html[0] === 'string' ? email.html[0].replace(/<[^>]*>/g, ' ') : '') : ''}`;
     return extractOTP(textContent);
-  }, [email.subject, email.text, email.intro, email.html]);
+  }, [email]);
 
   const formatDate = useCallback((dateString: string) => {
     try {
@@ -309,19 +324,8 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     setTimeout(() => setRawBodyCopied(false), 2000);
   }, [email]);
 
-  const handleDownloadPDF = useCallback(() => {
-    if (!iframeRef.current || !iframeRef.current.contentWindow) {
-      window.print();
-      return;
-    }
-    try {
-      iframeRef.current.contentWindow.print();
-    } catch {
-      window.print();
-    }
-  }, []);
-
   const handleForward = useCallback(() => {
+    if (!email) return;
     const subject = encodeURIComponent(`Fwd: ${email.subject || ''}`);
     const body = encodeURIComponent(`---------- Forwarded message ----------\nFrom: ${fromAddress}\nDate: ${email.createdAt}\nSubject: ${email.subject || ''}\n\n${email.text || ''}`);
     window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
@@ -334,6 +338,26 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       setTimeout(() => setCodeCopied(false), 2000);
     }
   }, [otpCode]);
+
+  if (loading) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center space-y-4" role="status" aria-live="polite">
+        <div className="w-full max-w-md px-8 space-y-4 animate-pulse" aria-hidden="true">
+          <div className="h-6 bg-white/5 rounded-lg w-3/4" />
+          <div className="h-4 bg-white/5 rounded-lg w-1/2" />
+          <div className="h-px bg-white/5 my-4" />
+          <div className="space-y-2">
+            <div className="h-3 bg-white/5 rounded w-full" />
+            <div className="h-3 bg-white/5 rounded w-5/6" />
+            <div className="h-3 bg-white/5 rounded w-4/6" />
+          </div>
+        </div>
+        <div className="text-xs text-slate-500 font-mono animate-pulse">{t.decrypting}</div>
+      </div>
+    );
+  }
+
+  if (!email) return null;
 
   return (
     <div className="flex flex-col h-full bg-transparent text-slate-200" role="article" aria-label={`Email: ${email.subject || 'No subject'}`}>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, ShieldAlert, ShieldCheck, Search, ArrowLeft, Mail, AlertTriangle, Lock, CheckCircle2, ArrowRight, RefreshCw, Key, Copy, Check } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Search, ArrowLeft, Mail, AlertTriangle, Lock, ArrowRight, RefreshCw, Key, Copy, Check } from 'lucide-react';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';

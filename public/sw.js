@@ -20,7 +20,16 @@ self.addEventListener('fetch', (event) => {
     if (request.method !== 'GET') return;
     const url = new URL(request.url);
     if (url.origin !== APP_ORIGIN) return;
-    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/') || url.searchParams.has('mailbox')) return;
+    if (
+        url.pathname.startsWith('/api/') ||
+        url.pathname.startsWith('/_next/') ||
+        url.pathname.startsWith('/messages/') ||
+        url.pathname.startsWith('/attachment/') ||
+        url.pathname.startsWith('/accounts') ||
+        url.pathname.startsWith('/token') ||
+        url.searchParams.has('mailbox')
+    ) return;
+
 
     if (isSameOriginNavigation(request)) {
         event.respondWith(fetch(request).catch(() => caches.match('/').then(cached => cached || Response.error())));

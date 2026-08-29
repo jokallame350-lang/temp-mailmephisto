@@ -5,14 +5,13 @@ import { fetchDomains } from '../services/mailService';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
-import { Language, translations } from '../translations';
+import { Language } from '../translations';
 
 interface BulkGeneratorPageProps {
   lang: Language;
 }
 
 const BulkGeneratorPage: React.FC<BulkGeneratorPageProps> = ({ lang }) => {
-  const t = translations[lang];
   const [count, setCount] = useState<number>(5);
   const [generatedEmails, setGeneratedEmails] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);

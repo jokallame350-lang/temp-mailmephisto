@@ -1,5 +1,3 @@
-import { en } from './en';
-
 export const de = {
   refresh: 'Aktualisieren', copy: 'Kopieren', copied: 'Kopiert', new: 'Neu', delete: 'Löschen', change: 'Ändern',
   generating: 'Wird generiert...', connecting: 'Verbinden...', noShield: 'Keine aktive Adresse', noAccount: 'Kein Konto',

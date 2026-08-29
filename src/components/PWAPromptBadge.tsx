@@ -20,7 +20,8 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => 
 
   useEffect(() => {
     // Check if running in standalone mode (already installed)
-    if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone) {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || Boolean((navigator as any).standalone);
+    if (isStandalone) {
       setInstalled(true);
       return;
     }
@@ -53,7 +54,7 @@ export const PWAPromptBadge: React.FC<PWAPromptBadgeProps> = memo(({ lang }) => 
 
     // Auto-display floating badge after 2.5 seconds if not dismissed
     const timer = setTimeout(() => {
-      if (!installed && (!dismissedUntil || Date.now() >= parseInt(dismissedUntil, 10))) {
+      if (!isStandalone && (!dismissedUntil || Date.now() >= parseInt(dismissedUntil, 10))) {
         setShowPrompt(true);
       }
     }, 2500);

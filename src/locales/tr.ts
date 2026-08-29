@@ -245,14 +245,15 @@ export const tr = {
 
   // VIP Upgrade Modal
   vipTitle: 'MephistoMail VIP Supporter',
-  vipSubtitle: '%100 Reklamsız, Sınırsız Özel Domain ve Saklama Ayrıcalığı',
+  vipSubtitle: '%100 Reklamsız, Özel Domain ve Öncelikli OTP Yönlendirme',
   vipActiveBadge: '👑 VIP Üyeliğiniz Aktif!',
   vipActiveDesc: 'Tüm reklamlar gizlendi, öncelikli OTP doğrulama altyapınız açık.',
   vipRemoveBtn: 'VIP Lisansını Kaldır (Test)',
   vipFeatAdFree: '🚫 %100 Reklamsız Sörf Deneyimi',
   vipFeatEdu: '🎓 Özel Üniversite & .EDU Domain',
-  vipFeatStorage: '📁 30 Günlük Uzatılmış Mail Depolama',
+  vipFeatStorage: '📁 1-Tık RFC 5322 (.eml) ve JSON Dışa Aktarma',
   vipFeatOtp: '⚡ <1 Sn Öncelikli OTP Teslimatı',
+
   vipMonthly: 'Aylık VIP',
   vipPerMonth: '/ ay',
   vipPayBtn: 'Kart veya Kripto ile Öde',

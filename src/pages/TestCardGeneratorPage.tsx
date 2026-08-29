@@ -44,7 +44,7 @@ export const TestCardGeneratorPage: React.FC<TestCardGeneratorPageProps> = ({ la
     return result + checkDigit.toString();
   };
 
-  const generateNewCard = () => {
+  const generateNewCard = React.useCallback(() => {
     const prefixes: Record<string, { prefix: string; len: number; cvvLen: number }> = {
       visa: { prefix: '4532', len: 16, cvvLen: 3 },
       mastercard: { prefix: '5425', len: 16, cvvLen: 3 },
@@ -78,12 +78,12 @@ export const TestCardGeneratorPage: React.FC<TestCardGeneratorPageProps> = ({ la
       holder
     };
 
-    setCards([newCard, ...cards.slice(0, 4)]);
-  };
+    setCards(prev => [newCard, ...prev.slice(0, 4)]);
+  }, [selectedBrand]);
 
   React.useEffect(() => {
     generateNewCard();
-  }, [selectedBrand]);
+  }, [generateNewCard]);
 
   const copyToClipboard = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text);

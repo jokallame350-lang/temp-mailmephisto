@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, Mail, Shield, Clock, Users, Globe, Lock, Zap, MessageCircle } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Mail, Shield, Globe, Zap, MessageCircle } from 'lucide-react';
 import { Language } from '../translations';
 import SEOPageMeta from '../components/SEOPageMeta';
 

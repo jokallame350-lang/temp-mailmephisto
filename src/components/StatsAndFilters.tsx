@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { AppStats, NotificationFilter, AICategory } from '../types';
 import { BarChart3, Bell, BellOff, X, Mail, Shield, Tag, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { translations, Language } from '../translations';

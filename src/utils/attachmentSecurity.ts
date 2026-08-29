@@ -5,23 +5,49 @@ const BLOCKED_MIME_TYPES = new Set([
   'application/x-msdownload',
   'application/x-msdos-program',
   'application/x-ms-installer',
-  'application/x-sh',
+  'application/x-msi',
   'application/x-bat',
+  'application/x-sh',
   'application/x-csh',
   'application/x-httpd-php',
   'application/x-executable',
+  'application/x-javascript',
+  'application/javascript',
+  'text/javascript',
+  'application/x-vbs',
+  'text/vbs',
+  'application/x-powershell',
+  'application/x-msshortcut',
+  'application/hta',
 ]);
 
 const BLOCKED_EXTENSIONS = new Set([
-  'exe','dll','com','scr','msi','msp','mst','bat','cmd','ps1','psm1','vbs','vbe','js','jse','ws','wsc','wsh','hta','cpl','jar','apk','appx','deb','rpm','dmg','pkg','sh','bash','zsh','fish'
+  'exe', 'dll', 'com', 'scr', 'msi', 'msp', 'mst', 'bat', 'cmd', 'ps1', 'psm1',
+  'psd1', 'ps1xml', 'vbs', 'vbe', 'js', 'jse', 'jscript', 'ws', 'wsc', 'wsf',
+  'wsh', 'hta', 'cpl', 'jar', 'apk', 'appx', 'appxbundle', 'msix', 'msixbundle',
+  'deb', 'rpm', 'dmg', 'pkg', 'sh', 'bash', 'zsh', 'fish', 'csh', 'ksh',
+  'iso', 'img', 'vhd', 'vhdx', 'inf', 'reg', 'pif', 'gadget', 'msc', 'vxd',
+  'sys', 'drv', 'ocx', 'bin', 'elf', 'action', 'command', 'workflow'
 ]);
 
 export const sanitizeAttachmentFilename = (filename: unknown): string => {
   const raw = typeof filename === 'string' ? filename : '';
-  const normalized = raw.replace(/[\u0000-\u001f\u007f]/g, '').replace(/[\\/]+/g, '_').trim();
-  const basename = normalized.split(/[\\/]/).pop() || '';
-  const safe = basename.replace(/^\.+$/, '').slice(0, MAX_FILENAME_LENGTH);
-  return safe || 'attachment';
+  // Strip control chars, null bytes, path traversal sequences and separators
+  const stripped = raw
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
+    .replace(/\\/g, '/')
+    .replace(/\.{2,}/g, '.')
+    .trim();
+  const basename = stripped.split('/').pop() || '';
+  const cleaned = basename
+    .replace(/[<>:"/\\|?*]+/g, '_')
+    .replace(/^\.+/, '')
+    .replace(/\.+$/, '')
+    .trim()
+    .slice(0, MAX_FILENAME_LENGTH);
+
+  return cleaned || 'attachment';
 };
 
 export const normalizeMimeType = (contentType: unknown): string => {
@@ -32,8 +58,11 @@ export const normalizeMimeType = (contentType: unknown): string => {
 
 export const isBlockedAttachment = (filename: unknown, contentType: unknown): boolean => {
   const name = sanitizeAttachmentFilename(filename).toLowerCase();
-  const ext = name.includes('.') ? name.split('.').pop() || '' : '';
-  return BLOCKED_EXTENSIONS.has(ext) || BLOCKED_MIME_TYPES.has(normalizeMimeType(contentType));
+  const ext = name.includes('.') ? (name.split('.').pop() || '') : '';
+  // Also check if any dot-separated segment contains a blocked executable extension
+  const segments = name.split('.');
+  const hasBlockedExtension = segments.some(seg => BLOCKED_EXTENSIONS.has(seg));
+  return hasBlockedExtension || BLOCKED_EXTENSIONS.has(ext) || BLOCKED_MIME_TYPES.has(normalizeMimeType(contentType));
 };
 
 export const validateAttachmentMetadata = (filename: unknown, contentType: unknown, size: unknown): { ok: boolean; filename: string; contentType: string; size: number; reason?: string } => {
@@ -64,3 +93,4 @@ export const validateAttachmentResponse = (blob: Blob, declaredType?: string, de
 };
 
 export const getMaxAttachmentBytes = (): number => MAX_ATTACHMENT_BYTES;
+

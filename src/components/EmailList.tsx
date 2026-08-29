@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo, memo } from 'react';
+import React, { useRef, useState, useCallback, memo } from 'react';
 import { Clock, ChevronRight, Loader2, ShieldCheck, Zap, Trash2, CheckCircle2, AlertCircle, Tag, Copy, Check, Search, X, Mail } from 'lucide-react';
 import { EmailSummary } from '../types';
 import { translations, Language } from '../translations';
@@ -16,7 +16,6 @@ interface EmailListProps {
 }
 
 import { extractOTP } from '../utils/otp';
-export { extractOTP };
 
 /**
  * Text highlight component that visually marks search query matches

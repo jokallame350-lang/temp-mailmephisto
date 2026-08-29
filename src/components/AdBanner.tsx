@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Language } from '../translations';
 
 interface AdBannerProps {
@@ -18,17 +18,13 @@ interface AdBannerProps {
  * 3. Remove the placeholder content
  */
 const AdBanner: React.FC<AdBannerProps> = ({ slot, lang }) => {
-    const [dismissed, setDismissed] = useState(false);
-
     useEffect(() => {
         try {
             ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-        } catch (e) {
+        } catch {
             // Silently handle AdBlock / script block errors so app rendering is unaffected
         }
     }, [slot]);
-
-    if (dismissed) return null;
 
     const sizes: Record<string, { w: string; h: string; label: string }> = {
         header: { w: 'w-full', h: 'h-[90px]', label: '728×90 Leaderboard' },

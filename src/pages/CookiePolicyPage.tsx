@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Cookie, CheckCircle2, ArrowLeft, Mail } from 'lucide-react';
+import { Cookie, ArrowLeft, Mail } from 'lucide-react';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';

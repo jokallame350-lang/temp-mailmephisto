@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Search, Shield, AlertTriangle, CheckCircle, XCircle, Mail, Lock, Eye, Globe, Loader2, Copy, Check, Sparkles, CreditCard, Key, Zap, Layers, Flame, Clock, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Search, Shield, AlertTriangle, CheckCircle, XCircle, Mail, Lock, Loader2, Copy, Check, Sparkles, CreditCard, Key, Zap, Layers, Flame, Clock, ArrowRight } from 'lucide-react';
 import { Language } from '../translations';
 import SEOPageMeta from '../components/SEOPageMeta';
 

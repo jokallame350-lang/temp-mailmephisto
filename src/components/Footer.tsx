@@ -2,7 +2,7 @@ import React, { useState, useCallback, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { translations, Language } from '../translations';
 import LegalModal from './LegalModal';
-import { Mail, Shield, Clock, Wrench, BookOpen, HelpCircle, FileText, Scale, Code2, MessageSquare, Github, Twitter, Heart, Send, CheckCircle, Zap, Download } from 'lucide-react';
+import { Mail, Shield, Clock, BookOpen, HelpCircle, FileText, Scale, Code2, MessageSquare, Github, Heart, Send, CheckCircle, Zap, Download } from 'lucide-react';
 
 interface FooterProps {
   lang: Language;

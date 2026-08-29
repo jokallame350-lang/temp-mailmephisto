@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';
-import { ShieldCheck, AlertTriangle, CheckCircle, Search, RefreshCw, Lock, Server, FileText, Link as LinkIcon, ExternalLink, Zap, FileSpreadsheet, Download, Check } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, CheckCircle, Search, RefreshCw, FileText, Link as LinkIcon, ExternalLink, Zap, FileSpreadsheet, Check } from 'lucide-react';
 
 interface DisposableCheckerPageProps {
   lang: Language;

@@ -245,14 +245,15 @@ export const en = {
 
   // VIP Upgrade Modal
   vipTitle: 'MephistoMail VIP Supporter',
-  vipSubtitle: '100% Ad-Free, Custom Domain & Extended 30-Day Inbox',
+  vipSubtitle: '100% Ad-Free, Custom Domain & Priority OTP Routing',
   vipActiveBadge: '👑 VIP Membership Active!',
   vipActiveDesc: 'All ads disabled, priority OTP routing unlocked.',
   vipRemoveBtn: 'Remove VIP License (Test)',
   vipFeatAdFree: '🚫 100% Ad-Free Clean UI',
   vipFeatEdu: '🎓 Custom University & .EDU Domains',
-  vipFeatStorage: '📁 30-Day Extended Email Storage',
+  vipFeatStorage: '📁 1-Click RFC 5322 (.eml) & JSON Export',
   vipFeatOtp: '⚡ <1 Sec Priority OTP Delivery',
+
   vipMonthly: 'Monthly VIP',
   vipPerMonth: '/ mo',
   vipPayBtn: 'Pay with Card or Crypto',

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useParams, Navigate } from 'react-router-dom';
 import { ArrowLeft, Clock, User, Calendar, Share2, ChevronRight } from 'lucide-react';
 import { Language } from '../translations';
-import { blogPosts, BlogPost } from '../data/blogContent';
+import { blogPosts } from '../data/blogContent';
 import SEOPageMeta from '../components/SEOPageMeta';
 
 interface BlogPostPageProps {

@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Shield, Zap, Lock, Globe, Code2, ArrowLeft, Heart, CheckCircle2 } from 'lucide-react';
+import { Mail, Shield, Zap, Lock, Globe, Code2, ArrowLeft } from 'lucide-react';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';

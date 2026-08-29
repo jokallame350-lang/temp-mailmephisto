@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import App from '../App';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';
-import { Zap, ArrowRight, ShieldCheck, Search, Filter, Mail, CheckCircle } from 'lucide-react';
+import { Zap, ArrowRight, Search, Filter, CheckCircle } from 'lucide-react';
 
 interface ServicesCatalogPageProps {
   lang: Language;

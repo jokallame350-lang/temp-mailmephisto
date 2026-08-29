@@ -144,7 +144,7 @@ flowchart TD
 
     subgraph Relays ["Stateless Ingress & Processing Layer"]
         API["Stateless REST API Router"]
-        SSE["Rapid Auto-Sync / Mercure Stream"]
+        SyncEngine["Rapid Auto-Sync / Smart Polling Engine"]
         GuerrillaRouter["GuerrillaMail Multi-Domain Gateway"]
         BYOD["Custom Domain Cloudflare MX Ingress"]
     end
@@ -159,19 +159,19 @@ flowchart TD
     Purify -->|"Export Mail"| Export
     
     UI <-->|"HTTPS REST Calls"| API
-    UI <-->|"Real-Time Push"| SSE
+    UI <-->|"Auto-Sync Polling"| SyncEngine
     API <-->|"Multi-Domain Queries"| GuerrillaRouter
     API <-->|"Custom Ingress"| BYOD
     
     API <--> RAM
-    SSE <--> RAM
+    SyncEngine <--> RAM
 
     classDef client fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
     classDef relay fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
     classDef storage fill:#450a0a,stroke:#f87171,stroke-width:2px,color:#fff;
 
     class UI,Search,Audio,Purify,Export client;
-    class API,SSE,GuerrillaRouter,BYOD relay;
+    class API,SyncEngine,GuerrillaRouter,BYOD relay;
     class RAM storage;
 ```
 

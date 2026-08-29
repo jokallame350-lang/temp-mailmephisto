@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import App from './App.tsx'
 import './index.css'
-import { translations, Language } from './translations'
+import { Language } from './translations'
 
 // Lazy load pages for code splitting
 const BlogPage = lazy(() => import('./pages/BlogPage'));

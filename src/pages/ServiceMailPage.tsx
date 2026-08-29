@@ -1,12 +1,11 @@
 import React, { useEffect } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import App from '../App';
-import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { SEOContent } from '../components/SEOContent';
-import { Language, translations } from '../translations';
-import { ShieldCheck, MessageSquare, CheckCircle, Zap, ArrowRight, Info, HelpCircle } from 'lucide-react';
+import { Language } from '../translations';
+import { ShieldCheck, MessageSquare, CheckCircle, Zap, ArrowRight, HelpCircle } from 'lucide-react';
 
 interface ServiceMailPageProps {
   lang: Language;
@@ -242,12 +241,13 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     ],
     faqsTr: [
       { q: 'Discord geçici e-posta adreslerini kabul ediyor mu?', a: 'Evet! MephistoMail sürekli güncellenen temiz domain listesi sunduğu için Discord doğrulama kodlarını sorunsuz şekilde alır.' },
-      { q: 'Discord doğrulama kodum ne kadar sürede düşer?', a: 'Otomatik Hızlı Senkronizasyon ve SSE altyapımız sayesinde doğrulama kodunuz 1 ila 3 saniye içinde ekranınızdaki bildirimde görünür.' }
+      { q: 'Discord doğrulama kodum ne kadar sürede düşer?', a: 'Otomatik Hızlı Senkronizasyon altyapımız sayesinde doğrulama kodunuz 1 ila 3 saniye içinde ekranınızdaki bildirimde görünür.' }
     ],
     faqsEn: [
       { q: 'Does Discord accept temporary email addresses?', a: 'Yes! MephistoMail uses fresh, regularly rotated domains ensuring Discord verification emails arrive smoothly.' },
-      { q: 'How fast will I get my Discord OTP code?', a: 'Our SSE and Otomatik Hızlı Senkronizasyon real-time delivery ensures your 6-digit code arrives in 1 to 3 seconds.' }
+      { q: 'How fast will I get my Discord OTP code?', a: 'Our rapid auto-sync delivery ensures your 6-digit code arrives in 1 to 3 seconds.' }
     ]
+
   },
   chatgpt: {
     id: 'chatgpt',
@@ -371,11 +371,12 @@ const SERVICES_MAP: Record<string, ServiceData> = {
       'Instant OTP detection auto-extracts 6-digit Roblox PINs.'
     ],
     faqsTr: [
-      { q: 'Roblox PIN mailleri ne kadar sürede gelir?', a: 'Real-time SSE altyapısı ile 1-3 saniyede ulaşır.' }
+      { q: 'Roblox PIN mailleri ne kadar sürede gelir?', a: 'Otomatik Hızlı Senkronizasyon altyapısı ile 1-3 saniyede ulaşır.' }
     ],
     faqsEn: [
-      { q: 'How fast do Roblox PIN emails arrive?', a: 'Powered by SSE, emails land in 1-3 seconds.' }
+      { q: 'How fast do Roblox PIN emails arrive?', a: 'Powered by rapid auto-sync, emails land in 1-3 seconds.' }
     ]
+
   },
   discounts: {
     id: 'discounts',
@@ -1099,8 +1100,8 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     color: 'from-yellow-500 to-red-600',
     titleTr: '1 Saniyede Geçici E-posta Oluştur (1 Second Temp Mail) - Işık Hızında',
     titleEn: '1 Second Temp Mail Generator - Instant Ultra-Fast Disposable Email',
-    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında Otomatik Hızlı Senkronizasyon ve SSE canlı posta kutusu.',
-    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time Otomatik Hızlı Senkronizasyon delivery, and sub-second OTP arrival.',
+    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında Otomatik Hızlı Senkronizasyon ve RAM tabanlı canlı posta kutusu.',
+    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, rapid auto-sync delivery, and sub-second OTP arrival.',
     whyTr: [
       'Tek tıkla 1 saniyeden kısa sürede hazır e-posta adresi alın.',
       'Gelen e-postaları ve OTP kodlarını canlı Otomatik Hızlı Senkronizasyon altyapısı ile anında görün.',
@@ -1108,16 +1109,16 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     ],
     whyEn: [
       'Get a fully operational disposable address in under 1000 milliseconds.',
-      'View incoming emails and security OTPs in real-time via persistent Otomatik Hızlı Senkronizasyons.',
+      'View incoming emails and security OTPs with rapid auto-sync delivery.',
       'Bypass slow sign-up forms and verify accounts with zero latency.'
     ],
     faqsTr: [
       { q: '1 saniyede mail gerçekten hazır oluyor mu?', a: 'Evet! Sayfa yüklendiği anda istemci tarafında RAM tabanlı e-posta adresi anında üretilir.' },
-      { q: 'Gelen mailler kaç saniyede düşer?', a: 'Server-Sent Events (SSE) teknolojimiz sayesinde gelen mailler 1 saniyeden kısa sürede bildirim olarak gelir.' }
+      { q: 'Gelen mailler kaç saniyede düşer?', a: 'Otomatik Hızlı Senkronizasyon teknolojimiz sayesinde gelen mailler saniyeler içinde bildirim olarak gelir.' }
     ],
     faqsEn: [
       { q: 'Is the email handle really generated in 1 second?', a: 'Yes! Client-side RAM handle generation prepares your address immediately upon page load.' },
-      { q: 'How fast do emails arrive?', a: 'Our Real-Time SSE engine delivers incoming messages and OTP codes in sub-second speed.' }
+      { q: 'How fast do emails arrive?', a: 'Our rapid auto-sync engine delivers incoming messages and OTP codes in seconds.' }
     ]
   },
   '1-second': {
@@ -1128,8 +1129,8 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     color: 'from-yellow-500 to-red-600',
     titleTr: '1 Saniyede Geçici E-posta Oluştur (1 Second Temp Mail) - Işık Hızında',
     titleEn: '1 Second Temp Mail Generator - Instant Ultra-Fast Disposable Email',
-    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında Otomatik Hızlı Senkronizasyon ve SSE canlı posta kutusu.',
-    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, real-time Otomatik Hızlı Senkronizasyon delivery, and sub-second OTP arrival.',
+    descriptionTr: '1 saniye içinde kullanılabilir geçici e-posta adresi edinin. Kayıt yok, bekleme yok, ışık hızında Otomatik Hızlı Senkronizasyon ve RAM tabanlı canlı posta kutusu.',
+    descriptionEn: 'Generate an active disposable email handle in under 1 second. Zero setup, rapid auto-sync delivery, and sub-second OTP arrival.',
     whyTr: [
       'Tek tıkla 1 saniyeden kısa sürede hazır e-posta adresi alın.',
       'Gelen e-postaları ve OTP kodlarını canlı Otomatik Hızlı Senkronizasyon altyapısı ile anında görün.',
@@ -1137,18 +1138,19 @@ const SERVICES_MAP: Record<string, ServiceData> = {
     ],
     whyEn: [
       'Get a fully operational disposable address in under 1000 milliseconds.',
-      'View incoming emails and security OTPs in real-time via persistent Otomatik Hızlı Senkronizasyons.',
+      'View incoming emails and security OTPs with rapid auto-sync delivery.',
       'Bypass slow sign-up forms and verify accounts with zero latency.'
     ],
     faqsTr: [
       { q: '1 saniyede mail gerçekten hazır oluyor mu?', a: 'Evet! Sayfa yüklendiği anda istemci tarafında RAM tabanlı e-posta adresi anında üretilir.' },
-      { q: 'Gelen mailler kaç saniyede düşer?', a: 'Server-Sent Events (SSE) teknolojimiz sayesinde gelen mailler 1 saniyeden kısa sürede bildirim olarak gelir.' }
+      { q: 'Gelen mailler kaç saniyede düşer?', a: 'Otomatik Hızlı Senkronizasyon teknolojimiz sayesinde gelen mailler saniyeler içinde bildirim olarak gelir.' }
     ],
     faqsEn: [
       { q: 'Is the email handle really generated in 1 second?', a: 'Yes! Client-side RAM handle generation prepares your address immediately upon page load.' },
-      { q: 'How fast do emails arrive?', a: 'Our Real-Time SSE engine delivers incoming messages and OTP codes in sub-second speed.' }
+      { q: 'How fast do emails arrive?', a: 'Our rapid auto-sync engine delivers incoming messages and OTP codes in seconds.' }
     ]
   },
+
   'steam-guard': {
     id: 'steam-guard',
     route: '/temp-mail-for-steam-guard',

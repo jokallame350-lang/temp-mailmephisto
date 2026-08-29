@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef, memo } from '
 import { Mailbox } from '../types';
 import { Copy, RefreshCw, Check, Globe, Loader2, Timer, UserCheck, SendToBack, Layers, Flame, ShieldCheck, Zap, Share2, Link, FileText, FileSpreadsheet, ChevronDown, Search, X } from 'lucide-react';
 import { translations, Language } from '../translations';
-import { isSoundEnabled } from '../utils/audioNotification';
 import { fetchDomains, GUERRILLA_DOMAINS } from '../services/mailService';
 
 const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000;
@@ -39,9 +38,9 @@ interface AddressBarProps {
   onOpenCompose?: () => void; autoVerifyEnabled?: boolean; onToggleAutoVerify?: () => void; onCopyMagicUrl?: () => void;
 }
 
-const AddressBar: React.FC<AddressBarProps> = ({ mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete, progress, lang, onChangeDomain, onIdentity, onShareDrop, onOpenCustomDomain, onCopyMagicUrl }) => {
+const AddressBar: React.FC<AddressBarProps> = ({ mailbox, isLoading, isRefreshing, onRefresh, onChange, onDelete: _onDelete, progress, lang, onChangeDomain, onIdentity, onShareDrop, onOpenCustomDomain: _onOpenCustomDomain, onCopyMagicUrl }) => {
   const t = translations[lang];
-  const [copied, setCopied] = useState(false), [copiedLink, setCopiedLink] = useState(false), [soundEnabled] = useState<boolean>(() => isSoundEnabled());
+  const [copied, setCopied] = useState(false), [copiedLink, setCopiedLink] = useState(false);
   const [isDomainOpen, setIsDomainOpen] = useState(false), [domainList, setDomainList] = useState<string[]>(GUERRILLA_DOMAINS), [domainSearch, setDomainSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null), domainBtnRef = useRef<HTMLButtonElement>(null);
   const addressParts = mailbox?.address ? mailbox.address.split('@') : ['', ''];

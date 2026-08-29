@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Globe, Copy, Check, ShieldCheck, Info, X, ExternalLink, Sparkles } from 'lucide-react';
+import { Globe, Copy, Check, ShieldCheck, Info, X, Sparkles } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 interface CustomDomainModalProps {

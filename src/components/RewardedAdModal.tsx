@@ -6,7 +6,7 @@ const CREDITS_STORAGE_KEY = 'mephisto_credits';
 const FREE_CREDITS = 3;
 const CREDITS_PER_AD = 3;
 
-export function getCredits(): number {
+function getCredits(): number {
     try {
         const saved = localStorage.getItem(CREDITS_STORAGE_KEY);
         if (saved === null) return FREE_CREDITS; // İlk kez gelen kullanıcı

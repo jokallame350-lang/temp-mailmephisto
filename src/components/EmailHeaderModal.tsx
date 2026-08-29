@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, Server, Terminal, List } from 'lucide-react';
+import { X, ShieldCheck, Server, List } from 'lucide-react';
 import { translations, Language } from '../translations';
 import { EmailDetail } from '../types';
 

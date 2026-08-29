@@ -1,7 +1,18 @@
-﻿const actionLinkCache = new Map<string, { url: string; label: string } | null>();
+const actionLinkCache = new Map<string, { url: string; label: string } | null>();
 const MAX_CACHE_ENTRIES = 100;
-const BLOCKED_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
-const PRIVATE_IPV4 = /^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/;
+const BLOCKED_HOSTS = new Set([
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::1',
+  'ip6-localhost',
+  'ip6-loopback',
+  'localhost.localdomain',
+]);
+
+const PRIVATE_IPV4 = /^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|192\.0\.0\.|192\.0\.2\.|198\.51\.100\.|203\.0\.113\.|22[4-9]\.|23\d\.|24\d\.|25[0-5]\.)/;
+
+const BLOCKED_TLDS = ['.localhost', '.local', '.internal', '.lan', '.home', '.corp', '.localdomain', '.invalid', '.test', '.example', '.onion'];
 
 export const isSafeVerificationUrl = (value: string): boolean => {
   try {
@@ -9,12 +20,15 @@ export const isSafeVerificationUrl = (value: string): boolean => {
     if (url.protocol !== 'https:' || url.username || url.password) return false;
     if (url.port && url.port !== '443') return false;
     const hostname = url.hostname.toLowerCase().replace(/\.$/, '');
-    if (!hostname || BLOCKED_HOSTS.has(hostname) || hostname.endsWith('.localhost') || hostname.endsWith('.local')) return false;
-    if (PRIVATE_IPV4.test(hostname) || hostname.includes(':')) return false;
+    if (!hostname || BLOCKED_HOSTS.has(hostname)) return false;
+    if (BLOCKED_TLDS.some(tld => hostname.endsWith(tld))) return false;
+    if (PRIVATE_IPV4.test(hostname) || hostname.includes(':') || hostname.startsWith('[') || hostname.endsWith(']')) return false;
+    if (!hostname.includes('.')) return false; // Block single-label internal hosts (e.g., "router", "intranet")
     if (url.origin === 'null') return false;
     return true;
   } catch { return false; }
 };
+
 
 /**
  * Extracts an explicit email-verification link only.

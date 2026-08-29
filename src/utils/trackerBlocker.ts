@@ -87,7 +87,13 @@ export const sanitizeAndBlockTrackers = (htmlContent: string): TrackerBlockerRes
         lowerSrc.startsWith('content:') ||
         lowerSrc.startsWith('chrome:') ||
         lowerSrc.startsWith('resource:') ||
-        lowerSrc.startsWith('filesystem:');
+        lowerSrc.startsWith('filesystem:') ||
+        lowerSrc.startsWith('javascript:') ||
+        lowerSrc.startsWith('vbscript:') ||
+        lowerSrc.startsWith('about:') ||
+        lowerSrc.startsWith('blob:') ||
+        (lowerSrc.startsWith('data:') && !lowerSrc.startsWith('data:image/'));
+
 
       // Detect 1x1 or zero dimension pixel
       const isOnePixel =

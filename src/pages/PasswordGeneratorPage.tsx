@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Key, Copy, Check, RefreshCw, ArrowLeft, Mail, ShieldCheck, Sparkles } from 'lucide-react';
+import { Key, Copy, Check, RefreshCw, ArrowLeft, Mail } from 'lucide-react';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import { Language } from '../translations';
@@ -18,7 +18,7 @@ export const PasswordGeneratorPage: React.FC<PasswordGeneratorPageProps> = ({ la
   const [includeSymbols, setIncludeSymbols] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  const generatePassword = () => {
+  const generatePassword = useCallback(() => {
     let chars = 'abcdefghijklmnopqrstuvwxyz';
     if (includeUppercase) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     if (includeNumbers) chars += '0123456789';
@@ -32,11 +32,11 @@ export const PasswordGeneratorPage: React.FC<PasswordGeneratorPageProps> = ({ la
       result += chars[randomValues[i] % chars.length];
     }
     setPassword(result);
-  };
+  }, [length, includeUppercase, includeNumbers, includeSymbols]);
 
   useEffect(() => {
     generatePassword();
-  }, [length, includeUppercase, includeNumbers, includeSymbols]);
+  }, [generatePassword]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(password);

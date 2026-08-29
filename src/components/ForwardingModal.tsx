@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ghost, X, AlertTriangle, ArrowRight, Share2, Copy } from 'lucide-react';
+import { Ghost, X, AlertTriangle, ArrowRight } from 'lucide-react';
 import { translations, Language } from '../translations';
 
 interface ForwardingModalProps {

@@ -25,6 +25,9 @@ export function useMailbox() {
     const [isLoadingAccount, setIsLoadingAccount] = useState(false);
     const isCreatingRef = useRef(false);
     const isFirstLoadRef = useRef(true);
+    const mountedRef = useRef(true);
+
+    useEffect(() => () => { mountedRef.current = false; }, []);
 
     const activeAccount = useMemo(() => accounts.find(a => a.id === activeAccountId) || null, [accounts, activeAccountId]);
     const persist = useCallback((items: Mailbox[]) => {
@@ -44,17 +47,25 @@ export function useMailbox() {
 
     const createQuickAccount = useCallback(async (_skipCreditCheck = false) => {
         if (isCreatingRef.current || accounts.length >= MAX_ACTIVE_ACCOUNTS) return { success: false, reason: accounts.length >= MAX_ACTIVE_ACCOUNTS ? 'capacity' : 'busy' };
-        isCreatingRef.current = true; setIsLoadingAccount(true);
+        isCreatingRef.current = true;
+        if (mountedRef.current) setIsLoadingAccount(true);
         try {
             const generated = await generateMailbox();
             if (!generated?.address || generated.id === 'error') throw new Error('Connection failed');
             const newMailbox: Mailbox = { ...generated, createdAt: Date.now() };
             if (newMailbox.password) storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
-            setAccounts(prev => { const updated = [newMailbox, ...prev].slice(0, MAX_ACTIVE_ACCOUNTS); persist(updated); return updated; });
-            setActiveAccountId(newMailbox.id);
+            if (mountedRef.current) {
+                setAccounts(prev => { const updated = [newMailbox, ...prev].slice(0, MAX_ACTIVE_ACCOUNTS); persist(updated); return updated; });
+                setActiveAccountId(newMailbox.id);
+            }
             return { success: true };
-        } catch (e) { console.error('Account creation failed:', e); return { success: false, reason: 'error' }; }
-        finally { setIsLoadingAccount(false); isCreatingRef.current = false; }
+        } catch (e) {
+            console.error('Account creation failed:', e);
+            return { success: false, reason: 'error' };
+        } finally {
+            if (mountedRef.current) setIsLoadingAccount(false);
+            isCreatingRef.current = false;
+        }
     }, [accounts.length, persist]);
 
     useEffect(() => {
@@ -72,7 +83,7 @@ export function useMailbox() {
                 const [username, ...domainParts] = targetMailbox.split('@');
                 const domain = domainParts.join('@').toLowerCase();
                 if (username && domain) {
-                    setIsLoadingAccount(true);
+                    if (!cancelled) setIsLoadingAccount(true);
                     try {
                         const provider = domainMap[domain] || 'guerrilla';
                         const created = await createCustomMailbox(username, domain, provider);
@@ -105,7 +116,10 @@ export function useMailbox() {
     }, [activeAccount?.address]);
 
     useEffect(() => {
-        const unsubscribe = onTokenRefresh((mailboxId: string, newToken: string) => setAccounts(prev => { const updated = prev.map(a => a.id === mailboxId ? { ...a, token: newToken } : a); persist(updated); return updated; }));
+        const unsubscribe = onTokenRefresh((mailboxId: string, newToken: string) => {
+            if (!mountedRef.current) return;
+            setAccounts(prev => { const updated = prev.map(a => a.id === mailboxId ? { ...a, token: newToken } : a); persist(updated); return updated; });
+        });
         return unsubscribe;
     }, [persist]);
 
@@ -120,26 +134,36 @@ export function useMailbox() {
                 expired.forEach(a => clearCredentials(a.id));
                 const filtered = prev.filter(a => !expired.some(e => e.id === a.id));
                 persist(filtered);
-                if (!filtered.some(a => a.id === activeAccountId)) setActiveAccountId(filtered[0]?.id || null);
                 return filtered;
             });
         }, 10000);
         return () => window.clearInterval(interval);
-    }, [activeAccountId, persist]);
+    }, [persist]);
+
+    // Keep activeAccountId synced if the active account is removed/expired
+    useEffect(() => {
+        if (activeAccountId && accounts.length > 0 && !accounts.some(a => a.id === activeAccountId)) {
+            setActiveAccountId(accounts[0]?.id || null);
+        } else if (accounts.length === 0 && activeAccountId !== null) {
+            setActiveAccountId(null);
+        }
+    }, [accounts, activeAccountId]);
 
     const handleCreateCustom = useCallback(async (username: string, domain: string, apiBase: string) => {
         if (!username || !domain || accounts.length >= MAX_ACTIVE_ACCOUNTS) return { success: false, reason: 'capacity' };
-        setIsLoadingAccount(true);
+        if (mountedRef.current) setIsLoadingAccount(true);
         try {
             const created = await createCustomMailbox(username, domain, apiBase);
             if (!created?.address || created.id === 'error') throw new Error('Connection failed');
             const newMailbox: Mailbox = { ...created, createdAt: Date.now() };
             if (newMailbox.password) storeCredentials(newMailbox.id, newMailbox.address, newMailbox.password);
-            setAccounts(prev => { const updated = [newMailbox, ...prev].slice(0, MAX_ACTIVE_ACCOUNTS); persist(updated); return updated; });
-            setActiveAccountId(newMailbox.id);
+            if (mountedRef.current) {
+                setAccounts(prev => { const updated = [newMailbox, ...prev].slice(0, MAX_ACTIVE_ACCOUNTS); persist(updated); return updated; });
+                setActiveAccountId(newMailbox.id);
+            }
             return { success: true };
         } catch (e: any) { const msg = String(e?.message || '').toLowerCase(); return { success: false, reason: msg.includes('taken') || msg.includes('alınmış') ? 'taken' : 'error' }; }
-        finally { setIsLoadingAccount(false); }
+        finally { if (mountedRef.current) setIsLoadingAccount(false); }
     }, [accounts.length, persist]);
 
     const deleteAccount = useCallback((id: string) => {
@@ -156,7 +180,7 @@ export function useMailbox() {
         if (!activeAccount || !newDomain) return { success: false };
         const username = activeAccount.address.split('@')[0];
         if (activeAccount.address.split('@')[1]?.toLowerCase() === newDomain.toLowerCase()) return { success: true, address: activeAccount.address };
-        setIsLoadingAccount(true);
+        if (mountedRef.current) setIsLoadingAccount(true);
         try {
             const domainRes = await fetchDomains();
             const provider = domainRes?.domainProviderMap?.[newDomain] || 'guerrilla';
@@ -164,12 +188,14 @@ export function useMailbox() {
             if (!created?.address || created.id === 'error') throw new Error('Mailbox creation failed');
             const mailboxWithDate: Mailbox = { ...created, createdAt: Date.now() };
             if (mailboxWithDate.password) storeCredentials(mailboxWithDate.id, mailboxWithDate.address, mailboxWithDate.password);
-            setAccounts(prev => { const updated = [mailboxWithDate, ...prev]; persist(updated); return updated; });
-            setActiveAccountId(mailboxWithDate.id);
+            if (mountedRef.current) {
+                setAccounts(prev => { const updated = [mailboxWithDate, ...prev]; persist(updated); return updated; });
+                setActiveAccountId(mailboxWithDate.id);
+            }
             return { success: true, address: mailboxWithDate.address };
         } catch (err) { console.error('Failed to change domain:', err); return { success: false }; }
-        finally { setIsLoadingAccount(false); }
+        finally { if (mountedRef.current) setIsLoadingAccount(false); }
     }, [activeAccount, persist]);
 
     return { accounts, activeAccount, activeAccountId, isLoadingAccount, setActiveAccountId, createQuickAccount, handleCreateCustom, changeDomain, deleteAccount, updateAccountLabel, setAutoDelete, bulkCopyAddresses, addCustomAccount, getMagicUrl, MAX_ACTIVE_ACCOUNTS };
-}
+}
