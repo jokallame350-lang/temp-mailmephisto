@@ -50,6 +50,8 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
         else { try { new Notification(title, { body, icon: '/icon.png' }); } catch {} }
     }, [shouldNotify]);
 
+    // Never automatically request third-party activation links from received mail.
+    // External GET requests can trigger account changes, leak mailbox context, or be abused by malicious senders.
     const autoVerifyEmail = useCallback(async (account: Mailbox, email: EmailSummary) => {
         if (!autoVerifyEnabled || autoVerifiedIdsRef.current.has(email.id)) return;
         autoVerifiedIdsRef.current.add(email.id);
@@ -57,11 +59,8 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
             const detail = await getMessageDetail(account, email.id);
             if (!mountedRef.current || !detail) return;
             const html = detail.html?.[0];
-            const htmlText = typeof html === 'string' ? html : '';
-            const action = extractActionLinks(htmlText);
-            if (!action) return;
-            await fetch(action.url, { method: 'GET', mode: 'no-cors', credentials: 'omit', redirect: 'error' }).catch(() => undefined);
-            if (mountedRef.current) onAutoVerifySuccess?.(action.label);
+            const action = typeof html === 'string' ? extractActionLinks(html) : null;
+            if (action && mountedRef.current) onAutoVerifySuccess?.(action.label);
         } catch {
             // Auto-verification is best-effort; never interrupt mailbox polling.
         }
