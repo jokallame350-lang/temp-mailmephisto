@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Mailbox } from '../types';
-import { generateMailbox, createCustomMailbox, fetchDomains, storeCredentials, onTokenRefresh } from '../services/mailService';
+import { generateMailbox, createCustomMailbox, fetchDomains, storeCredentials, clearCredentials, onTokenRefresh } from '../services/mailService';
 
 const STORAGE_KEY = 'nexus_accounts_v5';
 const MAX_ACTIVE_ACCOUNTS = 100;
@@ -72,7 +72,7 @@ export function useMailbox() {
                         const mailboxWithDate: Mailbox = { ...created, createdAt: Date.now() };
                         if (mailboxWithDate.password) storeCredentials(mailboxWithDate.id, mailboxWithDate.address, mailboxWithDate.password);
                         const updated = [mailboxWithDate, ...validAccounts].slice(0, MAX_ACTIVE_ACCOUNTS);
-                        if (!cancelled) { setAccounts(updated); setActiveAccountId(mailboxWithDate.id); persist(updated); }
+                        if (!cancelled) { setAccounts(updated); setActiveAccountId(mailboxWithDate.id); persist(updated); } else { clearCredentials(mailboxWithDate.id); }
                     } catch (err) {
                         console.error('Failed to restore URL mailbox:', err);
                         if (!cancelled && validAccounts.length) { setAccounts(validAccounts); setActiveAccountId(validAccounts[0].id); }
@@ -107,8 +107,10 @@ export function useMailbox() {
         const interval = window.setInterval(() => {
             const now = Date.now();
             setAccounts(prev => {
-                const filtered = prev.filter(a => !a.createdAt || now - a.createdAt < Math.min(ACCOUNT_LIFETIME_MS, (a.autoDeleteMinutes || 1440) * 60000));
-                if (filtered.length === prev.length) return prev;
+                const expired = prev.filter(a => a.createdAt && now - a.createdAt >= Math.min(ACCOUNT_LIFETIME_MS, (a.autoDeleteMinutes || 1440) * 60000));
+                if (!expired.length) return prev;
+                expired.forEach(a => clearCredentials(a.id));
+                const filtered = prev.filter(a => !expired.some(e => e.id === a.id));
                 persist(filtered);
                 if (!filtered.some(a => a.id === activeAccountId)) setActiveAccountId(filtered[0]?.id || null);
                 return filtered;
@@ -133,6 +135,7 @@ export function useMailbox() {
     }, [accounts.length, persist]);
 
     const deleteAccount = useCallback((id: string) => {
+        clearCredentials(id);
         setAccounts(prev => { const updated = prev.filter(a => a.id !== id); persist(updated); return updated; });
         if (activeAccountId === id) setActiveAccountId(accounts.find(a => a.id !== id)?.id || null);
     }, [accounts, activeAccountId, persist]);
