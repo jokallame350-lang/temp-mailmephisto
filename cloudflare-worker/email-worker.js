@@ -1,112 +1,165 @@
 /**
- * MephistoMail Cloudflare Email Worker Engine (Yol A)
- * 
- * Instructions:
- * 1. Go to Cloudflare Dashboard -> Email -> Email Routing.
- * 2. Enable Email Routing for mephistomail.site.
- * 3. Create a Worker in Workers & Pages -> Create Worker.
- * 4. Paste this code into index.js.
- * 5. Bind a KV Namespace named "MEPHISTO_KV" to your Worker.
- * 6. Set Catch-All Rule in Email Routing to Send to this Worker!
+ * MephistoMail Cloudflare Email Worker Engine
+ *
+ * IMPORTANT: This worker uses Cloudflare KV for ephemeral storage.
+ * It is not RAM-only. Messages expire automatically after 1 hour.
+ *
+ * Required binding:
+ *   MEPHISTO_KV -> Cloudflare KV namespace
+ *
+ * Required secret:
+ *   MAILBOX_ISSUER_SECRET -> long random secret used to sign mailbox access tokens
  */
 
+const MESSAGE_TTL = 3600;
+const MAX_MESSAGES = 50;
+const MAX_RAW_BYTES = 512 * 1024;
+const ADDRESS_RE = /^[a-z0-9][a-z0-9._-]{0,63}@[a-z0-9.-]+\.[a-z]{2,}$/i;
+
+const json = (body, status = 200, extra = {}) => new Response(JSON.stringify(body), {
+  status,
+  headers: {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store, max-age=0',
+    ...extra,
+  },
+});
+
+const base64url = (bytes) => btoa(String.fromCharCode(...bytes))
+  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+
+const base64urlEncode = (text) => base64url(new TextEncoder().encode(text));
+
+const base64urlDecode = (text) => {
+  const normalized = text.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, c => c.charCodeAt(0));
+};
+
+const hmacKey = async (secret) => crypto.subtle.importKey(
+  'raw', new TextEncoder().encode(secret),
+  { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']
+);
+
+const signMailboxToken = async (address, secret) => {
+  const payload = base64urlEncode(JSON.stringify({
+    sub: address,
+    exp: Math.floor(Date.now() / 1000) + MESSAGE_TTL,
+    v: 1,
+  }));
+  const key = await hmacKey(secret);
+  const signature = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload)));
+  return `${payload}.${base64url(signature)}`;
+};
+
+const verifyMailboxToken = async (token, address, secret) => {
+  try {
+    if (!token || !secret) return false;
+    const [payload, signature] = token.split('.');
+    if (!payload || !signature) return false;
+    const data = JSON.parse(new TextDecoder().decode(base64urlDecode(payload)));
+    if (data.sub !== address || !Number.isFinite(data.exp) || data.exp < Math.floor(Date.now() / 1000)) return false;
+    const key = await hmacKey(secret);
+    return crypto.subtle.verify('HMAC', key, base64urlDecode(signature), new TextEncoder().encode(payload));
+  } catch {
+    return false;
+  }
+};
+
+const getBearer = (request) => {
+  const value = request.headers.get('Authorization') || '';
+  return value.startsWith('Bearer ') ? value.slice(7).trim() : '';
+};
+
+const authenticate = async (request, address, env) => {
+  if (!ADDRESS_RE.test(address)) return false;
+  return verifyMailboxToken(getBearer(request), address, env.MAILBOX_ISSUER_SECRET);
+};
+
+const securityHeaders = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+  'X-Frame-Options': 'DENY',
+};
+
 export default {
-  // 1. Incoming Email Handler (Triggered automatically by Cloudflare Email Routing)
-  async email(message, env, ctx) {
+  async email(message, env) {
     try {
-      const recipient = message.to.toLowerCase();
-      const sender = message.from;
-      const subject = message.headers.get('subject') || '(No Subject)';
+      const recipient = String(message.to || '').toLowerCase().trim();
+      if (!ADDRESS_RE.test(recipient)) return;
+
+      const raw = await new Response(message.raw).arrayBuffer();
+      if (raw.byteLength > MAX_RAW_BYTES) return;
+
+      const sender = String(message.from || '').slice(0, 320);
+      const subject = String(message.headers.get('subject') || '(No Subject)').slice(0, 500);
+      const rawText = new TextDecoder().decode(raw);
       const date = new Date().toISOString();
+      const messageId = `msg_${crypto.randomUUID()}`;
 
-      // Read raw email body text
-      const rawText = await new Response(message.raw).text();
-
-      // Simple parser for plain text / basic HTML snippet
-      let bodyText = rawText;
-      let bodyHtml = '';
-
-      if (rawText.includes('Content-Type: text/html')) {
-        const parts = rawText.split('Content-Type: text/html');
-        if (parts[1]) {
-          bodyHtml = parts[1].split('------')[0] || parts[1].slice(0, 5000);
-        }
-      }
-
-      // Clean snippet for preview
-      const intro = bodyText.replace(/<[^>]*>/g, '').slice(0, 150).trim();
-
-      const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      // Keep the worker deliberately simple: the frontend sanitizes HTML before display.
+      const bodyText = rawText.slice(0, MAX_RAW_BYTES);
+      const htmlMatch = rawText.match(/Content-Type:\s*text\/html[\s\S]*?\r?\n\r?\n([\s\S]*)/i);
+      const bodyHtml = htmlMatch?.[1]?.slice(0, 256000) || '';
+      const intro = bodyText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150);
 
       const emailObj = {
         id: messageId,
         from: sender,
         to: recipient,
-        subject: subject,
-        intro: intro,
+        subject,
+        intro,
         text: bodyText,
-        html: bodyHtml || `<pre>${bodyText}</pre>`,
+        html: bodyHtml,
         createdAt: date,
       };
 
-      // Store in KV with 1-hour automatic expiration (RAM-only TTL)
-      const addressKey = `inbox:${recipient}`;
-      const existingJson = await env.MEPHISTO_KV.get(addressKey);
-      let messagesList = existingJson ? JSON.parse(existingJson) : [];
-      
-      messagesList.unshift(emailObj);
-      // Keep last 50 emails per inbox
-      if (messagesList.length > 50) messagesList = messagesList.slice(0, 50);
-
-      // Save to KV with 3600 seconds TTL (Auto-Expiry after 1 hour)
-      await env.MEPHISTO_KV.put(addressKey, JSON.stringify(messagesList), { expirationTtl: 3600 });
-      console.log(`[Mephisto Engine] Stored mail for ${recipient} (ID: ${messageId})`);
+      const key = `inbox:${recipient}`;
+      const existing = await env.MEPHISTO_KV.get(key, 'json');
+      const messages = Array.isArray(existing) ? existing : [];
+      messages.unshift(emailObj);
+      const trimmed = messages.slice(0, MAX_MESSAGES);
+      await env.MEPHISTO_KV.put(key, JSON.stringify(trimmed), { expirationTtl: MESSAGE_TTL });
     } catch (err) {
-      console.error('[Mephisto Engine] Error processing email:', err);
+      console.error('[Mephisto Engine] Error processing email:', err?.message || 'unknown error');
     }
   },
 
-  // 2. HTTP REST API Handler for Frontend UI Integration
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
+    const origin = request.headers.get('Origin');
+    const allowedOrigin = origin === 'https://mephistomail.site' ? origin : 'https://mephistomail.site';
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      ...securityHeaders,
+      'Access-Control-Allow-Origin': allowedOrigin,
+      'Vary': 'Origin',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Content-Type': 'application/json',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     };
 
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
+    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
+
+    if (url.pathname === '/api/domains' && request.method === 'GET') {
+      return json({ domains: ['mephistomail.site', 'anon.mephistomail.site'] }, 200, corsHeaders);
     }
 
-    // GET /api/domains
-    if (url.pathname === '/api/domains') {
-      return new Response(
-        JSON.stringify({ domains: ['mephistomail.site', 'anon.mephistomail.site'] }),
-        { headers: corsHeaders }
-      );
+    if (url.pathname === '/api/mailbox/token' && request.method === 'POST') {
+      const body = await request.json().catch(() => null);
+      const address = String(body?.address || '').toLowerCase().trim();
+      if (!ADDRESS_RE.test(address)) return json({ error: 'Invalid address' }, 400, corsHeaders);
+      if (!env.MAILBOX_ISSUER_SECRET) return json({ error: 'Server configuration error' }, 500, corsHeaders);
+      const token = await signMailboxToken(address, env.MAILBOX_ISSUER_SECRET);
+      return json({ token, expiresIn: MESSAGE_TTL }, 200, corsHeaders);
     }
 
-    // GET /api/messages?address=xyz@mephistomail.site
-    if (url.pathname === '/api/messages') {
-      const address = url.searchParams.get('address')?.toLowerCase();
-      if (!address) {
-        return new Response(JSON.stringify({ error: 'Missing address parameter' }), {
-          status: 400,
-          headers: corsHeaders,
-        });
-      }
-
-      const addressKey = `inbox:${address}`;
-      const existingJson = await env.MEPHISTO_KV.get(addressKey);
-      const messages = existingJson ? JSON.parse(existingJson) : [];
-
-      return new Response(JSON.stringify({ messages }), { headers: corsHeaders });
+    if (url.pathname === '/api/messages' && request.method === 'GET') {
+      const address = String(url.searchParams.get('address') || '').toLowerCase().trim();
+      if (!await authenticate(request, address, env)) return json({ error: 'Unauthorized' }, 401, corsHeaders);
+      const messages = await env.MEPHISTO_KV.get(`inbox:${address}`, 'json');
+      return json({ messages: Array.isArray(messages) ? messages : [] }, 200, corsHeaders);
     }
 
-    return new Response(JSON.stringify({ service: 'MephistoMail Cloudflare Engine v1.0', status: 'online' }), {
-      headers: corsHeaders,
-    });
+    return json({ service: 'MephistoMail Cloudflare Engine', status: 'online' }, 200, corsHeaders);
   },
 };
