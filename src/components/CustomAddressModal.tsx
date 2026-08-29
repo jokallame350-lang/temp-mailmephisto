@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Globe, Loader2, Dices } from 'lucide-react';
 import { translations, Language } from '../translations';
 import { fetchDomains } from '../services/mailService';
+import { useModalA11y } from '../hooks/useModalA11y';
 
 interface CustomAddressModalProps {
   isOpen: boolean;
@@ -11,12 +12,17 @@ interface CustomAddressModalProps {
 }
 
 const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose, onCreate, lang }) => {
-  const t = translations[lang];
+  const t = translations[lang] || translations.en;
   const [username, setUsername] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [domains, setDomains] = useState<string[]>([]);
   const [domainProviderMap, setDomainProviderMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const { modalRef, handleBackdropClick } = useModalA11y({
+    isOpen,
+    onClose,
+  });
 
   const handleRandomize = () => {
     const prefixes = ['cyber', 'shadow', 'phantom', 'ninja', 'alpha', 'matrix', 'vector', 'zero', 'signal', 'nexus'];
@@ -45,51 +51,79 @@ const CustomAddressModal: React.FC<CustomAddressModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-[#0a0a0c] border border-white/10 rounded-xl shadow-2xl w-full max-w-md overflow-hidden text-white">
-        <div className="flex items-center justify-between p-4 border-b border-white/5">
-          <h3 className="text-sm font-bold uppercase flex items-center gap-2"><Globe className="w-4 h-4 text-blue-500" /> {t.customTitle}</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-slate-500 hover:text-white transition-colors" /></button>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="custom-modal-title"
+    >
+      <div
+        ref={modalRef}
+        className="bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-white animate-in zoom-in-95 duration-150"
+      >
+        <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#111]">
+          <h3 id="custom-modal-title" className="text-sm font-bold uppercase flex items-center gap-2 text-blue-400">
+            <Globe className="w-4 h-4 text-blue-500" aria-hidden="true" />
+            <span>{t.customTitle}</span>
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={lang === 'tr' ? 'Kapat' : 'Close'}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-5 sm:p-6 space-y-4">
           <div className="flex justify-between items-center">
             <p className="text-xs text-slate-400">{t.customDesc}</p>
             <button
+              type="button"
               onClick={handleRandomize}
-              className="text-[10px] text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 bg-orange-500/10 px-2 py-1 rounded border border-orange-500/20 active:scale-95 transition-all"
+              className="text-[10px] text-orange-400 hover:text-orange-300 font-bold flex items-center gap-1 bg-orange-500/10 px-2.5 py-1.5 rounded-lg border border-orange-500/20 active:scale-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
               aria-label={t.randomHandle}
             >
-              <Dices className="w-3 h-3" />
-              {t.randomHandle}
+              <Dices className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>{t.randomHandle}</span>
             </button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9.]/g, ''))}
               placeholder={t.usernamePlaceholder}
-              className="flex-grow bg-black border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none text-white placeholder:text-slate-600"
+              className="flex-grow bg-black border border-white/10 rounded-xl px-3 py-2.5 text-sm focus:border-blue-500 outline-none text-white placeholder:text-slate-600 focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={t.usernamePlaceholder}
             />
-            <span className="py-2 text-slate-400">@</span>
+            <span className="text-slate-400 font-bold" aria-hidden="true">@</span>
             <select
               value={selectedDomain}
               onChange={(e) => setSelectedDomain(e.target.value)}
-              className="bg-black border border-white/10 rounded-lg px-3 py-2 text-sm outline-none max-w-[150px] text-white"
+              className="bg-black border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none max-w-[150px] text-white focus:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={t.selectDomain}
             >
-              {isLoading ? <option>{t.loadingDomains}</option> : domains.map(d => <option key={d} value={d}>{d}</option>)}
+              {isLoading ? (
+                <option>{t.loadingDomains}</option>
+              ) : (
+                domains.map(d => <option key={d} value={d}>{d}</option>)
+              )}
             </select>
           </div>
           <button
+            type="button"
             onClick={() => onCreate(username, selectedDomain, domainProviderMap[selectedDomain] || 'mail_tm')}
             disabled={!username || isLoading}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 active:scale-95"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all disabled:opacity-50 active:scale-95 shadow-lg shadow-blue-600/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : t.create}
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" aria-hidden="true" /> : t.create}
           </button>
         </div>
       </div>
     </div>
   );
 };
+
 export default CustomAddressModal;

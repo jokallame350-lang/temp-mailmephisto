@@ -4,7 +4,7 @@ const STATIC_ASSETS = ['/', '/icon.png', '/logo.png'];
 const APP_ORIGIN = self.location.origin;
 
 const isSameOriginNavigation = (request) => request.method === 'GET' && request.mode === 'navigate' && new URL(request.url).origin === APP_ORIGIN;
-const isCacheableStatic = (request, response) => request.method === 'GET' && new URL(request.url).origin === APP_ORIGIN && response.ok && response.type === 'basic';
+const isCacheableStatic = (request, response) => request.method === 'GET' && new URL(request.url).origin === APP_ORIGIN && response.ok && response.type === 'basic' && !request.headers.has('authorization');
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(() => undefined)));
@@ -27,6 +27,7 @@ self.addEventListener('fetch', (event) => {
         url.pathname.startsWith('/attachment/') ||
         url.pathname.startsWith('/accounts') ||
         url.pathname.startsWith('/token') ||
+        url.pathname.startsWith('/ajax.php') ||
         url.searchParams.has('mailbox')
     ) return;
 

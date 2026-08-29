@@ -59,6 +59,11 @@ export const en = {
   errorDomain: 'Error changing domain',
   usernameTaken: 'Username already taken',
   newMessageNotif: 'New message!',
+  errorRateLimit: 'Rate limit reached. Auto-retrying shortly...',
+  errorNetwork: 'Connection lost. Reconnecting to mail servers...',
+  errorSync: 'Temporary sync delay. Listening for new emails...',
+  errorSession: 'Session refreshed securely.',
+  errorGeneric: 'Service temporarily unavailable. Retrying...',
 
   // Araçlar
   qrTitle: 'Mobile Connect',

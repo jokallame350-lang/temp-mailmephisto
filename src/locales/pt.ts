@@ -59,6 +59,11 @@ export const pt = {
   errorDomain: 'Erro ao alterar o domínio',
   usernameTaken: 'Nome de usuário já está em uso',
   newMessageNotif: 'Nova mensagem!',
+  errorRateLimit: 'Limite de solicitações atingido. Tentando novamente em breve...',
+  errorNetwork: 'Conexão perdida. Reconectando aos servidores de e-mail...',
+  errorSync: 'Atraso temporário de sincronização. Aguardando novos e-mails...',
+  errorSession: 'Sessão atualizada com segurança.',
+  errorGeneric: 'Serviço temporariamente indisponível. Tentando novamente...',
 
   // Araçlar
   qrTitle: 'Conexão Móvel',

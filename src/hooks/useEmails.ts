@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
-import { getMessages, getMessageDetail, deleteMessage, deleteAllMessages, getRateLimitRemainingMs } from '../services/mailService';
+import { getMessages, getMessageDetail, deleteMessage, deleteAllMessages, getRateLimitRemainingMs, MailboxFetchError } from '../services/mailService';
 import { playNotificationSound } from '../utils/audioNotification';
 import { extractActionLinks } from '../utils/actionLinks';
 
@@ -63,6 +63,7 @@ export const safeSaveDeletedIds = (account: Mailbox | null, ids: Set<string> | s
     if (!key) return;
     try {
         const arr = Array.from(ids)
+            .filter((item: any) => item !== null && item !== undefined && typeof item !== 'boolean')
             .map(id => String(id).trim())
             .filter(Boolean)
             .slice(0, 500);
@@ -308,8 +309,7 @@ export function useEmails(
 
         const rateLimitRemaining = getRateLimitRemainingMs(activeAccount.apiBase);
         if (rateLimitRemaining > 0) {
-            const waitSec = Math.max(1, Math.ceil(rateLimitRemaining / 1000));
-            setFetchError(`Rate limited. Retry after ${waitSec}s`);
+            setFetchError('rate_limited');
             scheduleNextPoll(rateLimitRemaining + 500);
             return;
         }
@@ -372,8 +372,12 @@ export function useEmails(
                 return;
             }
             consecutiveFailuresRef.current += 1;
-            const message = err instanceof Error ? err.message : String(err || '');
-            if (message) setFetchError(message);
+            if (err instanceof MailboxFetchError && err.code === 'RATE_LIMITED') {
+                setFetchError('rate_limited');
+            } else {
+                const message = err instanceof Error ? err.message : String(err || '');
+                if (message) setFetchError(message);
+            }
         } finally {
             isFetchingRef.current = false;
             if (mountedRef.current && activeAccountIdRef.current === currentAccountId) {
@@ -546,8 +550,12 @@ export function useEmails(
             isSyncing = true;
             try {
                 const secondary = allAccounts.filter(acc => acc.id !== activeAccount?.id);
-                for (const acc of secondary) {
-                    if (!mountedRef.current) break;
+                // Sync up to 8 secondary mailboxes per tick to prevent network congestion when managing up to 100 accounts
+                const batchSize = Math.min(secondary.length, 8);
+                const accountsToSync = secondary.slice(0, batchSize);
+
+                for (const acc of accountsToSync) {
+                    if (!mountedRef.current || !isPollingAllowed()) break;
                     try {
                         const msgs = await getMessages(acc);
                         if (Array.isArray(msgs)) {

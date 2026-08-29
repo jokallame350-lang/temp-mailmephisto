@@ -2,6 +2,8 @@ import React, { useRef, useState, useCallback, memo } from 'react';
 import { Clock, ChevronRight, Loader2, ShieldCheck, Zap, Trash2, CheckCircle2, AlertCircle, Tag, Copy, Check, Search, X, Mail } from 'lucide-react';
 import { EmailSummary } from '../types';
 import { translations, Language } from '../translations';
+import { getLocalizedErrorMessage } from '../utils/errorLocalization';
+import { extractOTP } from '../utils/otp';
 
 interface EmailListProps {
   emails: EmailSummary[];
@@ -15,8 +17,6 @@ interface EmailListProps {
   onSearchChange: (q: string) => void;
   error?: string | null;
 }
-
-import { extractOTP } from '../utils/otp';
 
 /**
  * Text highlight component that visually marks search query matches
@@ -108,14 +108,14 @@ const EmailListItem: React.FC<EmailListItemProps> = memo(({
       aria-selected={isSelected}
       tabIndex={0}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(email.id); } }}
-      className="relative overflow-hidden"
+      className="relative overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-inset"
     >
-      {/* Swipe arka planı */}
+      {/* Swipe background */}
       <div className="absolute inset-0 bg-red-500/20 flex items-center justify-end pr-6 pointer-events-none" aria-hidden="true">
         <Trash2 className="w-5 h-5 text-red-500" />
       </div>
 
-      {/* Ana kart */}
+      {/* Main card */}
       <div
         onClick={() => onSelect(email.id)}
         onTouchStart={e => onTouchStart(e, email.id)}
@@ -128,7 +128,6 @@ const EmailListItem: React.FC<EmailListItemProps> = memo(({
         }`}
         style={isSwiping ? { transform: `translateX(${swipeX}px)`, transition: 'none' } : { transform: 'translateX(0)', transition: 'transform 0.3s' }}
       >
-        {/* İç Kart */}
         <div className="p-3 sm:p-4 md:p-5">
           <div className="flex justify-between items-start mb-1.5 gap-2">
             <div className="flex flex-col min-w-0 max-w-[170px] sm:max-w-[200px]">
@@ -169,11 +168,13 @@ const EmailListItem: React.FC<EmailListItemProps> = memo(({
                 ⚡ <HighlightText text={otpCode} query={searchQuery} className="text-green-300" />
               </span>
               <button
+                type="button"
                 onClick={e => onCopyCode(otpCode, e)}
-                className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-black text-[10px] font-bold rounded-md flex items-center gap-1 transition-transform active:scale-95 shadow-sm"
+                className="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-black text-[10px] font-bold rounded-md flex items-center gap-1 transition-all active:scale-95 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                aria-label={copiedCode === otpCode ? (lang === 'tr' ? 'Kopyalandı' : 'Copied') : (lang === 'tr' ? `Doğrulama kodunu kopyala: ${otpCode}` : `Copy verification code: ${otpCode}`)}
               >
-                {copiedCode === otpCode ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copiedCode === otpCode ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}
+                {copiedCode === otpCode ? <Check className="w-3 h-3" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
+                <span>{copiedCode === otpCode ? 'OK!' : (lang === 'tr' ? 'Kopyala' : 'Copy')}</span>
               </button>
             </div>
           )}
@@ -184,23 +185,25 @@ const EmailListItem: React.FC<EmailListItemProps> = memo(({
               {email.aiCategory === 'Security' && <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 text-[9px] border border-red-500/20 flex items-center gap-1" aria-label="Security alert"><AlertCircle className="w-3 h-3" aria-hidden="true" /> Alert</span>}
               {email.aiCategory === 'Newsletter' && <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 text-[9px] border border-blue-500/20 flex items-center gap-1" aria-label="Newsletter"><Tag className="w-3 h-3" aria-hidden="true" /> News</span>}
 
-              {/* OTP Tek Tıkla Kopyala */}
+              {/* OTP Quick Copy */}
               {otpCode && (
                 <button
+                  type="button"
                   onClick={(e) => onCopyCode(otpCode, e)}
-                  className="otp-glow flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-mono font-black hover:bg-green-500/20 transition-transform active:scale-95"
-                  aria-label={`Copy verification code ${otpCode}`}
+                  className="otp-glow flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-mono font-black hover:bg-green-500/20 transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+                  aria-label={lang === 'tr' ? `Doğrulama kodunu kopyala: ${otpCode}` : `Copy verification code: ${otpCode}`}
                 >
                   {copiedCode === otpCode ? <Check className="w-3 h-3" aria-hidden="true" /> : <Copy className="w-3 h-3" aria-hidden="true" />}
-                  {copiedCode === otpCode ? 'Copied!' : otpCode}
+                  <span>{copiedCode === otpCode ? 'Copied!' : otpCode}</span>
                 </button>
               )}
             </div>
             <div className="flex items-center gap-2">
               <ChevronRight className={`w-4 h-4 transition-transform ${isSelected ? 'translate-x-1 text-orange-500' : 'opacity-0 group-hover:opacity-100 text-slate-700'}`} aria-hidden="true" />
               <button
+                type="button"
                 onClick={(e) => onDelete(email.id, e)}
-                className="text-slate-500 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-500/10 sm:opacity-0 sm:group-hover:opacity-100"
+                className="text-slate-500 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-500/10 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 aria-label={lang === 'tr' ? 'E-postayı sil' : 'Delete email'}
               >
                 <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
@@ -218,8 +221,8 @@ const EmailListItem: React.FC<EmailListItemProps> = memo(({
 EmailListItem.displayName = 'EmailListItem';
 
 const RefreshIndicator: React.FC<{ scanningText: string }> = memo(({ scanningText }) => (
-  <div className="flex items-center justify-center gap-2 py-3 bg-orange-500/5 border-b border-white/5 animate-pulse">
-    <Loader2 className="w-3 h-3 text-orange-500 animate-spin" />
+  <div className="flex items-center justify-center gap-2 py-3 bg-orange-500/5 border-b border-white/5 animate-pulse" aria-live="off">
+    <Loader2 className="w-3 h-3 text-orange-500 animate-spin" aria-hidden="true" />
     <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500/80">
       {scanningText}
     </span>
@@ -228,10 +231,41 @@ const RefreshIndicator: React.FC<{ scanningText: string }> = memo(({ scanningTex
 
 RefreshIndicator.displayName = 'RefreshIndicator';
 
+// Stable Skeleton Loader Component to prevent any layout jump
+const EmailListSkeleton: React.FC = memo(() => (
+  <div className="flex flex-col h-full animate-pulse" role="status" aria-label="Loading emails">
+    <div className="p-2 sm:p-2.5 border-b border-white/5 bg-white/[0.01]">
+      <div className="h-9 bg-white/[0.04] rounded-xl border border-white/10" />
+      <div className="flex gap-1.5 mt-2">
+        <div className="h-5 w-12 bg-white/[0.03] rounded-lg border border-white/5" />
+        <div className="h-5 w-12 bg-white/[0.03] rounded-lg border border-white/5" />
+        <div className="h-5 w-16 bg-white/[0.03] rounded-lg border border-white/5" />
+      </div>
+    </div>
+    <div className="p-4 space-y-4 flex-grow overflow-hidden">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2.5">
+          <div className="flex justify-between items-center">
+            <div className="h-3 w-28 bg-white/10 rounded" />
+            <div className="h-3 w-12 bg-white/5 rounded" />
+          </div>
+          <div className="h-4 w-3/4 bg-white/10 rounded" />
+          <div className="h-3 w-full bg-white/5 rounded" />
+          <div className="flex gap-2 pt-1">
+            <div className="h-4 w-14 bg-white/5 rounded" />
+            <div className="h-4 w-10 bg-white/5 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+));
+EmailListSkeleton.displayName = 'EmailListSkeleton';
+
 const EmailList: React.FC<EmailListProps> = ({
   emails, selectedId, onSelect, onDelete, onDeleteAll, loading, lang, searchQuery, onSearchChange, error
 }) => {
-  const t = translations[lang];
+  const t = translations[lang] || translations.en;
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<string | null>(null);
   const [swipeX, setSwipeX] = useState(0);
@@ -259,7 +293,6 @@ const EmailList: React.FC<EmailListProps> = ({
     const dx = touch.clientX - touchStartRef.current.x;
     const dy = touch.clientY - touchStartRef.current.y;
 
-    // Yatay swipe kontrolü
     if (Math.abs(dx) > Math.abs(dy) && dx < 0) {
       if (Math.abs(dx) > 10 && e.cancelable) {
         e.preventDefault();
@@ -271,7 +304,6 @@ const EmailList: React.FC<EmailListProps> = ({
 
   const handleTouchEnd = useCallback((e: React.TouchEvent, id: string) => {
     if (swipingId === id && swipeX < -80) {
-      // Swipe threshold geçildi - sil
       onDelete(id, e as any);
     }
     setSwipingId(null);
@@ -299,7 +331,6 @@ const EmailList: React.FC<EmailListProps> = ({
 
   const handleListTouchEnd = useCallback(() => {
     if (isPulling && pullY > 50) {
-      // Pull-to-refresh tetikle
       window.dispatchEvent(new CustomEvent('mephisto-refresh'));
     }
     setPullY(0);
@@ -309,47 +340,52 @@ const EmailList: React.FC<EmailListProps> = ({
     }
   }, [isPulling, pullY]);
 
-  // Yükleme Durumu
+  // Loading state with stable skeleton layout
   if (loading && emails.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-50" role="status" aria-live="polite">
-        <div className="w-10 h-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">{t.connecting}</span>
+      <div className="flex flex-col h-full">
+        <RefreshIndicator scanningText={t.scanningNetwork} />
+        <EmailListSkeleton />
       </div>
     );
   }
 
-  // Boş Durum - Geliştirilmiş İllüstrasyon
+  // Empty state
   if (emails.length === 0 && !searchQuery) {
     return (
       <div className="flex flex-col h-full">
         <RefreshIndicator scanningText={t.scanningNetwork} />
-        <div className="flex-grow flex flex-col items-center justify-center text-center p-8" role="status" aria-live="polite">
-          {/* Animasyonlu Empty Inbox İllüstrasyonu */}
-          <div className="relative w-28 h-28 mb-6">
+        {error && (
+          <div className="px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-[10px] flex items-center gap-1.5 font-medium" role="status" aria-live="polite">
+            <AlertCircle className="w-3 h-3 shrink-0" aria-hidden="true" />
+            <span className="truncate">{getLocalizedErrorMessage(error, lang)}</span>
+          </div>
+        )}
+        <div className="flex-grow flex flex-col items-center justify-center text-center p-6 sm:p-8" role="status" aria-live="polite">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 mb-4 sm:mb-6">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-20 h-20 bg-orange-500/5 rounded-2xl flex items-center justify-center border border-orange-500/10">
-                <Mail className="w-10 h-10 text-orange-500/30" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-orange-500/5 rounded-2xl flex items-center justify-center border border-orange-500/10">
+                <Mail className="w-8 h-8 sm:w-10 sm:h-10 text-orange-500/30" aria-hidden="true" />
               </div>
             </div>
           </div>
 
-          <h3 className="text-sm font-black uppercase tracking-widest mb-2 text-white">
+          <h3 className="text-xs sm:text-sm font-black uppercase tracking-widest mb-2 text-white">
             {t.emptyInboxTitle}
           </h3>
 
           <div className="space-y-4 max-w-[240px]">
-            <p className="text-[11px] text-slate-500 leading-relaxed font-medium uppercase tracking-tighter">
+            <p className="text-[10px] sm:text-[11px] text-slate-500 leading-relaxed font-medium uppercase tracking-tighter">
               {t.emptyInboxDesc}
             </p>
 
-            <div className="flex flex-col gap-2 pt-4">
+            <div className="flex flex-col gap-2 pt-2 sm:pt-4">
               <div className="glass-card flex items-center gap-2 px-3 py-2 rounded-xl">
-                <ShieldCheck className="w-3 h-3 text-orange-500" aria-hidden="true" />
+                <ShieldCheck className="w-3 h-3 text-orange-500 shrink-0" aria-hidden="true" />
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t.encryptedLabel}</span>
               </div>
               <div className="glass-card flex items-center gap-2 px-3 py-2 rounded-xl">
-                <Zap className="w-3 h-3 text-orange-500" aria-hidden="true" />
+                <Zap className="w-3 h-3 text-orange-500 shrink-0" aria-hidden="true" />
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t.instantLabel}</span>
               </div>
             </div>
@@ -364,13 +400,13 @@ const EmailList: React.FC<EmailListProps> = ({
       <RefreshIndicator scanningText={t.scanningNetwork} />
 
       {error && (
-        <div className="px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-[10px] flex items-center gap-1.5 font-medium">
-          <AlertCircle className="w-3 h-3 shrink-0" />
-          <span className="truncate">{error}</span>
+        <div className="px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-[10px] flex items-center gap-1.5 font-medium" role="status" aria-live="polite">
+          <AlertCircle className="w-3 h-3 shrink-0" aria-hidden="true" />
+          <span className="truncate">{getLocalizedErrorMessage(error, lang)}</span>
         </div>
       )}
 
-      {/* Arama Çubuğu & Canlı Filtreleme */}
+      {/* Search Bar & Quick Filters */}
       <div className="p-2 sm:p-2.5 border-b border-white/5 bg-white/[0.01]">
         <div className="relative">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors ${searchQuery ? 'text-orange-400' : 'text-slate-500'}`} aria-hidden="true" />
@@ -379,7 +415,7 @@ const EmailList: React.FC<EmailListProps> = ({
             value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
             placeholder={lang === 'tr' ? 'Gönderen, e-posta, konu veya OTP ara...' : 'Search sender, email, subject, or OTP...'}
-            className="w-full bg-white/[0.04] border border-white/10 focus:border-orange-500/40 rounded-xl pl-9 pr-16 py-2 text-xs text-white placeholder:text-slate-500 outline-none transition-all shadow-inner"
+            className="w-full bg-white/[0.04] border border-white/10 focus:border-orange-500/40 rounded-xl pl-9 pr-16 py-2 text-xs text-white placeholder:text-slate-500 outline-none transition-all shadow-inner focus-visible:ring-2 focus-visible:ring-orange-500/50"
             aria-label={lang === 'tr' ? 'E-posta arama' : 'Search emails'}
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -389,9 +425,10 @@ const EmailList: React.FC<EmailListProps> = ({
                   {emails.length}
                 </span>
                 <button
+                  type="button"
                   onClick={() => onSearchChange('')}
-                  className="p-1 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors"
-                  aria-label="Clear search"
+                  className="p-1 hover:bg-white/10 text-slate-400 hover:text-white rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                  aria-label={lang === 'tr' ? 'Aramayı temizle' : 'Clear search'}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -400,59 +437,64 @@ const EmailList: React.FC<EmailListProps> = ({
           </div>
         </div>
 
-        {/* Hızlı Filtre Butonları */}
-        <div className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar text-[10px]">
+        {/* Quick Filter Buttons */}
+        <div className="flex items-center gap-1.5 mt-2 overflow-x-auto no-scrollbar text-[10px]" role="toolbar" aria-label="Filters">
           <button
             type="button"
             onClick={() => onSearchChange('')}
-            className={`px-2 py-0.5 rounded-lg font-bold transition-colors whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${
               !searchQuery ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-white/[0.02] text-slate-400 hover:text-white border border-white/5'
             }`}
+            aria-pressed={!searchQuery}
           >
             {lang === 'tr' ? 'Tümü' : 'All'}
           </button>
           <button
             type="button"
             onClick={() => onSearchChange('otp')}
-            className={`px-2 py-0.5 rounded-lg font-bold transition-colors whitespace-nowrap flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 ${
               searchQuery.toLowerCase() === 'otp' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-white/[0.02] text-slate-400 hover:text-green-400 border border-white/5'
             }`}
+            aria-pressed={searchQuery.toLowerCase() === 'otp'}
           >
-            <Zap className="w-2.5 h-2.5 text-green-400" />
-            OTP
+            <Zap className="w-2.5 h-2.5 text-green-400" aria-hidden="true" />
+            <span>OTP</span>
           </button>
           <button
             type="button"
             onClick={() => onSearchChange('verification')}
-            className={`px-2 py-0.5 rounded-lg font-bold transition-colors whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
               searchQuery.toLowerCase() === 'verification' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/[0.02] text-slate-400 hover:text-emerald-400 border border-white/5'
             }`}
+            aria-pressed={searchQuery.toLowerCase() === 'verification'}
           >
             {lang === 'tr' ? 'Doğrulama' : 'Verification'}
           </button>
           <button
             type="button"
             onClick={() => onSearchChange('security')}
-            className={`px-2 py-0.5 rounded-lg font-bold transition-colors whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 ${
               searchQuery.toLowerCase() === 'security' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-white/[0.02] text-slate-400 hover:text-red-400 border border-white/5'
             }`}
+            aria-pressed={searchQuery.toLowerCase() === 'security'}
           >
             {lang === 'tr' ? 'Güvenlik' : 'Security'}
           </button>
         </div>
       </div>
 
-      {/* Tümünü Sil butonu */}
+      {/* Delete All Header */}
       {emails.length > 1 && (
         <div className="flex justify-between items-center px-4 py-2 border-b border-white/5 bg-white/[0.01]">
           <span className="text-[9px] font-bold text-slate-500">{emails.length} {lang === 'tr' ? 'mesaj' : 'messages'}</span>
           <button
+            type="button"
             onClick={onDeleteAll}
-            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-red-500 transition-colors"
+            className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-red-500 transition-colors p-1 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
             aria-label={lang === 'tr' ? 'Tümünü sil' : 'Delete all emails'}
           >
             <Trash2 className="w-3 h-3" aria-hidden="true" />
-            {t.clearAll}
+            <span>{t.clearAll}</span>
           </button>
         </div>
       )}
@@ -464,7 +506,7 @@ const EmailList: React.FC<EmailListProps> = ({
         </div>
       )}
 
-      {/* Arama sonucu boş */}
+      {/* Search Empty Result */}
       {searchQuery && emails.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full py-12 px-4 text-center" role="status" aria-live="polite">
           <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center mb-3">
@@ -477,15 +519,16 @@ const EmailList: React.FC<EmailListProps> = ({
             {lang === 'tr' ? 'Gönderen, e-posta adresi, konu veya OTP kodunu kontrol edin.' : 'Check sender name, email address, subject or OTP code.'}
           </p>
           <button
+            type="button"
             onClick={() => onSearchChange('')}
-            className="text-[10px] font-bold px-3 py-1 bg-white/5 hover:bg-white/10 text-orange-400 rounded-lg border border-white/10 transition-colors"
+            className="text-[10px] font-bold px-3 py-1.5 bg-white/5 hover:bg-white/10 text-orange-400 rounded-lg border border-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
           >
             {lang === 'tr' ? 'Aramayı Temizle' : 'Clear Search'}
           </button>
         </div>
       )}
 
-      {/* Email listesi */}
+      {/* Email list */}
       <div
         ref={listRef}
         className="flex-grow overflow-y-auto custom-scrollbar"

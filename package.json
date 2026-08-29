@@ -12,6 +12,7 @@
     "test": "tsx --test scripts/unit-tests.ts",
     "test:watch": "tsx --test --watch scripts/unit-tests.ts",
     "test:smoke": "tsx scripts/smoke-test.ts",
+    "audit": "tsx scripts/production-audit.ts",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {

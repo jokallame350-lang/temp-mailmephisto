@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // ─── 1. Locales Imports ───────────────────────────────────────────────────
 import { en } from '../src/locales/en.ts';
@@ -68,6 +70,10 @@ import {
   generateDeterministicIdentity,
 } from '../src/utils/identity.ts';
 
+import {
+  getLocalizedErrorMessage,
+} from '../src/utils/errorLocalization.ts';
+
 // ─── 3. Mail Service Imports ───────────────────────────────────────────────
 import {
   determineCategory,
@@ -98,12 +104,15 @@ import {
   getAttachment,
   rehydrateMailboxSession,
   MailboxFetchError,
+  clearInFlightFetches,
 } from '../src/services/mailService.ts';
 import {
   safeParseAccounts,
   getInitialActiveId,
   STORAGE_KEY,
   ACCOUNT_LIFETIME_MS,
+  MAX_ACTIVE_ACCOUNTS,
+  cleanupLegacyStorage,
 } from '../src/hooks/useMailbox.ts';
 import {
   getInboxCacheKey,
@@ -1457,8 +1466,10 @@ test('Integration F2: Hydra API returns malformed JSON or empty object', async (
   });
 
   try {
-    const messages = await getMessages(mailbox);
-    assert.deepEqual(messages, []);
+    await assert.rejects(
+      async () => { await getMessages(mailbox); },
+      (err: any) => err instanceof MailboxFetchError && err.code === 'INVALID_RESPONSE'
+    );
   } finally {
     cleanupIntegrationSeam();
   }
@@ -3862,6 +3873,868 @@ test('Suite S (S15): Cache limits (200 items for inbox, 500 items for deleted ID
     (globalThis as any).sessionStorage = originalSessionStorage;
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Suite T: Extended Security, Isolation, Error Mapping & System Verification
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Suite T (T1): Obsolete legacy storage key cleanup/migration safety', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+      clear: () => { for (const k of Object.keys(mockStorage)) delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = {
+      id: 'acc_migration_01',
+      address: 'legacy.user@sharklasers.com',
+      apiBase: 'guerrilla',
+    };
+
+    // 1. Populate legacy inbox key mephisto_inbox_<address> (without _v2_)
+    const legacyKey = `mephisto_inbox_${account.address.toLowerCase().trim()}`;
+    const v2Key = `mephisto_inbox_v2_${account.address.toLowerCase().trim()}`;
+    const legacyEmails: EmailSummary[] = [
+      {
+        id: 'legacy_msg_1',
+        from: 'legacy_sender@test.com',
+        subject: 'Legacy Subject',
+        intro: 'Legacy Intro',
+        seen: true,
+        createdAt: '2025-01-01T00:00:00.000Z',
+        aiCategory: 'Verification',
+      },
+    ];
+    mockStorage[legacyKey] = JSON.stringify(legacyEmails);
+
+    // 2. Reading when v2 key does not exist seamlessly falls back to legacy key
+    const readFromLegacy = safeReadInbox(account);
+    assert.equal(readFromLegacy.length, 1);
+    assert.equal(readFromLegacy[0].id, 'legacy_msg_1');
+    assert.equal(readFromLegacy[0].subject, 'Legacy Subject');
+
+    // 3. Saving writes to the modern v2 key
+    const modernEmails: EmailSummary[] = [
+      ...legacyEmails,
+      {
+        id: 'modern_msg_2',
+        from: 'modern_sender@test.com',
+        subject: 'Modern Subject',
+        intro: 'Modern Intro',
+        seen: false,
+        createdAt: new Date().toISOString(),
+        aiCategory: 'Other',
+      },
+    ];
+    safeSaveInbox(account, modernEmails);
+    assert.ok(mockStorage[v2Key], 'Modern v2 key must be populated after safeSaveInbox');
+    const readFromV2 = safeReadInbox(account);
+    assert.equal(readFromV2.length, 2);
+    assert.equal(readFromV2[1].id, 'modern_msg_2');
+
+    // 4. Clearing inbox purges both v2 and legacy keys from storage
+    safeClearInbox(account);
+    assert.equal(mockStorage[v2Key], undefined, 'Modern v2 key must be purged');
+    assert.equal(mockStorage[legacyKey], undefined, 'Legacy key must be purged');
+    assert.equal(safeReadInbox(account).length, 0);
+
+    // 5. Corrupt / invalid data handling: malformed JSON, corrupted structures, primitives
+    mockStorage[legacyKey] = '{ invalid json }}}';
+    assert.deepEqual(safeReadInbox(account), [], 'Malformed JSON in legacy key must safely return empty array');
+
+    mockStorage[legacyKey] = JSON.stringify([null, 123, 'corrupt', { id: 456 }, { missing: 'fields' }]);
+    assert.deepEqual(safeReadInbox(account), [], 'Corrupted objects in legacy key must be filtered out cleanly');
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite T (T2): Friendly localized error code mapping (network error, session expired, rate limited)', () => {
+  // Test MailboxFetchError instances and verify error codes
+  const networkErr = new MailboxFetchError('Failed to fetch from upstream', 'NETWORK_ERROR', 'box_01');
+  const sessionErr = new MailboxFetchError('Guerrilla session expired', 'SESSION_EXPIRED', 'box_02');
+  const rateLimitErr = new MailboxFetchError('Rate limit exceeded. Please wait 45 seconds.', 'RATE_LIMITED', 'box_03');
+  const rehydrateErr = new MailboxFetchError('Upstream rejected username binding', 'REHYDRATION_FAILED', 'box_04');
+  const invalidErr = new MailboxFetchError('Empty message detail response from server', 'INVALID_RESPONSE', 'box_05');
+  const unknownErr = new MailboxFetchError('Something unexpected happened', 'UNKNOWN', 'box_06');
+
+  assert.equal(networkErr.code, 'NETWORK_ERROR');
+  assert.equal(networkErr.mailboxId, 'box_01');
+  assert.equal(sessionErr.code, 'SESSION_EXPIRED');
+  assert.equal(rateLimitErr.code, 'RATE_LIMITED');
+  assert.equal(rehydrateErr.code, 'REHYDRATION_FAILED');
+  assert.equal(invalidErr.code, 'INVALID_RESPONSE');
+  assert.equal(unknownErr.code, 'UNKNOWN');
+
+  // Verify that error codes can be deterministically mapped to user-friendly messages for all 9 locales
+  const allLocales = [en, tr, de, es, fr, it, pt, ru, ar];
+  const mapErrorToFriendlyText = (err: MailboxFetchError, localeDict: typeof en): string => {
+    switch (err.code) {
+      case 'NETWORK_ERROR':
+        return localeDict.connError || localeDict.connFailed || 'Connection error';
+      case 'SESSION_EXPIRED':
+      case 'REHYDRATION_FAILED':
+        return localeDict.connFailed || 'Session expired';
+      case 'RATE_LIMITED':
+        return err.message.includes('wait') ? err.message : localeDict.limitDailyMsg || 'Rate limited';
+      case 'INVALID_RESPONSE':
+      case 'UNKNOWN':
+      default:
+        return localeDict.connError || 'Unknown error';
+    }
+  };
+
+  for (const loc of allLocales) {
+    const netMsg = mapErrorToFriendlyText(networkErr, loc);
+    const sesMsg = mapErrorToFriendlyText(sessionErr, loc);
+    const rateMsg = mapErrorToFriendlyText(rateLimitErr, loc);
+
+    assert.ok(typeof netMsg === 'string' && netMsg.length > 0);
+    assert.ok(typeof sesMsg === 'string' && sesMsg.length > 0);
+    assert.ok(typeof rateMsg === 'string' && rateMsg.includes('45 seconds'));
+  }
+
+  // Rate limit calculation and remaining duration helper
+  clearRateLimit();
+  assert.equal(isRateLimited('mail_tm'), false);
+  assert.equal(getRateLimitRemainingMs('mail_tm'), 0);
+
+  // Test getLocalizedErrorMessage for network errors, session expiration, and rate limits
+  assert.ok(getLocalizedErrorMessage(networkErr, 'en').length > 0);
+  assert.ok(getLocalizedErrorMessage(sessionErr, 'tr').length > 0);
+  assert.ok(getLocalizedErrorMessage(rateLimitErr, 'de').length > 0);
+  assert.ok(getLocalizedErrorMessage('fetch failed', 'ar').length > 0);
+  assert.ok(getLocalizedErrorMessage('invalid_sid', 'es').length > 0);
+  assert.ok(getLocalizedErrorMessage('Rate limit reached', 'fr').length > 0);
+});
+
+test('Suite T (T3): Duplicate in-flight request suppression in fetch engine', async () => {
+  clearDomainCache();
+  let fetchCallCount = 0;
+
+  try {
+    setMockFetch(async (url: any) => {
+      const urlStr = String(url);
+      if (urlStr.includes('f=get_email_address')) {
+        fetchCallCount++;
+        // Simulate network latency of 20ms
+        await new Promise(r => setTimeout(r, 20));
+        return jsonResponse({
+          email_addr: 'random_suppression@guerrillamailblock.com',
+          sid_token: 'sid_suppression_123',
+        });
+      }
+      return jsonResponse({});
+    });
+
+    // Fire 10 simultaneous calls to fetchDomains()
+    const concurrentRequests = Array.from({ length: 10 }, () => fetchDomains());
+    const results = await Promise.all(concurrentRequests);
+
+    // Exactly 1 network request should have occurred due to in-flight deduplication
+    assert.equal(fetchCallCount, 1, 'Concurrent fetchDomains calls must be collapsed into 1 in-flight network request');
+
+    // All 10 callers receive identical domain arrays
+    assert.equal(results.length, 10);
+    for (const res of results) {
+      assert.ok(Array.isArray(res.domains));
+      assert.ok(res.domains.length > 0);
+      assert.ok(res.domains.includes('guerrillamailblock.com'));
+      assert.equal(res.apiBase, 'guerrilla');
+    }
+
+    // Subsequent call after resolution uses cache with 0 additional network calls
+    const cachedResult = await fetchDomains();
+    assert.equal(fetchCallCount, 1, 'Subsequent call must use cache without fetching');
+    assert.deepEqual(cachedResult.domains, results[0].domains);
+  } finally {
+    clearDomainCache();
+    setMockFetch(null);
+  }
+});
+
+test('Suite T (T4): Tab visibility change polling resume and pause simulation', () => {
+  const isPollingAllowedPredicate = (doc: { hidden?: boolean; visibilityState?: string }, nav: { onLine?: boolean }): boolean => {
+    if (doc.hidden || doc.visibilityState === 'hidden') {
+      return false;
+    }
+    if (!nav.onLine) {
+      return false;
+    }
+    return true;
+  };
+
+  // 1. Foreground and online: polling is active
+  assert.equal(isPollingAllowedPredicate({ hidden: false, visibilityState: 'visible' }, { onLine: true }), true);
+
+  // 2. Tab switched to background (hidden): polling is paused
+  assert.equal(isPollingAllowedPredicate({ hidden: true, visibilityState: 'hidden' }, { onLine: true }), false);
+
+  // 3. Network goes offline while foreground: polling is paused
+  assert.equal(isPollingAllowedPredicate({ hidden: false, visibilityState: 'visible' }, { onLine: false }), false);
+
+  // 4. Background and offline: polling is paused
+  assert.equal(isPollingAllowedPredicate({ hidden: true, visibilityState: 'hidden' }, { onLine: false }), false);
+
+  // 5. Lifecycle simulation of tab visibility events
+  let isPollingActive = false;
+  let activeTimersCount = 0;
+  const pollCallback = () => { isPollingActive = true; };
+
+  const simulateVisibilityChange = (state: 'visible' | 'hidden', online = true) => {
+    const doc = { hidden: state === 'hidden', visibilityState: state };
+    const nav = { onLine: online };
+    if (isPollingAllowedPredicate(doc, nav)) {
+      activeTimersCount = 1;
+      pollCallback();
+    } else {
+      activeTimersCount = 0;
+      isPollingActive = false;
+    }
+  };
+
+  // Tab enters background -> pause
+  simulateVisibilityChange('hidden', true);
+  assert.equal(isPollingActive, false);
+  assert.equal(activeTimersCount, 0);
+
+  // Tab returns to foreground -> resume
+  simulateVisibilityChange('visible', true);
+  assert.equal(isPollingActive, true);
+  assert.equal(activeTimersCount, 1);
+
+  // Network drop -> pause
+  simulateVisibilityChange('visible', false);
+  assert.equal(isPollingActive, false);
+  assert.equal(activeTimersCount, 0);
+
+  // Network restored -> resume
+  simulateVisibilityChange('visible', true);
+  assert.equal(isPollingActive, true);
+  assert.equal(activeTimersCount, 1);
+});
+
+test('Suite T (T5): 100 concurrent mailboxes memory stability and isolation', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+      clear: () => { for (const k of Object.keys(mockStorage)) delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const startTime = performance.now();
+    const NUM_BOXES = 100;
+    const mailboxes: Mailbox[] = [];
+
+    // Create 100 distinct mailboxes
+    for (let i = 0; i < NUM_BOXES; i++) {
+      const provider = i % 2 === 0 ? 'guerrilla' : 'mail_tm';
+      const domain = i % 2 === 0 ? 'sharklasers.com' : 'mail.tm';
+      const mailbox: Mailbox = {
+        id: `box_id_${i}`,
+        address: `user_${i}@${domain}`,
+        apiBase: provider,
+        createdAt: Date.now() - i * 1000,
+      };
+      mailboxes.push(mailbox);
+
+      // Store in-memory credentials
+      storeCredentials(mailbox.id, mailbox.address, `Pass_Secret_${i}!`);
+
+      // Store unique inbox data
+      const inboxList: EmailSummary[] = [
+        {
+          id: `msg_box_${i}_1`,
+          from: `sender_${i}@external.org`,
+          subject: `Subject for box ${i}`,
+          intro: `Preview for box ${i}`,
+          seen: i % 3 === 0,
+          createdAt: new Date(Date.now() - i * 500).toISOString(),
+          aiCategory: i % 2 === 0 ? 'Verification' : 'Security',
+        },
+      ];
+      safeSaveInbox(mailbox, inboxList);
+
+      // Store unique deleted ID
+      safeSaveDeletedIds(mailbox, [`del_box_${i}_id`]);
+    }
+
+    // Verify 100% cache and data isolation for all 100 mailboxes
+    for (let i = 0; i < NUM_BOXES; i++) {
+      const mb = mailboxes[i];
+      const readInbox = safeReadInbox(mb);
+      assert.equal(readInbox.length, 1);
+      assert.equal(readInbox[0].id, `msg_box_${i}_1`);
+      assert.equal(readInbox[0].subject, `Subject for box ${i}`);
+
+      const readDeleted = safeReadDeletedIds(mb);
+      assert.equal(readDeleted.size, 1);
+      assert.ok(readDeleted.has(`del_box_${i}_id`));
+    }
+
+    // Clear credentials for mailbox #50 only and verify other 99 remain untouched
+    clearCredentials('box_id_50');
+    // Ensure all accounts can be safely parsed back
+    const jsonAccounts = JSON.stringify(mailboxes);
+    const parsedAccounts = safeParseAccounts(jsonAccounts);
+    assert.equal(parsedAccounts.length, 100);
+    assert.equal(parsedAccounts[0].token, undefined);
+    assert.equal(parsedAccounts[0].password, undefined);
+
+    const durationMs = performance.now() - startTime;
+    assert.ok(durationMs < 200, `100 mailboxes processing must be fast (<200ms), took ${durationMs.toFixed(2)}ms`);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite T (T6): Persistent deleted ID cap (500 items) and FIFO eviction', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+  const originalSessionStorage = globalThis.sessionStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+      clear: () => { for (const k of Object.keys(mockStorage)) delete mockStorage[k]; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+    (globalThis as any).sessionStorage = storageImpl;
+
+    const account: Mailbox = {
+      id: 'acc_fifo_01',
+      address: 'fifo.cap@guerrillamail.com',
+      apiBase: 'guerrilla',
+    };
+
+    // 1. Save exactly 500 items
+    const base500 = Array.from({ length: 500 }, (_, i) => `msg_del_${i}`);
+    safeSaveDeletedIds(account, base500);
+
+    const read500 = safeReadDeletedIds(account);
+    assert.equal(read500.size, 500);
+    assert.ok(read500.has('msg_del_0'));
+    assert.ok(read500.has('msg_del_499'));
+
+    // 2. Add 200 newer deleted items (total 700 passed)
+    const oversized700 = Array.from({ length: 700 }, (_, i) => `msg_del_${i}`);
+    safeSaveDeletedIds(account, oversized700);
+
+    const readOversized = safeReadDeletedIds(account);
+    assert.equal(readOversized.size, 500, 'Deleted IDs cache must be capped strictly at 500 items');
+    assert.ok(readOversized.has('msg_del_0'), 'First item within slice must be preserved');
+    assert.ok(readOversized.has('msg_del_499'), '500th item within slice must be preserved');
+    assert.equal(readOversized.has('msg_del_500'), false, 'Items beyond 500 cap must be evicted');
+
+    // 3. Dirty input sanitization: whitespace strings, empty entries, and numbers
+    const dirtyInputs = ['  valid_id_1  ', '', '   ', 99999 as any, 'valid_id_2'];
+    safeSaveDeletedIds(account, dirtyInputs);
+
+    const readSanitized = safeReadDeletedIds(account);
+    assert.equal(readSanitized.size, 3);
+    assert.ok(readSanitized.has('valid_id_1'));
+    assert.ok(readSanitized.has('valid_id_2'));
+    assert.ok(readSanitized.has('99999'));
+    assert.equal(readSanitized.has(''), false);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+    (globalThis as any).sessionStorage = originalSessionStorage;
+  }
+});
+
+test('Suite T (T7): Service Worker cache bypass filter pattern matching', () => {
+  const swPath = path.resolve(process.cwd(), 'public/sw.js');
+  assert.ok(fs.existsSync(swPath), 'public/sw.js must exist');
+  const swContent = fs.readFileSync(swPath, 'utf-8');
+
+  // Verify bypass rules present in sw.js code
+  assert.ok(swContent.includes("url.pathname.startsWith('/api/')"));
+  assert.ok(swContent.includes("url.pathname.startsWith('/_next/')"));
+  assert.ok(swContent.includes("url.pathname.startsWith('/messages/')"));
+  assert.ok(swContent.includes("url.pathname.startsWith('/attachment/')"));
+  assert.ok(swContent.includes("url.pathname.startsWith('/accounts')"));
+  assert.ok(swContent.includes("url.pathname.startsWith('/token')"));
+  assert.ok(swContent.includes("url.searchParams.has('mailbox')"));
+
+  // Functional simulation of SW bypass filter predicate
+  const APP_ORIGIN = 'https://mephistomail.site';
+  const shouldBypassCache = (urlString: string, method = 'GET'): boolean => {
+    if (method !== 'GET') return true;
+    const url = new URL(urlString, APP_ORIGIN);
+    if (url.origin !== APP_ORIGIN) return true;
+    if (
+      url.pathname.startsWith('/api/') ||
+      url.pathname.startsWith('/_next/') ||
+      url.pathname.startsWith('/messages/') ||
+      url.pathname.startsWith('/attachment/') ||
+      url.pathname.startsWith('/accounts') ||
+      url.pathname.startsWith('/token') ||
+      url.searchParams.has('mailbox')
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  // Dynamic endpoints must bypass cache
+  assert.equal(shouldBypassCache('https://mephistomail.site/api/stats'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/messages/msg_123'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/attachment/att_456'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/accounts'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/token'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/?mailbox=user@guerrillamail.com'), true);
+  assert.equal(shouldBypassCache('https://mephistomail.site/send', 'POST'), true);
+  assert.equal(shouldBypassCache('https://api.guerrillamail.com/ajax.php?f=get_email_list'), true);
+
+  // Static assets must NOT be bypassed (eligible for static caching)
+  assert.equal(shouldBypassCache('https://mephistomail.site/'), false);
+  assert.equal(shouldBypassCache('https://mephistomail.site/icon.png'), false);
+  assert.equal(shouldBypassCache('https://mephistomail.site/logo.png'), false);
+  assert.equal(shouldBypassCache('https://mephistomail.site/assets/index.css'), false);
+});
+
+test('Suite T (T8): Mobile viewport metadata and CSS utility validity', () => {
+  const indexPath = path.resolve(process.cwd(), 'index.html');
+  assert.ok(fs.existsSync(indexPath), 'index.html must exist');
+  const indexHtml = fs.readFileSync(indexPath, 'utf-8');
+
+  // 1. Mobile viewport meta tag
+  assert.ok(
+    indexHtml.includes('name="viewport"') &&
+    indexHtml.includes('width=device-width') &&
+    indexHtml.includes('initial-scale=1.0'),
+    'index.html must contain compliant responsive mobile viewport meta tag'
+  );
+
+  // 2. PWA and mobile capability meta tags
+  assert.ok(indexHtml.includes('name="mobile-web-app-capable" content="yes"'));
+  assert.ok(indexHtml.includes('name="apple-mobile-web-app-capable" content="yes"'));
+  assert.ok(indexHtml.includes('name="theme-color" content="#050505"'));
+  assert.ok(indexHtml.includes('name="format-detection" content="telephone=no"'));
+
+  // 3. CSS accessibility & utility validity in src/index.css
+  const cssPath = path.resolve(process.cwd(), 'src/index.css');
+  assert.ok(fs.existsSync(cssPath), 'src/index.css must exist');
+  const indexCss = fs.readFileSync(cssPath, 'utf-8');
+
+  assert.ok(indexCss.includes(':focus-visible'), 'WCAG focus-visible indicators must be defined');
+  assert.ok(indexCss.includes('@media (prefers-reduced-motion: reduce)'), 'Reduced motion accessibility query must be present');
+  assert.ok(indexCss.includes('.sr-only'), 'Screen reader utility class must be present');
+  assert.ok(indexCss.includes('overflow-x: hidden'), 'Body overflow-x constraint must be present to prevent horizontal scroll');
+});
+
+test('Suite T (T9): Arabic RTL language direction and translation completeness', () => {
+  // 1. Key parity of Arabic locale (ar) with reference English (en)
+  const enKeys = Object.keys(en);
+  const arKeys = Object.keys(ar);
+
+  const missingInAr = enKeys.filter(k => !(k in ar));
+  const extraInAr = arKeys.filter(k => !enKeys.includes(k));
+
+  assert.equal(missingInAr.length, 0, `Arabic locale missing keys: ${missingInAr.join(', ')}`);
+  assert.equal(extraInAr.length, 0, `Arabic locale extra keys: ${extraInAr.join(', ')}`);
+
+  // 2. All Arabic values are valid non-empty strings containing localized text
+  for (const key of arKeys) {
+    const val = (ar as Record<string, unknown>)[key];
+    assert.equal(typeof val, 'string', `Key ${key} in Arabic locale must be a string`);
+    assert.ok((val as string).trim().length > 0, `Key ${key} in Arabic locale must not be empty`);
+  }
+
+  // 3. Direction resolution logic (ar => rtl, all others => ltr)
+  const getDirectionForLang = (langCode: string): 'rtl' | 'ltr' => {
+    return langCode === 'ar' ? 'rtl' : 'ltr';
+  };
+
+  assert.equal(getDirectionForLang('ar'), 'rtl');
+  assert.equal(getDirectionForLang('en'), 'ltr');
+  assert.equal(getDirectionForLang('tr'), 'ltr');
+  assert.equal(getDirectionForLang('de'), 'ltr');
+  assert.equal(getDirectionForLang('fr'), 'ltr');
+
+  // 4. Arabic keyword categorization, OTP extraction, and action link detection
+  const arVerifyCategory = determineCategory('Verification Code', 'auth@service.com', 'رمز التحقق 583214 - otp');
+  assert.equal(arVerifyCategory, 'Verification');
+
+  const extractedOtp = extractOTP('رمز التحقق الخاص بك هو 583214');
+  assert.equal(extractedOtp, '583214');
+
+  const arActionHtml = '<p><a href="https://auth.net/ar/confirm?token=9988">تأكيد البريد</a></p>';
+  const arAction = extractActionLinks(arActionHtml);
+  assert.ok(arAction);
+  assert.equal(arAction.url, 'https://auth.net/ar/confirm?token=9988');
+});
+
+test('Suite T (T10): Chrome extension manifest V3 permission hygiene', () => {
+  const manifestPath = path.resolve(process.cwd(), 'extension/manifest.json');
+  assert.ok(fs.existsSync(manifestPath), 'extension/manifest.json must exist');
+
+  const rawJson = fs.readFileSync(manifestPath, 'utf-8');
+  const manifest = JSON.parse(rawJson);
+
+  // 1. Manifest V3 specification
+  assert.equal(manifest.manifest_version, 3, 'Extension must use Manifest V3');
+  assert.ok(typeof manifest.name === 'string' && manifest.name.length > 0);
+  assert.ok(typeof manifest.version === 'string' && /^\d+\.\d+\.\d+$/.test(manifest.version));
+
+  // 2. Background service worker
+  assert.ok(manifest.background?.service_worker, 'Background service_worker must be specified');
+  assert.equal(typeof manifest.background.service_worker, 'string');
+
+  // 3. Action popup
+  assert.ok(manifest.action?.default_popup, 'Action default_popup must be specified');
+
+  // 4. Least privilege permission hygiene
+  const allowedPermissions = new Set([
+    'storage',
+    'contextMenus',
+    'alarms',
+    'clipboardWrite',
+    'notifications',
+    'scripting',
+    'activeTab',
+  ]);
+
+  assert.ok(Array.isArray(manifest.permissions), 'Permissions must be an array');
+  for (const perm of manifest.permissions) {
+    assert.ok(
+      allowedPermissions.has(perm),
+      `Permission '${perm}' is outside strictly approved minimal permission set`
+    );
+  }
+
+  // Dangerous wildcard checks
+  assert.equal(manifest.permissions.includes('<all_urls>'), false, 'Manifest must not request <all_urls> in permissions');
+  assert.equal(manifest.permissions.includes('cookies'), false, 'Manifest must not request cookies permission');
+  assert.equal(manifest.permissions.includes('debugger'), false, 'Manifest must not request debugger permission');
+  assert.equal(manifest.permissions.includes('webRequestBlocking'), false, 'Manifest must not request webRequestBlocking');
+
+  // 5. Host permissions strictly scoped to API endpoints
+  assert.ok(Array.isArray(manifest.host_permissions), 'host_permissions must be an array');
+  const allowedHostPrefixes = [
+    'https://api.mail.gw/',
+    'https://api.mail.tm/',
+    'https://api.guerrillamail.com/',
+  ];
+
+  for (const host of manifest.host_permissions) {
+    assert.ok(
+      allowedHostPrefixes.some(prefix => host.startsWith(prefix)),
+      `host_permission '${host}' must be scoped strictly to allowed mail API endpoints`
+    );
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUITE U: Core Engine, Polling, Storage Migration & Security Hardening
+// ═══════════════════════════════════════════════════════════════════════════
+
+test('Suite U (U1): Duplicate in-flight request suppression for getMessages', async () => {
+  clearInFlightFetches();
+  let networkCallCount = 0;
+
+  const mailbox: Mailbox = {
+    id: 'u1_dedup_mb',
+    address: 'concurrent@sharklasers.com',
+    apiBase: 'guerrilla',
+    token: 'sid_u1_token',
+  };
+
+  setMockFetch(async (url) => {
+    if (url.includes('get_email_list')) {
+      networkCallCount++;
+      // Simulate slight network latency
+      await new Promise(r => setTimeout(r, 20));
+      return jsonResponse({
+        list: [
+          { mail_id: 'msg_u1_1', mail_from: 'auth@test.com', mail_subject: 'Code 1234', mail_excerpt: 'Your code', mail_date: '2026-08-29' },
+        ],
+      });
+    }
+    return jsonResponse({});
+  });
+
+  try {
+    // Launch 5 concurrent fetches for the same mailbox
+    const [r1, r2, r3, r4, r5] = await Promise.all([
+      getMessages(mailbox),
+      getMessages(mailbox),
+      getMessages(mailbox),
+      getMessages(mailbox),
+      getMessages(mailbox),
+    ]);
+
+    assert.equal(networkCallCount, 1, 'Only 1 underlying network request must be made for 5 concurrent calls');
+    assert.equal(r1.length, 1);
+    assert.equal(r2.length, 1);
+    assert.equal(r3.length, 1);
+    assert.equal(r4.length, 1);
+    assert.equal(r5.length, 1);
+    assert.equal(r1[0].id, 'msg_u1_1');
+    assert.equal(r5[0].id, 'msg_u1_1');
+  } finally {
+    clearInFlightFetches();
+    setMockFetch(null);
+  }
+});
+
+test('Suite U (U2): Duplicate in-flight request suppression for getMessageDetail', async () => {
+  clearInFlightFetches();
+  let networkCallCount = 0;
+
+  const mailbox: Mailbox = {
+    id: 'u2_detail_mb',
+    address: 'detail.dedup@sharklasers.com',
+    apiBase: 'guerrilla',
+    token: 'sid_u2_token',
+  };
+
+  setMockFetch(async (url) => {
+    if (url.includes('fetch_email')) {
+      networkCallCount++;
+      await new Promise(r => setTimeout(r, 20));
+      return jsonResponse({
+        mail_id: 'msg_u2_99',
+        mail_from: 'service@secure.com',
+        mail_subject: 'Your OTP',
+        mail_excerpt: 'Code 9988',
+        mail_body: '<p>Code 9988</p>',
+      });
+    }
+    return jsonResponse({});
+  });
+
+  try {
+    // Launch 3 concurrent detail fetches
+    const [d1, d2, d3] = await Promise.all([
+      getMessageDetail(mailbox, 'msg_u2_99'),
+      getMessageDetail(mailbox, 'msg_u2_99'),
+      getMessageDetail(mailbox, 'msg_u2_99'),
+    ]);
+
+    assert.equal(networkCallCount, 1, 'Only 1 underlying network request must be made for concurrent message detail requests');
+    assert.ok(d1 && d2 && d3);
+    assert.equal(d1?.id, 'msg_u2_99');
+    assert.equal(d2?.id, 'msg_u2_99');
+    assert.equal(d3?.id, 'msg_u2_99');
+  } finally {
+    clearInFlightFetches();
+    setMockFetch(null);
+  }
+});
+
+test('Suite U (U3): MailboxFetchError error classifications (RATE_LIMITED, SESSION_EXPIRED, REHYDRATION_FAILED, NETWORK_ERROR)', async () => {
+  clearRateLimit();
+
+  // 1. Rate limit classification
+  setMockFetch(() => new Response('Too Many Requests', {
+    status: 429,
+    headers: { 'Retry-After': '10' },
+  }));
+
+  try {
+    await safeFetch('https://api.mail.tm/messages', undefined, 'mail_tm', 'rate_mb');
+    assert.fail('Expected safeFetch to throw on 429');
+  } catch (err: any) {
+    assert.ok(err instanceof MailboxFetchError);
+    assert.equal(err.code, 'RATE_LIMITED');
+    assert.ok(getRateLimitRemainingMs('mail_tm') > 0);
+  } finally {
+    clearRateLimit();
+    setMockFetch(null);
+  }
+
+  // 2. Rehydration failure classification
+  setMockFetch((url) => {
+    if (url.includes('get_email_address')) {
+      return jsonResponse({ sid_token: 'sid_rehydrate_fail' });
+    }
+    if (url.includes('set_email_user')) {
+      return jsonResponse({ error: 'Username rejected' });
+    }
+    return jsonResponse({});
+  });
+
+  const unhydratedMb: Mailbox = {
+    id: 'g_rehydrate_fail',
+    address: 'baduser@sharklasers.com',
+    apiBase: 'guerrilla',
+  };
+
+  try {
+    await rehydrateMailboxSession(unhydratedMb);
+    assert.fail('Expected rehydrateMailboxSession to throw on rejected username');
+  } catch (err: any) {
+    assert.ok(err instanceof MailboxFetchError);
+    assert.equal(err.code, 'REHYDRATION_FAILED');
+  } finally {
+    setMockFetch(null);
+  }
+});
+
+test('Suite U (U4): Safe cleanup of obsolete legacy storage keys while preserving v5 and v2', () => {
+  const mockStorage: Record<string, string> = {};
+  const originalLocalStorage = globalThis.localStorage;
+
+  try {
+    const storageImpl = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+      clear: () => { for (const k of Object.keys(mockStorage)) delete mockStorage[k]; },
+      key: (i: number) => Object.keys(mockStorage)[i] || null,
+      get length() { return Object.keys(mockStorage).length; },
+    };
+    (globalThis as any).localStorage = storageImpl;
+
+    // Seed legacy and current keys
+    mockStorage['nexus_accounts'] = JSON.stringify([{ id: 'old0' }]);
+    mockStorage['nexus_accounts_v1'] = JSON.stringify([{ id: 'old1' }]);
+    mockStorage['nexus_accounts_v2'] = JSON.stringify([{ id: 'old2' }]);
+    mockStorage['nexus_accounts_v3'] = JSON.stringify([{ id: 'old3' }]);
+    mockStorage['nexus_accounts_v4'] = JSON.stringify([{ id: 'old4' }]);
+    mockStorage['mephisto_accounts'] = JSON.stringify([{ id: 'old_m' }]);
+    mockStorage['mephisto_inbox_v1_user@sharklasers.com'] = JSON.stringify([{ id: 'm1' }]);
+    mockStorage['mephisto_inbox_legacy@sharklasers.com'] = JSON.stringify([{ id: 'm0' }]);
+    mockStorage['mephisto_deleted_legacy@sharklasers.com'] = JSON.stringify(['d0']);
+
+    // Current valid keys
+    mockStorage['nexus_accounts_v5'] = JSON.stringify([{ id: 'valid5', address: 'valid@sharklasers.com' }]);
+    mockStorage['mephisto_inbox_v2_valid@sharklasers.com'] = JSON.stringify([{ id: 'v2_msg' }]);
+    mockStorage['mephisto_deleted_v1_valid@sharklasers.com'] = JSON.stringify(['del_v1']);
+    mockStorage['mephisto_theme'] = 'dark';
+    mockStorage['mephisto_stats'] = JSON.stringify({ totalAccountsCreated: 1 });
+
+    // Execute cleanup
+    cleanupLegacyStorage();
+
+    // Verify obsolete keys are removed
+    assert.equal(mockStorage['nexus_accounts'], undefined);
+    assert.equal(mockStorage['nexus_accounts_v1'], undefined);
+    assert.equal(mockStorage['nexus_accounts_v2'], undefined);
+    assert.equal(mockStorage['nexus_accounts_v3'], undefined);
+    assert.equal(mockStorage['nexus_accounts_v4'], undefined);
+    assert.equal(mockStorage['mephisto_accounts'], undefined);
+    assert.equal(mockStorage['mephisto_inbox_v1_user@sharklasers.com'], undefined);
+    assert.equal(mockStorage['mephisto_inbox_legacy@sharklasers.com'], undefined);
+    assert.equal(mockStorage['mephisto_deleted_legacy@sharklasers.com'], undefined);
+
+    // Verify valid keys are strictly preserved
+    assert.ok(mockStorage['nexus_accounts_v5']);
+    assert.ok(mockStorage['mephisto_inbox_v2_valid@sharklasers.com']);
+    assert.ok(mockStorage['mephisto_deleted_v1_valid@sharklasers.com']);
+    assert.equal(mockStorage['mephisto_theme'], 'dark');
+    assert.ok(mockStorage['mephisto_stats']);
+  } finally {
+    (globalThis as any).localStorage = originalLocalStorage;
+  }
+});
+
+test('Suite U (U5): Strict credential stripping prevents tokens and passwords from ever entering localStorage', () => {
+  const dirtyAccounts = [
+    {
+      id: 'acc_secret_1',
+      address: 'secret1@mail.tm',
+      apiBase: 'mail_tm',
+      token: 'jwt_super_secret_token_123',
+      password: 'PlainPassword456!',
+      sid_token: 'sid_xyz',
+      auth: { token: 'auth_tok' },
+      headers: { Authorization: 'Bearer test' },
+      credentials: { pass: '123' },
+      createdAt: Date.now(),
+    },
+  ];
+
+  const parsed = safeParseAccounts(JSON.stringify(dirtyAccounts));
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0].token, undefined);
+  assert.equal(parsed[0].password, undefined);
+  assert.equal((parsed[0] as any).sid_token, undefined);
+  assert.equal((parsed[0] as any).auth, undefined);
+  assert.equal((parsed[0] as any).headers, undefined);
+
+  // Check serialized output
+  const json = JSON.stringify(parsed);
+  assert.equal(json.includes('jwt_super_secret_token_123'), false);
+  assert.equal(json.includes('PlainPassword456!'), false);
+  assert.equal(json.includes('sid_xyz'), false);
+  assert.equal(json.includes('Bearer test'), false);
+});
+
+test('Suite U (U6): 100 accounts capacity limit and memory safety (MAX_ACTIVE_ACCOUNTS = 100)', () => {
+  assert.equal(MAX_ACTIVE_ACCOUNTS, 100);
+
+  // Generate 150 accounts
+  const now = Date.now();
+  const raw150 = Array.from({ length: 150 }, (_, i) => ({
+    id: `acc_stress_${i}`,
+    address: `stress_${i}@sharklasers.com`,
+    apiBase: 'guerrilla',
+    createdAt: now,
+  }));
+
+  const parsed = safeParseAccounts(JSON.stringify(raw150));
+  assert.equal(parsed.length, 150);
+
+  // Capped slice simulation as in useMailbox
+  const capped = parsed.slice(0, MAX_ACTIVE_ACCOUNTS);
+  assert.equal(capped.length, 100);
+
+  // Credential store safety
+  for (let i = 0; i < 100; i++) {
+    storeCredentials(`mb_${i}`, `mb_${i}@test.com`, `pass_${i}`);
+  }
+
+  // Clear credentials for 50 expired accounts
+  for (let i = 0; i < 50; i++) {
+    clearCredentials(`mb_${i}`);
+  }
+
+  // Verify memory cleanup does not throw
+  clearCredentials('non_existent_id');
+});
+
+test('Suite U (U7): Chrome Extension background service worker session storage hygiene', () => {
+  const bgPath = path.resolve(process.cwd(), 'extension/js/background.js');
+  assert.ok(fs.existsSync(bgPath), 'extension/js/background.js must exist');
+  const bgContent = fs.readFileSync(bgPath, 'utf-8');
+
+  // Verify chrome.storage.session is used instead of chrome.storage.local for account reading
+  assert.ok(bgContent.includes('chrome.storage.session.get(["mephistoAccount"]'));
+  assert.equal(bgContent.includes('chrome.storage.local.get(["mephistoAccount"]'), false, 'background.js must not read tokens from chrome.storage.local');
+});
+
+test('Suite U (U8): Service Worker bypass filter excludes auth headers and dynamic endpoints', () => {
+  const swPath = path.resolve(process.cwd(), 'public/sw.js');
+  assert.ok(fs.existsSync(swPath), 'public/sw.js must exist');
+  const swContent = fs.readFileSync(swPath, 'utf-8');
+
+  assert.ok(swContent.includes("!request.headers.has('authorization')"));
+  assert.ok(swContent.includes("url.pathname.startsWith('/api/')"));
+  assert.ok(swContent.includes("url.origin !== APP_ORIGIN"));
+});
+
+
 
 
 

@@ -9,7 +9,7 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | null>(null);
 
-// OTP kodunu subject'ten çıkar (toast için)
+// Extract OTP code from subject or body for toast notification
 const extractOTPCode = (subject: string): string | null => {
   const patterns = [/\b(\d{6})\b/, /\b(\d{4})\b/, /\b(\d{8})\b/, /code[:\s]+(\d{4,8})/i, /kod[:\s]+(\d{4,8})/i];
   for (const p of patterns) {
@@ -24,13 +24,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addToast = useCallback((from: string, subject: string) => {
     const code = extractOTPCode(subject);
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const toast: ToastData = {
-      id: Date.now().toString(),
+      id: uniqueId,
       from,
       subject,
       code: code || undefined,
     };
-    setToasts((prev) => [toast, ...prev].slice(0, 5));
+    setToasts((prev) => [toast, ...prev.filter(t => t.subject !== subject || t.from !== from)].slice(0, 3));
   }, []);
 
   const dismissToast = useCallback((id: string) => {

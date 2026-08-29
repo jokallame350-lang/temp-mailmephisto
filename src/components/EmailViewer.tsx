@@ -5,6 +5,9 @@ import DOMPurify from 'dompurify';
 import { translations, Language } from '../translations';
 import { sanitizeAndBlockTrackers } from '../utils/trackerBlocker';
 import { downloadAsEML, downloadAsJSON, downloadAsTXT, printEmailContent } from '../utils/exportMail';
+import { extractActionLinks } from '../utils/actionLinks';
+import { extractOTP } from '../utils/otp';
+import { sanitizeAttachmentFilename, isBlockedAttachment } from '../utils/attachmentSecurity';
 
 interface EmailViewerProps {
   email: EmailDetail | null;
@@ -15,18 +18,14 @@ interface EmailViewerProps {
   onReply?: (_initialData: { to: string; subject: string; body: string }) => void;
 }
 
-import { extractActionLinks } from '../utils/actionLinks';
-import { extractOTP } from '../utils/otp';
-import { sanitizeAttachmentFilename, isBlockedAttachment } from '../utils/attachmentSecurity';
-
-// Dosya tipine göre ikon
+// Icon based on file type
 const getFileIcon = (contentType: string) => {
-  if (contentType.startsWith('image/')) return <Image className="w-4 h-4 text-blue-400" />;
-  if (contentType.includes('pdf') || contentType.includes('document')) return <FileText className="w-4 h-4 text-orange-400" />;
-  return <File className="w-4 h-4 text-slate-400" />;
+  if (contentType.startsWith('image/')) return <Image className="w-4 h-4 text-blue-400" aria-hidden="true" />;
+  if (contentType.includes('pdf') || contentType.includes('document')) return <FileText className="w-4 h-4 text-orange-400" aria-hidden="true" />;
+  return <File className="w-4 h-4 text-slate-400" aria-hidden="true" />;
 };
 
-// Dosya boyutunu formatla
+// Format file size
 const formatSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -34,7 +33,7 @@ const formatSize = (bytes: number): string => {
 };
 
 const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang, token, onReply: _onReply }) => {
-  const t = translations[lang];
+  const t = translations[lang] || translations.en;
   const [viewSource, setViewSource] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
@@ -42,7 +41,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
   const [previewDevice, setPreviewDevice] = useState<'responsive' | 'mobile'>('responsive');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Ek dosya indirme
+  // Attachment download handler
   const handleDownloadAttachment = useCallback(async (att: EmailDetail['attachments'][0]) => {
     if (!email) return;
     const filename = att.filename || (att as any).name || 'attachment';
@@ -98,9 +97,14 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     }
   }, [email, token]);
 
-  useEffect(() => { setViewSource(false); setShowHeaders(false); setCodeCopied(false); setRawBodyCopied(false); }, [email?.id]);
+  useEffect(() => {
+    setViewSource(false);
+    setShowHeaders(false);
+    setCodeCopied(false);
+    setRawBodyCopied(false);
+  }, [email?.id]);
 
-  // Sandbox HTML - Tracker Blocker & DOMPurify ile temizle (file:/// ve güvensiz protokolleri kesin engelle)
+  // Sandbox HTML - Tracker Blocker & DOMPurify
   const trackerResult = useMemo(() => {
     if (!email) return { cleanHtml: '', trackerCount: 0, trackerDomains: [] };
     let raw = '';
@@ -117,7 +121,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     const { cleanHtml, trackerCount, trackerDomains } = sanitizeAndBlockTrackers(raw);
 
     try {
-      // DOMPurify Hook: file:/// ve güvensiz protokolleri öznitelik düzeyinde temizle
       const attrHook = (node: Element, data: any) => {
         if (data.attrValue) {
           const val = data.attrValue.trim().toLowerCase();
@@ -200,7 +203,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
 
   const sanitizedHTML = trackerResult.cleanHtml;
 
-  // iframe sandbox içeriği
+  // Iframe sandbox logic
   useEffect(() => {
     if (!iframeRef.current || viewSource || !sanitizedHTML) return;
     const doc = iframeRef.current.contentDocument;
@@ -209,7 +212,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     doc.open();
     doc.write(`
       <!DOCTYPE html>
-      <html>
+      <html dir="${lang === 'ar' ? 'rtl' : 'ltr'}">
       <head>
         <meta charset="UTF-8">
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; font-src https: http: data:;">
@@ -230,7 +233,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     `);
     doc.close();
 
-    // iframe yüksekliğini otomatik ayarla
     const resizeObserver = new ResizeObserver(() => {
       if (iframeRef.current && doc.body) {
         iframeRef.current.style.height = `${doc.body.scrollHeight + 32}px`;
@@ -238,7 +240,6 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     });
     if (doc.body) resizeObserver.observe(doc.body);
 
-    // Linkleri güvenli protokollerle aç (file:// ve güvensiz protokolleri kesin engelle)
     const handleLinkClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a');
       if (target) {
@@ -277,7 +278,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
       resizeObserver.disconnect();
       doc.removeEventListener('click', handleLinkClick);
     };
-  }, [sanitizedHTML, viewSource]);
+  }, [sanitizedHTML, viewSource, lang]);
 
   const actionLink = useMemo(() => {
     if (!email) return null;
@@ -305,7 +306,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     try {
       const d = new Date(dateString);
       if (isNaN(d.getTime())) return dateString || '';
-      return d.toLocaleString(lang === 'tr' ? 'tr-TR' : 'en-US', {
+      return d.toLocaleString(lang === 'tr' ? 'tr-TR' : lang === 'ar' ? 'ar-SA' : 'en-US', {
         weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
       });
     } catch {
@@ -339,20 +340,35 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
     }
   }, [otpCode]);
 
+  // Loading skeleton matching real layout to prevent jumping
   if (loading) {
     return (
-      <div className="flex-grow flex flex-col items-center justify-center space-y-4" role="status" aria-live="polite">
-        <div className="w-full max-w-md px-8 space-y-4 animate-pulse" aria-hidden="true">
-          <div className="h-6 bg-white/5 rounded-lg w-3/4" />
-          <div className="h-4 bg-white/5 rounded-lg w-1/2" />
-          <div className="h-px bg-white/5 my-4" />
-          <div className="space-y-2">
-            <div className="h-3 bg-white/5 rounded w-full" />
-            <div className="h-3 bg-white/5 rounded w-5/6" />
-            <div className="h-3 bg-white/5 rounded w-4/6" />
+      <div className="flex flex-col h-full bg-transparent text-slate-200 animate-pulse" role="status" aria-label={t.decrypting}>
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-white/5 bg-[#0e0e11]/40">
+          <div className="h-6 w-20 bg-white/5 rounded-lg md:hidden" />
+          <div className="flex gap-2 ml-auto">
+            <div className="h-8 w-8 bg-white/5 rounded-lg" />
+            <div className="h-8 w-8 bg-white/5 rounded-lg" />
+            <div className="h-8 w-8 bg-white/5 rounded-lg" />
+            <div className="h-8 w-8 bg-white/5 rounded-lg" />
           </div>
         </div>
-        <div className="text-xs text-slate-500 font-mono animate-pulse">{t.decrypting}</div>
+        <div className="p-4 md:p-6 border-b border-white/5 space-y-3">
+          <div className="h-6 bg-white/10 rounded-lg w-3/4" />
+          <div className="flex gap-3">
+            <div className="h-4 bg-white/5 rounded-full w-40" />
+            <div className="h-4 bg-white/5 rounded-full w-28" />
+          </div>
+        </div>
+        <div className="p-6 space-y-3 flex-grow">
+          <div className="h-4 bg-white/5 rounded w-full" />
+          <div className="h-4 bg-white/5 rounded w-5/6" />
+          <div className="h-4 bg-white/5 rounded w-4/6" />
+          <div className="h-32 bg-white/[0.02] rounded-xl border border-white/5 mt-4" />
+        </div>
+        <div className="p-3 text-center text-xs text-slate-500 font-mono">
+          {t.decrypting}
+        </div>
       </div>
     );
   }
@@ -361,47 +377,110 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
 
   return (
     <div className="flex flex-col h-full bg-transparent text-slate-200" role="article" aria-label={`Email: ${email.subject || 'No subject'}`}>
-      {/* Üst Toolbar */}
+      {/* Top Toolbar */}
       <div className="flex items-center justify-between p-3 md:p-4 border-b border-white/5 bg-[#0e0e11]/40">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase md:hidden min-h-[44px] px-2" aria-label={t.back}>
-          <ArrowLeft className="w-4 h-4" aria-hidden="true" /> {t.back}
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase md:hidden min-h-[44px] px-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+          aria-label={t.back}
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          <span>{t.back}</span>
         </button>
-        <div className="flex items-center gap-1.5 md:gap-2 ml-auto flex-wrap">
-          <button onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}>
+        <div className="flex items-center gap-1.5 md:gap-2 ml-auto flex-wrap" role="toolbar" aria-label="Email actions">
+          <button
+            type="button"
+            onClick={() => setPreviewDevice(prev => prev === 'mobile' ? 'responsive' : 'mobile')}
+            className={`p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${previewDevice === 'mobile' ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : 'hover:bg-white/5 text-slate-400'}`}
+            title={lang === 'tr' ? 'Mobil Önizleme' : 'Mobile Preview'}
+            aria-label={previewDevice === 'mobile' ? (lang === 'tr' ? 'Duyarlı Görünüme Geç' : 'Switch to Responsive View') : (lang === 'tr' ? 'Mobil Önizlemeye Geç' : 'Switch to Mobile Preview')}
+            aria-pressed={previewDevice === 'mobile'}
+          >
             <Smartphone className="w-4 h-4" />
           </button>
-          <button onClick={() => { setShowHeaders(!showHeaders); if (!showHeaders) setViewSource(false); }} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${showHeaders ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'} aria-label={showHeaders ? 'Hide headers' : 'Show headers'} aria-pressed={showHeaders}>
+          <button
+            type="button"
+            onClick={() => { setShowHeaders(!showHeaders); if (!showHeaders) setViewSource(false); }}
+            className={`p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${showHeaders ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : 'hover:bg-white/5 text-slate-400'}`}
+            title={lang === 'tr' ? 'E-posta Başlıkları' : 'Email Headers'}
+            aria-label={showHeaders ? (lang === 'tr' ? 'Başlıkları Gizle' : 'Hide Headers') : (lang === 'tr' ? 'E-posta Başlıklarını İncele' : 'Inspect Email Headers')}
+            aria-pressed={showHeaders}
+          >
             <List className="w-4 h-4" />
           </button>
-          <button onClick={() => { setViewSource(!viewSource); if (!viewSource) setShowHeaders(false); }} className={`p-2 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${viewSource ? 'bg-orange-500/20 text-orange-500' : 'hover:bg-white/5 text-slate-400'}`} title={t.sourceCode} aria-label={viewSource ? 'View rendered' : t.sourceCode} aria-pressed={viewSource}>
+          <button
+            type="button"
+            onClick={() => { setViewSource(!viewSource); if (!viewSource) setShowHeaders(false); }}
+            className={`p-2 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${viewSource ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : 'hover:bg-white/5 text-slate-400'}`}
+            title={t.sourceCode}
+            aria-label={viewSource ? (lang === 'tr' ? 'Render Edilmiş İçeriği Göster' : 'Show Rendered View') : t.sourceCode}
+            aria-pressed={viewSource}
+          >
             {viewSource ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
           </button>
-          <button onClick={handleCopyRawBody} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={rawBodyCopied ? (lang === 'tr' ? 'Gövde Kopyalandı!' : 'Raw Body Copied!') : (lang === 'tr' ? 'Ham Mesaj Gövdesini Kopyala' : 'Copy Raw Message Body')} aria-label="Copy Raw Message Body">
+          <button
+            type="button"
+            onClick={handleCopyRawBody}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+            title={rawBodyCopied ? (lang === 'tr' ? 'Gövde Kopyalandı!' : 'Raw Body Copied!') : (lang === 'tr' ? 'Ham Mesaj Gövdesini Kopyala' : 'Copy Raw Message Body')}
+            aria-label={lang === 'tr' ? 'Ham Mesaj Gövdesini Kopyala' : 'Copy Raw Message Body'}
+          >
             {rawBodyCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
           </button>
-          <button onClick={handleForward} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={t.forward} aria-label={t.forward}>
+          <button
+            type="button"
+            onClick={handleForward}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-orange-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+            title={t.forward}
+            aria-label={t.forward}
+          >
             <Forward className="w-4 h-4" />
           </button>
-          <button onClick={() => downloadAsEML(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-purple-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? '1-Tık EML İndir (.eml - RFC 822/5322)' : '1-Click Export .EML (RFC 822/5322)'} aria-label="Export EML">
+          <button
+            type="button"
+            onClick={() => downloadAsEML(email)}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-purple-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+            title={lang === 'tr' ? '1-Tık EML İndir (.eml - RFC 822/5322)' : '1-Click Export .EML (RFC 822/5322)'}
+            aria-label={lang === 'tr' ? 'EML Olarak İndir' : 'Export as .EML'}
+          >
             <FileType className="w-4 h-4" />
           </button>
-          <button onClick={() => downloadAsJSON(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? '1-Tık JSON İndir (.json)' : '1-Click Export JSON'} aria-label="Export JSON">
+          <button
+            type="button"
+            onClick={() => downloadAsJSON(email)}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-emerald-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            title={lang === 'tr' ? '1-Tık JSON İndir (.json)' : '1-Click Export JSON'}
+            aria-label={lang === 'tr' ? 'JSON Olarak İndir' : 'Export as JSON'}
+          >
             <FileJson className="w-4 h-4" />
           </button>
-          <button onClick={() => downloadAsTXT(email)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-blue-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? '1-Tık TXT İndir (.txt)' : '1-Click Export TXT'} aria-label="Export TXT">
+          <button
+            type="button"
+            onClick={() => downloadAsTXT(email)}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-blue-400 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            title={lang === 'tr' ? '1-Tık TXT İndir (.txt)' : '1-Click Export TXT'}
+            aria-label={lang === 'tr' ? 'TXT Olarak İndir' : 'Export as TXT'}
+          >
             <FileText className="w-4 h-4" />
           </button>
-          <button onClick={() => printEmailContent(email, lang)} className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center" title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'} aria-label="Print or Download PDF">
+          <button
+            type="button"
+            onClick={() => printEmailContent(email, lang)}
+            className="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+            title={lang === 'tr' ? 'PDF İndir / Yazdır' : 'Download PDF / Print'}
+            aria-label={lang === 'tr' ? 'Yazdır veya PDF İndir' : 'Print or Download PDF'}
+          >
             <Printer className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Tracker Blocker Bildirim Rozeti */}
+      {/* Tracker Blocker Notification */}
       {trackerResult.trackerCount > 0 && (
         <div className="mx-3 sm:mx-6 mt-3 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between text-xs text-emerald-300 animate-fade-in">
           <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" />
             <span>
               🛡️ <strong>{trackerResult.trackerCount}</strong> {t.trackerBlockedDesc}
             </span>
@@ -412,7 +491,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
         </div>
       )}
 
-      {/* Konu + Gönderici */}
+      {/* Subject + Sender info */}
       <div className="p-3 sm:p-4 md:p-6 border-b border-white/5 space-y-3 sm:space-y-4 bg-transparent">
         <h1 className="text-base sm:text-lg md:text-2xl font-bold text-white leading-tight">{email.subject || t.noSubject}</h1>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-[11px] sm:text-xs text-slate-400">
@@ -428,7 +507,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
         </div>
       </div>
 
-      {/* OTP Kodu Algılandıysa */}
+      {/* Detected OTP */}
       {otpCode && (
         <div className="otp-glow mx-3 sm:mx-4 mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-green-500/[0.07] border border-green-500/20 rounded-xl sm:rounded-2xl p-3 sm:p-4" role="alert">
           <div className="flex items-center gap-3">
@@ -443,17 +522,18 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             </div>
           </div>
           <button
+            type="button"
             onClick={handleCopyCode}
-            className="w-full sm:w-auto px-4 py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0"
-            aria-label={`Copy code ${otpCode}`}
+            className="w-full sm:w-auto px-4 py-2.5 bg-green-500 hover:bg-green-600 text-black rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+            aria-label={lang === 'tr' ? `Doğrulama kodunu kopyala: ${otpCode}` : `Copy verification code: ${otpCode}`}
           >
-            {codeCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {codeCopied ? 'OK!' : t.copy}
+            {codeCopied ? <Check className="w-4 h-4" aria-hidden="true" /> : <Copy className="w-4 h-4" aria-hidden="true" />}
+            <span>{codeCopied ? 'OK!' : t.copy}</span>
           </button>
         </div>
       )}
 
-      {/* AI Aksiyon Linki Algılandıysa */}
+      {/* AI Action Link */}
       {!otpCode && actionLink && (
         <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-orange-500/[0.05] border border-orange-500/20 rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:border-orange-500/40 transition-colors" role="alert">
           <div className="flex items-center gap-3">
@@ -471,14 +551,14 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             href={actionLink.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold text-sm flex items-center justify-center transition-all active:scale-95 shrink-0"
+            className="w-full sm:w-auto px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-black rounded-xl font-bold text-sm flex items-center justify-center transition-all active:scale-95 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
           >
             {t.openLink}
           </a>
         </div>
       )}
 
-      {/* Ek Dosyalar */}
+      {/* Attachments */}
       {email.hasAttachments && email.attachments && email.attachments.length > 0 && (
         <div className="mx-3 sm:mx-4 mt-3 sm:mt-4 p-3 bg-white/[0.02] border border-white/5 rounded-xl sm:rounded-2xl" role="region" aria-label="Attachments">
           <div className="flex items-center gap-2 mb-2">
@@ -491,8 +571,9 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
             {email.attachments.map((att, i) => (
               <button
                 key={att.id || i}
+                type="button"
                 onClick={() => handleDownloadAttachment(att)}
-                className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-pointer group text-left"
+                className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] border border-white/5 rounded-xl hover:bg-white/[0.06] hover:border-white/10 transition-all cursor-pointer group text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                 title={`${lang === 'tr' ? 'İndir' : 'Download'}: ${att.filename}`}
                 aria-label={`${lang === 'tr' ? 'İndir' : 'Download'}: ${att.filename}`}
               >
@@ -506,7 +587,7 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
                     {t.preview}
                   </span>
                 ) : (
-                  <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-green-400 transition-colors" />
+                  <Download className="w-3.5 h-3.5 text-slate-400 group-hover:text-green-400 transition-colors" aria-hidden="true" />
                 )}
               </button>
             ))}
@@ -514,12 +595,12 @@ const EmailViewer: React.FC<EmailViewerProps> = ({ email, loading, onBack, lang,
         </div>
       )}
 
-      {/* İçerik - Sandbox iframe veya kaynak kodu veya headers */}
+      {/* Content - Sandbox iframe, Source or Headers */}
       <div className="flex-grow overflow-y-auto custom-scrollbar relative bg-transparent">
         {showHeaders ? (
           <div className="absolute inset-0 bg-[#050505] p-4 md:p-6 overflow-auto">
             <div className="flex items-center gap-2 mb-4">
-              <List className="w-4 h-4 text-orange-500" />
+              <List className="w-4 h-4 text-orange-500" aria-hidden="true" />
               <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">
                 {t.emailHeaders}
               </span>

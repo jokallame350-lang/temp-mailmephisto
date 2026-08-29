@@ -59,6 +59,11 @@ export const it = {
   errorDomain: 'Errore durante il cambio di dominio',
   usernameTaken: 'Nome utente già occupato',
   newMessageNotif: 'Nuovo messaggio!',
+  errorRateLimit: 'Limite di richieste raggiunto. Nuovo tentativo a breve...',
+  errorNetwork: 'Connessione persa. Riconnessione ai server di posta...',
+  errorSync: 'Ritardo temporaneo di sincronizzazione. In attesa di nuove email...',
+  errorSession: 'Sessione aggiornata in modo sicuro.',
+  errorGeneric: 'Servizio temporaneamente non disponibile. Nuovo tentativo...',
 
   // Araçlar
   qrTitle: 'Connessione Mobile',

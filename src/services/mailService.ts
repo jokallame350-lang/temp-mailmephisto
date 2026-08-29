@@ -112,6 +112,14 @@ const rateLimitState: Record<
   }
 > = {};
 
+const inFlightMessageFetches = new Map<string, Promise<EmailSummary[]>>();
+const inFlightDetailFetches = new Map<string, Promise<EmailDetail | null>>();
+
+export const clearInFlightFetches = () => {
+  inFlightMessageFetches.clear();
+  inFlightDetailFetches.clear();
+};
+
 export const isRateLimited = (provider = 'mail_tm'): boolean => {
   const state = rateLimitState[provider];
 
@@ -153,8 +161,10 @@ export const safeFetch = async (
 ): Promise<Response> => {
   if (isRateLimited(provider)) {
     const waitSec = Math.max(1, Math.ceil(getRateLimitRemainingMs(provider) / 1000));
-    throw new Error(
-      `Rate limited. Retry after ${waitSec}s`
+    throw new MailboxFetchError(
+      `Rate limited. Retry after ${waitSec}s`,
+      'RATE_LIMITED',
+      mailboxId
     );
   }
 
@@ -259,10 +269,12 @@ export const safeFetch = async (
       resetTime: Date.now() + waitMs,
     };
 
-    throw new Error(
+    throw new MailboxFetchError(
       `Rate limit exceeded. Please wait ${Math.ceil(
         waitMs / 1000
-      )} seconds.`
+      )} seconds.`,
+      'RATE_LIMITED',
+      mailboxId
     );
   }
 
@@ -335,7 +347,7 @@ export const determineCategory = (
   const text = normalizeSearchText(raw);
 
   if (
-    /(code|verify|verification|otp|confirm|activation|activate|pin\b|passcode|dogrulama|kod|sifre|aktivasyon|etkinlestir|onay)/i.test(
+    /(code|verify|verification|otp|confirm|activation|activate|pin\b|passcode|dogrulama|kod|sifre|aktivasyon|etkinlestir|onay|رمز|تحقق|تأكيد|تفعيل)/i.test(
       text
     )
   ) {
@@ -343,7 +355,7 @@ export const determineCategory = (
   }
 
   if (
-    /(security|alert|reset password|suspicious|login attempt|unauthorized|2fa|guvenlik|giris|uyari|sifirlama)/i.test(
+    /(security|alert|reset password|suspicious|login attempt|unauthorized|2fa|guvenlik|giris|uyari|sifirlama|أمان|تنبيه|دخول)/i.test(
       text
     )
   ) {
@@ -351,7 +363,7 @@ export const determineCategory = (
   }
 
   if (
-    /(newsletter|bulten|weekly|digest|firsat|indirim|offer|sale|kampanya|promo|discount)/i.test(
+    /(newsletter|bulten|weekly|digest|firsat|indirim|offer|sale|kampanya|promo|discount|نشرة|عرض|تخفيض)/i.test(
       text
     )
   ) {
@@ -1318,138 +1330,28 @@ export const createCustomMailbox =
 export const getMessages = async (
   mailbox: Mailbox
 ): Promise<EmailSummary[]> => {
-  if (isGuerrilla(mailbox.apiBase)) {
-    return await getGuerrillaMessages(mailbox);
+  if (!mailbox) return [];
+  const fetchKey = (mailbox.id || mailbox.address || '').trim().toLowerCase();
+  if (!fetchKey) return [];
+
+  const inFlight = inFlightMessageFetches.get(fetchKey);
+  if (inFlight) {
+    return inFlight;
   }
 
-  if (!mailbox.token) {
-    await rehydrateMailboxSession(mailbox);
-  }
-
-  const apiBase = getApiBase(mailbox.apiBase);
-
-  const res = await safeFetch(
-    `${apiBase}/messages`,
-    {
-      headers: {
-        Authorization: `Bearer ${mailbox.token}`,
-      },
-    },
-    mailbox.apiBase,
-    mailbox.id
-  );
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      mailbox.token = undefined;
-      await rehydrateMailboxSession(mailbox);
-      const retryRes = await safeFetch(
-        `${apiBase}/messages`,
-        {
-          headers: {
-            Authorization: `Bearer ${mailbox.token}`,
-          },
-        },
-        mailbox.apiBase,
-        mailbox.id
-      );
-      if (!retryRes.ok) throw new MailboxFetchError(`Hydra HTTP error ${retryRes.status}`, 'SESSION_EXPIRED', mailbox.id);
-      const retryData = await retryRes.json().catch(() => null);
-      const rawList = Array.isArray(retryData?.['hydra:member'])
-        ? retryData['hydra:member']
-        : Array.isArray(retryData)
-        ? retryData
-        : [];
-      return rawList.map((msg: any) => {
-        const fromAddr = msg.from?.address || 'unknown';
-        const subject = formatSmartSubject(
-          msg.subject || '',
-          msg.intro || '',
-          fromAddr
-        );
-        const intro = msg.intro || '';
-        return {
-          id: String(msg.id),
-          from: {
-            address: fromAddr,
-            name: msg.from?.name || formatSenderName(fromAddr),
-          },
-          subject,
-          intro: intro || 'Görüntülenecek önizleme yok',
-          seen: Boolean(msg.seen),
-          createdAt: msg.createdAt || new Date().toISOString(),
-          aiCategory: determineCategory(
-            subject,
-            fromAddr,
-            intro
-          ),
-        };
-      });
+  const executeFetch = async (): Promise<EmailSummary[]> => {
+    if (isGuerrilla(mailbox.apiBase)) {
+      return await getGuerrillaMessages(mailbox);
     }
-    throw new MailboxFetchError(`HTTP error ${res.status}`, 'NETWORK_ERROR', mailbox.id);
-  }
 
-  const data = await res.json().catch(() => null);
-  const rawList = Array.isArray(data?.['hydra:member'])
-    ? data['hydra:member']
-    : Array.isArray(data)
-    ? data
-    : [];
+    if (!mailbox.token) {
+      await rehydrateMailboxSession(mailbox);
+    }
 
-  return rawList.map((msg: any) => {
-    const fromAddr = msg.from?.address || 'unknown';
-    const subject = formatSmartSubject(
-      msg.subject || '',
-      msg.intro || '',
-      fromAddr
-    );
-    const intro = msg.intro || '';
+    const apiBase = getApiBase(mailbox.apiBase);
 
-    return {
-      id: String(msg.id),
-      from: {
-        address: fromAddr,
-        name: msg.from?.name || formatSenderName(fromAddr),
-      },
-      subject,
-      intro: intro || 'Görüntülenecek önizleme yok',
-      seen: Boolean(msg.seen),
-      createdAt: msg.createdAt || new Date().toISOString(),
-      aiCategory: determineCategory(
-        subject,
-        fromAddr,
-        intro
-      ),
-    };
-  });
-};
-
-export const getMessageDetail = async (
-  mailbox: Mailbox,
-  messageId: string
-): Promise<EmailDetail | null> => {
-  if (!messageId) {
-    return null;
-  }
-
-  if (isGuerrilla(mailbox.apiBase)) {
-    return await getGuerrillaMessageDetail(
-      mailbox,
-      messageId
-    );
-  }
-
-  if (!mailbox.token) {
-    await rehydrateMailboxSession(mailbox);
-  }
-
-  const apiBase = getApiBase(mailbox.apiBase);
-
-  try {
     const res = await safeFetch(
-      `${apiBase}/messages/${encodeURIComponent(
-        messageId
-      )}`,
+      `${apiBase}/messages`,
       {
         headers: {
           Authorization: `Bearer ${mailbox.token}`,
@@ -1460,87 +1362,237 @@ export const getMessageDetail = async (
     );
 
     if (!res.ok) {
-      throw new MailboxFetchError(`Failed to fetch message detail (HTTP ${res.status})`, 'NETWORK_ERROR', mailbox.id);
+      if (res.status === 401) {
+        mailbox.token = undefined;
+        await rehydrateMailboxSession(mailbox);
+        const retryRes = await safeFetch(
+          `${apiBase}/messages`,
+          {
+            headers: {
+              Authorization: `Bearer ${mailbox.token}`,
+            },
+          },
+          mailbox.apiBase,
+          mailbox.id
+        );
+        if (!retryRes.ok) throw new MailboxFetchError(`Hydra HTTP error ${retryRes.status}`, 'SESSION_EXPIRED', mailbox.id);
+        const retryData = await retryRes.json().catch(() => null);
+        const rawList = Array.isArray(retryData?.['hydra:member'])
+          ? retryData['hydra:member']
+          : Array.isArray(retryData)
+          ? retryData
+          : [];
+        return rawList.map((msg: any) => {
+          const fromAddr = msg.from?.address || 'unknown';
+          const subject = formatSmartSubject(
+            msg.subject || '',
+            msg.intro || '',
+            fromAddr
+          );
+          const intro = msg.intro || '';
+          return {
+            id: String(msg.id),
+            from: {
+              address: fromAddr,
+              name: msg.from?.name || formatSenderName(fromAddr),
+            },
+            subject,
+            intro: intro || 'Görüntülenecek önizleme yok',
+            seen: Boolean(msg.seen),
+            createdAt: msg.createdAt || new Date().toISOString(),
+            aiCategory: determineCategory(
+              subject,
+              fromAddr,
+              intro
+            ),
+          };
+        });
+      }
+      throw new MailboxFetchError(`HTTP error ${res.status}`, 'NETWORK_ERROR', mailbox.id);
     }
 
-    const msg = await res.json().catch(() => null);
-    if (!msg || !msg.id) {
-      throw new MailboxFetchError('Empty message detail response from server', 'INVALID_RESPONSE', mailbox.id);
+    const data = await res.json().catch(() => null);
+    if (!data || (!Array.isArray(data?.['hydra:member']) && !Array.isArray(data))) {
+      throw new MailboxFetchError('Hydra API returned an invalid response schema', 'INVALID_RESPONSE', mailbox.id);
     }
+    const rawList = Array.isArray(data?.['hydra:member'])
+      ? data['hydra:member']
+      : (data as any[]);
 
-    const headerFields: Record<string, string> = {
-      From: msg.from?.address || 'unknown',
-      Subject: msg.subject || '',
-      Date: msg.createdAt || '',
-    };
-
-    if (msg.to?.length) {
-      headerFields.To = msg.to
-        .map((t: any) => t.address)
-        .join(', ');
-    }
-
-    if (msg.cc?.length) {
-      headerFields.Cc = msg.cc
-        .map((c: any) => c.address)
-        .join(', ');
-    }
-
-    if (msg.msgid) {
-      headerFields['Message-ID'] = msg.msgid;
-    }
-
-    if (msg.size) {
-      headerFields.Size = `${msg.size} bytes`;
-    }
-
-    const attachments: EmailAttachment[] = Array.isArray(msg.attachments)
-      ? msg.attachments.map((a: any) => ({
-          id: String(a.id || ''),
-          filename:
-            a.filename ||
-            a.name ||
-            'attachment',
-          size: a.size || 0,
-          contentType:
-            a.contentType ||
-            'application/octet-stream',
-        }))
-      : [];
-
-    return {
-      id: String(msg.id),
-      from: {
-        address:
-          msg.from?.address || 'unknown',
-        name:
-          msg.from?.name ||
-          msg.from?.address ||
-          'unknown',
-      },
-      subject: msg.subject || '',
-      intro: msg.intro || '',
-      seen: true,
-      createdAt: msg.createdAt,
-      aiCategory: determineCategory(
+    return rawList.map((msg: any) => {
+      const fromAddr = msg.from?.address || 'unknown';
+      const subject = formatSmartSubject(
         msg.subject || '',
-        msg.from?.address || '',
-        msg.intro || ''
-      ),
-      html: msg.html ? (Array.isArray(msg.html) ? msg.html : [String(msg.html)]) : [],
-      text: msg.text,
-      hasAttachments:
-        attachments.length > 0,
-      attachments,
-      headerFields,
-    };
-  } catch (err: unknown) {
-    if (err instanceof MailboxFetchError) throw err;
-    throw new MailboxFetchError(
-      err instanceof Error ? err.message : 'Failed to fetch message detail',
-      'NETWORK_ERROR',
-      mailbox.id
-    );
+        msg.intro || '',
+        fromAddr
+      );
+      const intro = msg.intro || '';
+
+      return {
+        id: String(msg.id),
+        from: {
+          address: fromAddr,
+          name: msg.from?.name || formatSenderName(fromAddr),
+        },
+        subject,
+        intro: intro || 'Görüntülenecek önizleme yok',
+        seen: Boolean(msg.seen),
+        createdAt: msg.createdAt || new Date().toISOString(),
+        aiCategory: determineCategory(
+          subject,
+          fromAddr,
+          intro
+        ),
+      };
+    });
+  };
+
+  const promise = executeFetch();
+  inFlightMessageFetches.set(fetchKey, promise);
+
+  try {
+    return await promise;
+  } finally {
+    inFlightMessageFetches.delete(fetchKey);
+  }
+};
+
+export const getMessageDetail = async (
+  mailbox: Mailbox,
+  messageId: string
+): Promise<EmailDetail | null> => {
+  if (!messageId || !mailbox) {
+    return null;
+  }
+
+  const mailboxKey = (mailbox.id || mailbox.address || '').trim().toLowerCase();
+  const fetchKey = `${mailboxKey}_${messageId}`;
+
+  const inFlight = inFlightDetailFetches.get(fetchKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const executeFetch = async (): Promise<EmailDetail | null> => {
+    if (isGuerrilla(mailbox.apiBase)) {
+      return await getGuerrillaMessageDetail(
+        mailbox,
+        messageId
+      );
+    }
+
+    if (!mailbox.token) {
+      await rehydrateMailboxSession(mailbox);
+    }
+
+    const apiBase = getApiBase(mailbox.apiBase);
+
+    try {
+      const res = await safeFetch(
+        `${apiBase}/messages/${encodeURIComponent(
+          messageId
+        )}`,
+        {
+          headers: {
+            Authorization: `Bearer ${mailbox.token}`,
+          },
+        },
+        mailbox.apiBase,
+        mailbox.id
+      );
+
+      if (!res.ok) {
+        throw new MailboxFetchError(`Failed to fetch message detail (HTTP ${res.status})`, 'NETWORK_ERROR', mailbox.id);
+      }
+
+      const msg = await res.json().catch(() => null);
+      if (!msg || !msg.id) {
+        throw new MailboxFetchError('Empty message detail response from server', 'INVALID_RESPONSE', mailbox.id);
+      }
+
+      const headerFields: Record<string, string> = {
+        From: msg.from?.address || 'unknown',
+        Subject: msg.subject || '',
+        Date: msg.createdAt || '',
+      };
+
+      if (msg.to?.length) {
+        headerFields.To = msg.to
+          .map((t: any) => t.address)
+          .join(', ');
+      }
+
+      if (msg.cc?.length) {
+        headerFields.Cc = msg.cc
+          .map((c: any) => c.address)
+          .join(', ');
+      }
+
+      if (msg.msgid) {
+        headerFields['Message-ID'] = msg.msgid;
+      }
+
+      if (msg.size) {
+        headerFields.Size = `${msg.size} bytes`;
+      }
+
+      const attachments: EmailAttachment[] = Array.isArray(msg.attachments)
+        ? msg.attachments.map((a: any) => ({
+            id: String(a.id || ''),
+            filename:
+              a.filename ||
+              a.name ||
+              'attachment',
+            size: a.size || 0,
+            contentType:
+              a.contentType ||
+              'application/octet-stream',
+          }))
+        : [];
+
+      return {
+        id: String(msg.id),
+        from: {
+          address:
+            msg.from?.address || 'unknown',
+          name:
+            msg.from?.name ||
+            msg.from?.address ||
+            'unknown',
+        },
+        subject: msg.subject || '',
+        intro: msg.intro || '',
+        seen: true,
+        createdAt: msg.createdAt,
+        aiCategory: determineCategory(
+          msg.subject || '',
+          msg.from?.address || '',
+          msg.intro || ''
+        ),
+        html: msg.html ? (Array.isArray(msg.html) ? msg.html : [String(msg.html)]) : [],
+        text: msg.text,
+        hasAttachments:
+          attachments.length > 0,
+        attachments,
+        headerFields,
+      };
+    } catch (err: unknown) {
+      if (err instanceof MailboxFetchError) throw err;
+      throw new MailboxFetchError(
+        err instanceof Error ? err.message : 'Failed to fetch message detail',
+        'NETWORK_ERROR',
+        mailbox.id
+      );
+    }
+  };
+
+  const promise = executeFetch();
+  inFlightDetailFetches.set(fetchKey, promise);
+
+  try {
+    return await promise;
+  } finally {
+    inFlightDetailFetches.delete(fetchKey);
   }
 };
 

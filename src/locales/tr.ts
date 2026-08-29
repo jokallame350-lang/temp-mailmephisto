@@ -59,6 +59,11 @@ export const tr = {
   errorDomain: 'Alan adı değiştirilemedi',
   usernameTaken: 'Bu kullanıcı adı alınmış',
   newMessageNotif: 'Yeni mesaj!',
+  errorRateLimit: 'İstek sınırı aşıldı. Kısa süre sonra tekrar denenecek...',
+  errorNetwork: 'Bağlantı kesildi. E-posta sunucularına yeniden bağlanılıyor...',
+  errorSync: 'Geçici senkronizasyon gecikmesi. Yeni e-postalar dinleniyor...',
+  errorSession: 'Oturum güvenli bir şekilde yenilendi.',
+  errorGeneric: 'Servis geçici olarak kullanılamıyor. Yeniden deneniyor...',
 
   // Araçlar
   qrTitle: 'Mobil Bağlantı',

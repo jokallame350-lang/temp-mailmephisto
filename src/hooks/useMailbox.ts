@@ -6,6 +6,49 @@ export const STORAGE_KEY = 'nexus_accounts_v5';
 export const MAX_ACTIVE_ACCOUNTS = 100;
 export const ACCOUNT_LIFETIME_MS = 24 * 60 * 60 * 1000;
 
+export const cleanupLegacyStorage = () => {
+    if (typeof localStorage === 'undefined') return;
+    try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+
+            // 1. Obsolete account keys (nexus_accounts_v1..v4, mephisto_accounts, legacy unversioned keys)
+            if (
+                (key.startsWith('nexus_accounts') && key !== STORAGE_KEY) ||
+                key.startsWith('mephisto_accounts') ||
+                key === 'accounts' ||
+                key === 'mailboxes'
+            ) {
+                keysToRemove.push(key);
+            }
+
+            // 2. Obsolete inbox keys: mephisto_inbox_v1_..., mephisto_inbox_<addr> (not v2)
+            if (
+                key.startsWith('mephisto_inbox_') &&
+                !key.startsWith('mephisto_inbox_v2_')
+            ) {
+                keysToRemove.push(key);
+            }
+
+            // 3. Obsolete deleted keys: mephisto_deleted_... (not v1)
+            if (
+                key.startsWith('mephisto_deleted_') &&
+                !key.startsWith('mephisto_deleted_v1_')
+            ) {
+                keysToRemove.push(key);
+            }
+        }
+
+        keysToRemove.forEach(k => {
+            try {
+                localStorage.removeItem(k);
+            } catch {}
+        });
+    } catch {}
+};
+
 export const safeParseAccounts = (raw: string | null): Mailbox[] => {
     if (!raw) return [];
     try {
@@ -15,7 +58,15 @@ export const safeParseAccounts = (raw: string | null): Mailbox[] => {
         return parsed
             .filter((a: Mailbox) => a && typeof a.id === 'string' && typeof a.address === 'string' && (!a.createdAt || now - a.createdAt < ACCOUNT_LIFETIME_MS))
             .map((a: any) => {
-                const { password: _p, token: _t, ...safeAccount } = a;
+                const {
+                    password: _p,
+                    token: _t,
+                    sid_token: _st,
+                    auth: _au,
+                    headers: _h,
+                    credentials: _c,
+                    ...safeAccount
+                } = a;
                 return {
                     ...safeAccount,
                     token: undefined,
@@ -27,6 +78,7 @@ export const safeParseAccounts = (raw: string | null): Mailbox[] => {
 
 export const getInitialAccounts = (): Mailbox[] => {
     if (typeof window === 'undefined') return [];
+    cleanupLegacyStorage();
     return safeParseAccounts(localStorage.getItem(STORAGE_KEY));
 };
 
@@ -74,7 +126,18 @@ export function useMailbox() {
 
     const persist = useCallback((items: Mailbox[]) => {
         try {
-            const safeItems = items.map(({ password: _p, token: _t, ...account }) => account);
+            const safeItems = items.map((account: any) => {
+                const {
+                    password: _p,
+                    token: _t,
+                    sid_token: _st,
+                    auth: _au,
+                    headers: _h,
+                    credentials: _c,
+                    ...safeAccount
+                } = account;
+                return safeAccount as Mailbox;
+            });
             if (safeItems.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(safeItems)); else localStorage.removeItem(STORAGE_KEY);
         } catch {}
     }, []);

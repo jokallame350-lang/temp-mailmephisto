@@ -2,6 +2,9 @@ const API_BASE = "https://api.mail.gw";
 const WEB_ORIGIN = "https://mephistomail.site";
 
 chrome.runtime.onInstalled.addListener(() => {
+    if (chrome.storage?.session?.setAccessLevel) {
+        chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' }).catch(() => {});
+    }
     chrome.contextMenus.create({
         id: "insert-mephisto",
         title: "Insert MephistoMail Address",
@@ -20,7 +23,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     }).catch(() => [{ result: false }]);
     if (!isAllowed) return;
 
-    chrome.storage.local.get(["mephistoAccount"], (result) => {
+    chrome.storage.session.get(["mephistoAccount"], (result) => {
         const account = result.mephistoAccount;
         if (account?.address) {
             chrome.tabs.sendMessage(tab.id, { action: "insertEmail", email: account.address }).catch(() => {});
@@ -40,7 +43,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 async function checkNewEmails() {
-    chrome.storage.local.get(["mephistoAccount"], async (result) => {
+    chrome.storage.session.get(["mephistoAccount"], async (result) => {
         const acc = result.mephistoAccount;
         if (!acc?.token) return;
         try {
