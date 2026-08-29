@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   server: {
     port: 3000,
     host: '127.0.0.1',
@@ -36,6 +36,4 @@ export default defineConfig(({ command }) => ({
       },
     },
   },
-  // Avoid changing production behavior based on the Vite command.
-  define: command === 'build' ? {} : {},
-}));
+});
