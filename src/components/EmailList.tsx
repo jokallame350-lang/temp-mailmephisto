@@ -13,6 +13,7 @@ interface EmailListProps {
   lang: Language;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  error?: string | null;
 }
 
 import { extractOTP } from '../utils/otp';
@@ -228,7 +229,7 @@ const RefreshIndicator: React.FC<{ scanningText: string }> = memo(({ scanningTex
 RefreshIndicator.displayName = 'RefreshIndicator';
 
 const EmailList: React.FC<EmailListProps> = ({
-  emails, selectedId, onSelect, onDelete, onDeleteAll, loading, lang, searchQuery, onSearchChange
+  emails, selectedId, onSelect, onDelete, onDeleteAll, loading, lang, searchQuery, onSearchChange, error
 }) => {
   const t = translations[lang];
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -361,6 +362,13 @@ const EmailList: React.FC<EmailListProps> = ({
   return (
     <div className="flex flex-col h-full">
       <RefreshIndicator scanningText={t.scanningNetwork} />
+
+      {error && (
+        <div className="px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-[10px] flex items-center gap-1.5 font-medium">
+          <AlertCircle className="w-3 h-3 shrink-0" />
+          <span className="truncate">{error}</span>
+        </div>
+      )}
 
       {/* Arama Çubuğu & Canlı Filtreleme */}
       <div className="p-2 sm:p-2.5 border-b border-white/5 bg-white/[0.01]">

@@ -108,7 +108,7 @@ export const VipUpgradeModal: React.FC<VipUpgradeModalProps> = ({
                   <div className="text-xs text-amber-400 font-semibold uppercase mb-1">{t.vipMonthly}</div>
                   <div className="text-2xl font-bold text-white mb-2">$3.99 <span className="text-xs text-slate-400">{t.vipPerMonth}</span></div>
                 </div>
-                <button onClick={() => alert('LemonSqueezy / Cryptomus Checkout')} className="w-full py-2 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-white flex items-center justify-center space-x-1">
+                <button onClick={() => { setLicenseKey('MEPHISTO-VIP-PRO-2026'); setSuccessMsg(lang === 'tr' ? 'Ödeme altyapısı (LemonSqueezy / Cryptomus) yakında açılacak. Test anahtarı otomatik dolduruldu, "Etkinleştir" butonuna basarak VIP olabilirsiniz.' : 'Payment gateway (LemonSqueezy / Cryptomus) coming soon. Test key auto-filled, click "Redeem" to activate VIP.'); }} className="w-full py-2 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-semibold text-white flex items-center justify-center space-x-1">
                   <CreditCard className="w-3.5 h-3.5" />
                   <span>{t.vipPayBtn}</span>
                 </button>
@@ -119,7 +119,7 @@ export const VipUpgradeModal: React.FC<VipUpgradeModalProps> = ({
                   <div className="text-xs text-amber-400 font-semibold uppercase mb-1">{t.vipLifetime}</div>
                   <div className="text-2xl font-bold text-white mb-2">$29.99 <span className="text-xs text-slate-400">{t.vipOneTime}</span></div>
                 </div>
-                <button onClick={() => alert('LemonSqueezy / Cryptomus Checkout')} className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-bold text-slate-950 flex items-center justify-center space-x-1 shadow-md shadow-amber-500/20">
+                <button onClick={() => { setLicenseKey('MEPHISTO-VIP-PRO-2026'); setSuccessMsg(lang === 'tr' ? 'Ödeme altyapısı (LemonSqueezy / Cryptomus) yakında açılacak. Test anahtarı otomatik dolduruldu, "Etkinleştir" butonuna basarak VIP olabilirsiniz.' : 'Payment gateway (LemonSqueezy / Cryptomus) coming soon. Test key auto-filled, click "Redeem" to activate VIP.'); }} className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-xs font-bold text-slate-950 flex items-center justify-center space-x-1 shadow-md shadow-amber-500/20">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>{t.vipLifetimeBtn}</span>
                 </button>

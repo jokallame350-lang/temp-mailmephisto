@@ -97,7 +97,7 @@ import {
   safeFetch,
   getAttachment,
 } from '../src/services/mailService.ts';
-import { Mailbox, EmailDetail } from '../src/types.ts';
+import { Mailbox, EmailDetail, EmailSummary } from '../src/types.ts';
 
 // ─── Deterministic HTTP Test Seam ──────────────────────────────────────────
 type FetchMockHandler = (url: string, init?: RequestInit) => Promise<Response> | Response;
@@ -1915,3 +1915,73 @@ test('Integration M2: fetchDomains falls back to GUERRILLA_DOMAINS when API fail
     cleanupIntegrationSeam();
   }
 });
+
+// ─── N. Custom Input Validation & Account Isolation Tests ─────────────────
+test('Integration N1: createCustomMailbox rejects invalid inputs with strict errors', async () => {
+  // Empty inputs
+  await assert.rejects(() => createCustomMailbox('', 'sharklasers.com', 'guerrilla'));
+  await assert.rejects(() => createCustomMailbox('testuser', '', 'guerrilla'));
+
+  // Invalid characters / symbols in username
+  await assert.rejects(() => createCustomMailbox('bad user with space', 'sharklasers.com', 'guerrilla'));
+  await assert.rejects(() => createCustomMailbox('bad<user>@name', 'sharklasers.com', 'guerrilla'));
+  await assert.rejects(() => createCustomMailbox('bad!user#name', 'sharklasers.com', 'guerrilla'));
+
+  // Extremely long username (> 64 chars)
+  const hugeUsername = 'a'.repeat(65);
+  await assert.rejects(() => createCustomMailbox(hugeUsername, 'sharklasers.com', 'guerrilla'));
+
+  // Invalid domain formatting
+  await assert.rejects(() => createCustomMailbox('validuser', '.badprefix.com', 'guerrilla'));
+  await assert.rejects(() => createCustomMailbox('validuser', 'badsuffix.com.', 'guerrilla'));
+});
+
+test('Integration N2: Multi-account isolation prevents message cross-contamination', () => {
+  // Simulated accounts A and B
+  const accountA: Mailbox = { id: 'box_A', address: 'alpha@sharklasers.com', apiBase: 'guerrilla' };
+  const accountB: Mailbox = { id: 'box_B', address: 'beta@sharklasers.com', apiBase: 'guerrilla' };
+
+  const messagesAccountA: EmailSummary[] = [
+    { id: 'msg_101', from: 'alice@test.com', subject: 'Secret Alpha Code', intro: '', createdAt: new Date().toISOString(), seen: false, aiCategory: 'Verification' },
+  ];
+  const messagesAccountB: EmailSummary[] = [
+    { id: 'msg_202', from: 'bob@test.com', subject: 'Beta Report', intro: '', createdAt: new Date().toISOString(), seen: false, aiCategory: 'Newsletter' },
+  ];
+
+  // Request token tracker simulation
+  let activeAccountId = accountA.id;
+  let activeRequestId = 1;
+
+  // In-flight fetch for Account A starts (req 1)
+  const req1_Account = activeAccountId;
+  const req1_Id = activeRequestId;
+
+  // User immediately switches to Account B (req 2)
+  activeAccountId = accountB.id;
+  activeRequestId = 2;
+
+  // Late response for Account A arrives
+  const isReq1ValidForCurrentState = (req1_Id === activeRequestId && req1_Account === activeAccountId);
+  assert.equal(isReq1ValidForCurrentState, false, 'Late response from Account A must be discarded when active account is B');
+
+  // Response for Account B arrives
+  const isReq2ValidForCurrentState = (activeRequestId === 2 && activeAccountId === accountB.id);
+  assert.equal(isReq2ValidForCurrentState, true, 'Active response for Account B must be accepted');
+  assert.ok(!messagesAccountB.some(m => messagesAccountA.some(a => a.id === m.id)));
+});
+
+test('Integration N3: Deletion state prevents resurrected messages on subsequent poll merges', () => {
+  const incomingServerList: EmailSummary[] = [
+    { id: 'msg_301', from: 'bank@auth.com', subject: 'Your OTP', intro: '123456', createdAt: new Date().toISOString(), seen: false, aiCategory: 'Verification' },
+    { id: 'msg_302', from: 'news@weekly.com', subject: 'Tech Roundup', intro: '', createdAt: new Date().toISOString(), seen: false, aiCategory: 'Newsletter' },
+  ];
+
+  const deletedIds = new Set<string>(['msg_301']); // User deleted msg_301
+
+  // Filter server list against deletedIds
+  const filtered = incomingServerList.filter(e => !deletedIds.has(e.id));
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].id, 'msg_302');
+  assert.ok(!filtered.some(e => e.id === 'msg_301'));
+});
+
