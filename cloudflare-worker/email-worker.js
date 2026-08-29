@@ -8,6 +8,8 @@
 const MESSAGE_TTL = 3600;
 const MAX_MESSAGES = 50;
 const MAX_RAW_BYTES = 512 * 1024;
+const MAX_HTML_BYTES = 256 * 1024;
+const MAIL_DOMAINS = ['mephistomail.site', 'anon.mephistomail.site'];
 const ADDRESS_RE = /^[a-z0-9][a-z0-9._-]{0,63}@[a-z0-9.-]+\.[a-z]{2,}$/i;
 const ALLOWED_ORIGIN = 'https://mephistomail.site';
 
@@ -23,22 +25,24 @@ const json = (body, status = 200, extra = {}) => new Response(JSON.stringify(bod
   headers: { 'Content-Type': 'application/json; charset=utf-8', ...securityHeaders, ...extra },
 });
 
-const corsHeaders = (request) => ({
-  ...securityHeaders,
-  'Access-Control-Allow-Origin': request.headers.get('Origin') === ALLOWED_ORIGIN ? ALLOWED_ORIGIN : ALLOWED_ORIGIN,
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-  'Vary': 'Origin',
-});
+const corsHeaders = request => {
+  const origin = request.headers.get('Origin');
+  return {
+    ...securityHeaders,
+    ...(origin === ALLOWED_ORIGIN ? { 'Access-Control-Allow-Origin': ALLOWED_ORIGIN, 'Vary': 'Origin' } : {}),
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  };
+};
 
-const base64url = (bytes) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-const encode = (text) => base64url(new TextEncoder().encode(text));
-const decode = (text) => {
+const base64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+const encode = text => base64url(new TextEncoder().encode(text));
+const decode = text => {
   const normalized = text.replace(/-/g, '+').replace(/_/g, '/');
   const binary = atob(normalized + '='.repeat((4 - normalized.length % 4) % 4));
   return Uint8Array.from(binary, c => c.charCodeAt(0));
 };
-const keyFor = (secret) => crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+const keyFor = secret => crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 
 const signToken = async (address, secret) => {
   const payload = encode(JSON.stringify({ sub: address, exp: Math.floor(Date.now() / 1000) + MESSAGE_TTL, v: 1 }));
@@ -55,8 +59,7 @@ const verifyToken = async (token, address, secret) => {
     const [payload, signature] = parts;
     const data = JSON.parse(new TextDecoder().decode(decode(payload)));
     if (data.sub !== address || !Number.isFinite(data.exp) || data.exp <= Math.floor(Date.now() / 1000)) return false;
-    const key = await keyFor(secret);
-    return crypto.subtle.verify('HMAC', key, decode(signature), new TextEncoder().encode(payload));
+    return crypto.subtle.verify('HMAC', await keyFor(secret), decode(signature), new TextEncoder().encode(payload));
   } catch { return false; }
 };
 
@@ -68,11 +71,29 @@ const bearer = request => {
 const authenticate = async (request, address, env) =>
   ADDRESS_RE.test(address) && verifyToken(bearer(request), address, env.MAILBOX_ISSUER_SECRET);
 
+const randomLocalPart = () => {
+  const bytes = new Uint8Array(18);
+  crypto.getRandomValues(bytes);
+  return `m${base64url(bytes).toLowerCase()}`.replace(/[^a-z0-9]/g, '').slice(0, 24);
+};
+
+const createMailbox = async env => {
+  if (!env.MEPHISTO_KV || !env.MAILBOX_ISSUER_SECRET) throw new Error('Server configuration error');
+  const address = `${randomLocalPart()}@${MAIL_DOMAINS[0]}`;
+  // Reserve the mailbox briefly. The email handler can still receive mail for it,
+  // while the token proves the caller obtained this exact mailbox from the service.
+  const reservation = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+  await env.MEPHISTO_KV.put(`mailbox:${address}`, '1', { expirationTtl: MESSAGE_TTL });
+  await env.MEPHISTO_KV.put(`reservation:${reservation}`, address, { expirationTtl: 300 });
+  const token = await signToken(address, env.MAILBOX_ISSUER_SECRET);
+  return { address, token, expiresIn: MESSAGE_TTL, reservation };
+};
+
 export default {
   async email(message, env) {
     try {
       const recipient = String(message.to || '').toLowerCase().trim();
-      if (!ADDRESS_RE.test(recipient)) return;
+      if (!ADDRESS_RE.test(recipient) || !MAIL_DOMAINS.includes(recipient.split('@')[1])) return;
       const raw = await new Response(message.raw).arrayBuffer();
       if (raw.byteLength > MAX_RAW_BYTES) return;
 
@@ -84,7 +105,7 @@ export default {
         subject: String(message.headers.get('subject') || '(No Subject)').slice(0, 500),
         intro: rawText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 150),
         text: rawText.slice(0, MAX_RAW_BYTES),
-        html: (rawText.match(/Content-Type:\s*text\/html[\s\S]*?\r?\n\r?\n([\s\S]*)/i)?.[1] || '').slice(0, 256000),
+        html: (rawText.match(/Content-Type:\s*text\/html[\s\S]*?\r?\n\r?\n([\s\S]*)/i)?.[1] || '').slice(0, MAX_HTML_BYTES),
         createdAt: new Date().toISOString(),
       };
 
@@ -93,39 +114,34 @@ export default {
       const messages = Array.isArray(existing) ? existing : [];
       messages.unshift(emailObj);
       await env.MEPHISTO_KV.put(key, JSON.stringify(messages.slice(0, MAX_MESSAGES)), { expirationTtl: MESSAGE_TTL });
+      await env.MEPHISTO_KV.put(`mailbox:${recipient}`, '1', { expirationTtl: MESSAGE_TTL });
     } catch (err) {
-      console.error('[Mephisto Engine] email processing failed:', err?.message || 'unknown');
+      console.error('[Mephisto Engine] email processing failed:', err?.message || 'unknown error');
     }
   },
 
   async fetch(request, env) {
     const url = new URL(request.url);
     const headers = corsHeaders(request);
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
-
-    if (url.pathname === '/api/domains' && request.method === 'GET') {
-      return json({ domains: ['mephistomail.site', 'anon.mephistomail.site'] }, 200, headers);
+    if (request.method === 'OPTIONS') {
+      if (request.headers.get('Origin') !== ALLOWED_ORIGIN) return new Response(null, { status: 403, headers });
+      return new Response(null, { status: 204, headers });
+    }
+    if (request.headers.get('Origin') && request.headers.get('Origin') !== ALLOWED_ORIGIN) {
+      return json({ error: 'Origin not allowed' }, 403, headers);
     }
 
-    // Token issuance is intentionally restricted: the client must prove mailbox creation
-    // through a one-time creation nonce stored server-side. Never issue a token for an
-    // arbitrary address supplied by an unauthenticated caller.
-    if (url.pathname === '/api/mailbox/token' && request.method === 'POST') {
-      const body = await request.json().catch(() => null);
-      const address = String(body?.address || '').toLowerCase().trim();
-      const creationNonce = String(body?.creationNonce || '').trim();
-      if (!ADDRESS_RE.test(address) || !creationNonce || creationNonce.length < 32) {
-        return json({ error: 'Invalid mailbox credentials' }, 400, headers);
+    if (url.pathname === '/api/domains' && request.method === 'GET') {
+      return json({ domains: MAIL_DOMAINS }, 200, headers);
+    }
+
+    if (url.pathname === '/api/mailbox/create' && request.method === 'POST') {
+      try {
+        const result = await createMailbox(env);
+        return json(result, 201, headers);
+      } catch {
+        return json({ error: 'Server configuration error' }, 500, headers);
       }
-      if (!env.MAILBOX_ISSUER_SECRET) return json({ error: 'Server configuration error' }, 500, headers);
-
-      const nonceKey = `create:${creationNonce}`;
-      const claimedAddress = await env.MEPHISTO_KV.get(nonceKey);
-      if (claimedAddress !== address) return json({ error: 'Invalid or expired creation nonce' }, 401, headers);
-      await env.MEPHISTO_KV.delete(nonceKey);
-
-      const token = await signToken(address, env.MAILBOX_ISSUER_SECRET);
-      return json({ token, expiresIn: MESSAGE_TTL }, 200, headers);
     }
 
     if (url.pathname === '/api/messages' && request.method === 'GET') {
