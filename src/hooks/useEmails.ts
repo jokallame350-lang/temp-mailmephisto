@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Mailbox, EmailSummary, EmailDetail, AppStats, NotificationFilter } from '../types';
 import { getMessages, getMessageDetail, deleteMessage, subscribeToMailboxEvents } from '../services/mailService';
-import { extractActionLinks } from '../utils/actionLinks';
 import { playNotificationSound } from '../utils/audioNotification';
 
-const REFRESH_INTERVAL = 2500; // 2.5 saniyede bir ultra-hızlı senkronize kontrol
-const REFRESH_INTERVAL_HIDDEN = 20000; // Sekme arka plandayken 20 sn
+// SSE is the primary real-time channel. Polling is only a resilient fallback.
+const REFRESH_INTERVAL = 10000;
+const REFRESH_INTERVAL_HIDDEN = 30000;
 const STATS_KEY = 'mephisto_stats';
 const FILTER_KEY = 'mephisto_notif_filters';
 
@@ -23,11 +23,20 @@ const defaultFilters: NotificationFilter = {
     other: true,
 };
 
+const safeRead = <T,>(key: string, fallback: T): T => {
+    try {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : fallback;
+    } catch {
+        return fallback;
+    }
+};
+
 export function useEmails(
     activeAccount: Mailbox | null,
     onNewEmail?: (from: string, subject: string) => void,
-    autoVerifyEnabled?: boolean,
-    onAutoVerifySuccess?: (urlLabel: string) => void
+    _autoVerifyEnabled?: boolean,
+    _onAutoVerifySuccess?: (urlLabel: string) => void
 ) {
     const [emails, setEmails] = useState<EmailSummary[]>([]);
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
@@ -39,48 +48,19 @@ export function useEmails(
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    const [stats, setStats] = useState<AppStats>(() => safeRead(STATS_KEY, defaultStats));
+    const [notifFilters, setNotifFilters] = useState<NotificationFilter>(() => safeRead(FILTER_KEY, defaultFilters));
 
-    // Listen for instant 1-second Test OTP demo events
+    const previousIdsRef = useRef<Set<string>>(new Set());
+    const fetchingRef = useRef(false);
+    const mountedRef = useRef(true);
+
     useEffect(() => {
-        const handleTestOTP = (e: Event) => {
-            const customEvent = e as CustomEvent;
-            if (customEvent.detail) {
-                const fromStr = typeof customEvent.detail.from === 'string' ? customEvent.detail.from : 'security@verify-service.com';
-                const newEmail: EmailSummary = {
-                    id: customEvent.detail.id,
-                    from: fromStr,
-                    subject: customEvent.detail.subject,
-                    intro: customEvent.detail.body || '🔐 Your Verification Code: 849201',
-                    seen: false,
-                    createdAt: new Date().toISOString(),
-                    aiCategory: 'Verification',
-                };
-                setEmails(prev => [newEmail, ...prev]);
-                playNotificationSound();
-                if (onNewEmail) {
-                    onNewEmail(fromStr, newEmail.subject);
-                }
-            }
-        };
-        window.addEventListener('mephisto-test-otp', handleTestOTP);
-        return () => window.removeEventListener('mephisto-test-otp', handleTestOTP);
-    }, [onNewEmail]);
-    const [stats, setStats] = useState<AppStats>(() => {
-        try { return JSON.parse(localStorage.getItem(STATS_KEY) || '') || defaultStats; }
-        catch { return defaultStats; }
-    });
-    const [notifFilters, setNotifFilters] = useState<NotificationFilter>(() => {
-        try { return JSON.parse(localStorage.getItem(FILTER_KEY) || '') || defaultFilters; }
-        catch { return defaultFilters; }
-    });
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
 
-    const previousEmailCountRef = useRef(0);
-    const verifiedEmailIdsRef = useRef<Set<string>>(new Set());
-
-    // Aktif hesap değiştiğinde sıfırla
-    useEffect(() => {
-        deletedIdsRef.current = deletedIds;
-    }, [deletedIds]);
+    useEffect(() => { deletedIdsRef.current = deletedIds; }, [deletedIds]);
 
     useEffect(() => {
         setEmails([]);
@@ -88,20 +68,17 @@ export function useEmails(
         setCurrentEmailDetail(null);
         setDeletedIds(new Set());
         deletedIdsRef.current = new Set();
-        verifiedEmailIdsRef.current = new Set();
+        previousIdsRef.current = new Set();
         setFetchError(null);
-        previousEmailCountRef.current = 0;
         setProgress(0);
     }, [activeAccount?.id]);
 
-    // Stats persist
     useEffect(() => {
-        localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+        try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch {}
     }, [stats]);
 
-    // Filter persist
     useEffect(() => {
-        localStorage.setItem(FILTER_KEY, JSON.stringify(notifFilters));
+        try { localStorage.setItem(FILTER_KEY, JSON.stringify(notifFilters)); } catch {}
     }, [notifFilters]);
 
     const shouldNotify = useCallback((category: string) => {
@@ -109,213 +86,124 @@ export function useEmails(
         return notifFilters[key] ?? false;
     }, [notifFilters]);
 
-    const fetchEmails = useCallback(async () => {
-        if (!activeAccount) return;
-        try {
-            const fetched = await getMessages(activeAccount);
-            if (fetched && Array.isArray(fetched)) {
-                const currentDeletedIds = deletedIdsRef.current;
-                const filtered = fetched.filter(e => !currentDeletedIds.has(e.id));
+    const notifyNewEmails = useCallback((newEmails: EmailSummary[]) => {
+        if (!newEmails.length) return;
+        const shouldPlay = newEmails.some(e => shouldNotify(e.aiCategory));
+        if (!shouldPlay) return;
 
-                // Yeni mail geldi mi?
-                if (filtered.length > previousEmailCountRef.current && previousEmailCountRef.current !== 0) {
-                    const newEmails = filtered.slice(0, filtered.length - previousEmailCountRef.current);
-                    const shouldPlay = newEmails.some(e => shouldNotify(e.aiCategory));
+        playNotificationSound();
+        if (typeof Notification === 'undefined') return;
 
-                    if (shouldPlay) {
-                        playNotificationSound();
-                        if (typeof Notification !== 'undefined') {
-                            if (Notification.permission === 'granted') {
-                                const firstEmail = newEmails[0];
-                                let fromStr = 'Yeni E-Posta';
-                                if (firstEmail) {
-                                    if (typeof firstEmail.from === 'string') fromStr = firstEmail.from;
-                                    else if (firstEmail.from && typeof firstEmail.from === 'object') fromStr = firstEmail.from.name || firstEmail.from.address || 'Yeni E-Posta';
-                                }
-                                const notifTitle = `📩 ${fromStr}`;
-                                const notifBody = firstEmail ? (firstEmail.subject || 'Yeni bir mesajınız var.') : 'Yeni bir mesajınız var.';
+        const first = newEmails[0];
+        const from = typeof first.from === 'string'
+            ? first.from
+            : first.from?.name || first.from?.address || 'Yeni E-Posta';
+        const title = `📩 ${from}`;
+        const body = first.subject || 'Yeni bir mesajınız var.';
 
-                                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                                    navigator.serviceWorker.ready.then(reg => {
-                                        reg.showNotification(notifTitle, {
-                                            body: notifBody,
-                                            icon: '/icon.png',
-                                            badge: '/icon.png',
-                                            data: { url: '/' }
-                                        } as any);
-                                    }).catch(() => {
-                                        try { new Notification(notifTitle, { body: notifBody, icon: '/icon.png' }); } catch {}
-                                    });
-                                } else {
-                                    try { new Notification(notifTitle, { body: notifBody, icon: '/icon.png' }); } catch {}
-                                }
-                            } else if (Notification.permission !== 'denied') {
-                                Notification.requestPermission().catch(() => {});
-                            }
-                        }
-                    }
-
-                    // Toast bildirimi tetikle
-                    newEmails.forEach(e => {
-                        let fromName = '';
-                        if (typeof e.from === 'string') {
-                            fromName = e.from;
-                        } else if (e.from && typeof e.from === 'object') {
-                            fromName = String(e.from.name || e.from.address || 'unknown');
-                        } else {
-                            fromName = String(e.from || 'unknown');
-                        }
-                        onNewEmail?.(fromName, e.subject);
-                    });
-
-                    // Otomatik Doğrulama (Auto-Verify) kontrolü — Her gelen veya listedeki yeni mail için
-                    if (autoVerifyEnabled && filtered.length > 0) {
-                        filtered.forEach(async (e) => {
-                            if (verifiedEmailIdsRef.current.has(e.id)) return;
-                            verifiedEmailIdsRef.current.add(e.id);
-
-                            try {
-                                const detail = await getMessageDetail(activeAccount, e.id);
-                                if (detail) {
-                                    const htmlText = detail.html && detail.html.length > 0 ? (typeof detail.html[0] === 'string' ? detail.html[0] : '') : '';
-                                    const action = extractActionLinks(htmlText);
-                                    if (action && action.url) {
-                                        // 1. HTTP GET Fetch isteği (cors / fallback no-cors)
-                                        fetch(action.url, { method: 'GET', credentials: 'omit' }).catch(() => {
-                                            return fetch(action.url, { method: 'GET', mode: 'no-cors' });
-                                        });
-
-                                        // 2. Arka plan 1x1 iFrame Entegrasyonu (Tam Tarayıcı Gezinmesi ve Redirect Takibi İçin)
-                                        if (typeof document !== 'undefined') {
-                                            try {
-                                                const iframe = document.createElement('iframe');
-                                                iframe.style.position = 'fixed';
-                                                iframe.style.width = '0px';
-                                                iframe.style.height = '0px';
-                                                iframe.style.border = 'none';
-                                                iframe.style.opacity = '0';
-                                                iframe.style.pointerEvents = 'none';
-                                                iframe.src = action.url;
-                                                document.body.appendChild(iframe);
-
-                                                setTimeout(() => {
-                                                    try {
-                                                        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-                                                    } catch {}
-                                                }, 6000);
-                                            } catch {}
-                                        }
-
-                                        onAutoVerifySuccess?.(action.label || 'Doğrulama Linki');
-                                    }
-                                }
-                            } catch { /* sessizce geç */ }
-                        });
-                    }
-
-                    // Stats güncelle
-                    setStats(prev => {
-                        const updated = { ...prev };
-                        updated.totalEmailsReceived += newEmails.length;
-                        updated.lastActivity = Date.now();
-                        newEmails.forEach(e => {
-                            updated.categoryBreakdown[e.aiCategory] = (updated.categoryBreakdown[e.aiCategory] || 0) + 1;
-                        });
-                        return updated;
-                    });
-                }
-                previousEmailCountRef.current = Math.max(previousEmailCountRef.current, filtered.length);
-
-                // E-postaların geçici API takılmalarında ekrandan kaybolmaması için Merge algoritması:
-                setEmails(prev => {
-                    const map = new Map<string, EmailSummary>();
-                    // Önceki silinmemiş e-postaları koru
-                    prev.forEach(item => {
-                        if (!currentDeletedIds.has(item.id)) map.set(item.id, item);
-                    });
-                    // Sunucudan gelen taze e-postaları ekle/güncelle
-                    filtered.forEach(item => map.set(item.id, item));
-
-                    const merged = Array.from(map.values());
-                    return merged.sort((a, b) => {
-                        const dateA = new Date(a.createdAt).getTime();
-                        const dateB = new Date(b.createdAt).getTime();
-                        if (!isNaN(dateB) && !isNaN(dateA)) return dateB - dateA;
-                        return String(b.id).localeCompare(String(a.id));
-                    });
+        if (Notification.permission === 'granted') {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification(title, { body, icon: '/icon.png', badge: '/icon.png', data: { url: '/' } } as NotificationOptions);
+                }).catch(() => {
+                    try { new Notification(title, { body, icon: '/icon.png' }); } catch {}
                 });
-                setFetchError(null);
-            }
-        } catch (err: any) {
-            console.warn('Email fetch failed:', err);
-            const msg = err?.message || '';
-            if (msg.includes('Rate limit')) {
-                setFetchError(msg);
+            } else {
+                try { new Notification(title, { body, icon: '/icon.png' }); } catch {}
             }
         }
-    }, [activeAccount, playNotificationSound, shouldNotify, onNewEmail]);
+    }, [shouldNotify]);
+
+    const fetchEmails = useCallback(async () => {
+        if (!activeAccount || fetchingRef.current) return;
+        fetchingRef.current = true;
+        try {
+            const fetched = await getMessages(activeAccount);
+            if (!Array.isArray(fetched) || !mountedRef.current) return;
+
+            const currentDeleted = deletedIdsRef.current;
+            const filtered = fetched.filter(e => !currentDeleted.has(e.id));
+            const previousIds = previousIdsRef.current;
+            const newEmails = filtered.filter(e => !previousIds.has(e.id));
+
+            // Do not treat the initial inbox contents as notifications.
+            if (previousIds.size > 0 && newEmails.length > 0) {
+                notifyNewEmails(newEmails);
+                newEmails.forEach(e => {
+                    const from = typeof e.from === 'string'
+                        ? e.from
+                        : e.from?.name || e.from?.address || 'unknown';
+                    onNewEmail?.(String(from), e.subject || '');
+                });
+                setStats(prev => {
+                    const updated = { ...prev, totalEmailsReceived: prev.totalEmailsReceived + newEmails.length, lastActivity: Date.now() };
+                    newEmails.forEach(e => {
+                        updated.categoryBreakdown[e.aiCategory] = (updated.categoryBreakdown[e.aiCategory] || 0) + 1;
+                    });
+                    return updated;
+                });
+            }
+
+            previousIdsRef.current = new Set(filtered.map(e => e.id));
+            setEmails(prev => {
+                const map = new Map<string, EmailSummary>();
+                prev.forEach(item => { if (!currentDeleted.has(item.id)) map.set(item.id, item); });
+                filtered.forEach(item => map.set(item.id, item));
+                return Array.from(map.values()).sort((a, b) => {
+                    const da = new Date(a.createdAt).getTime();
+                    const db = new Date(b.createdAt).getTime();
+                    return (!Number.isNaN(db) && !Number.isNaN(da)) ? db - da : String(b.id).localeCompare(String(a.id));
+                });
+            });
+            setFetchError(null);
+        } catch (err: unknown) {
+            if (!mountedRef.current) return;
+            const message = err instanceof Error ? err.message : String(err || '');
+            if (message.toLowerCase().includes('rate limit')) setFetchError(message);
+        } finally {
+            fetchingRef.current = false;
+        }
+    }, [activeAccount, notifyNewEmails, onNewEmail]);
 
     const handleManualRefresh = useCallback(async () => {
+        if (!activeAccount) return;
         setIsLoadingEmails(true);
         setProgress(25);
         await fetchEmails();
+        if (!mountedRef.current) return;
         setProgress(100);
-        setTimeout(() => {
-            setIsLoadingEmails(false);
-            setProgress(0);
+        window.setTimeout(() => {
+            if (mountedRef.current) { setIsLoadingEmails(false); setProgress(0); }
         }, 300);
-    }, [fetchEmails]);
+    }, [activeAccount, fetchEmails]);
 
-    // Real-time SSE dinleyici (mail.tm ve mail.gw Mercure SSE hub)
+    // Real-time notifications first; polling is deliberately conservative fallback traffic.
     useEffect(() => {
         if (!activeAccount) return;
         const unsubscribe = subscribeToMailboxEvents(activeAccount, () => {
-            setProgress(100);
             fetchEmails();
-            setTimeout(() => setProgress(0), 300);
         });
+        return unsubscribe;
+    }, [activeAccount, fetchEmails]);
+
+    useEffect(() => {
+        if (!activeAccount) return;
+        fetchEmails();
+        let intervalId = window.setInterval(fetchEmails, document.hidden ? REFRESH_INTERVAL_HIDDEN : REFRESH_INTERVAL);
+        const handleVisibility = () => {
+            window.clearInterval(intervalId);
+            intervalId = window.setInterval(fetchEmails, document.hidden ? REFRESH_INTERVAL_HIDDEN : REFRESH_INTERVAL);
+            if (!document.hidden) fetchEmails();
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
         return () => {
-            unsubscribe();
+            window.clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', handleVisibility);
         };
     }, [activeAccount, fetchEmails]);
 
-    // Otomatik e-posta çekme döngüsü (Adaptive Loop)
     useEffect(() => {
-        fetchEmails();
-
-        let dataInterval = setInterval(() => {
-            setProgress(90);
-            fetchEmails().then(() => {
-                setProgress(100);
-                setTimeout(() => setProgress(0), 200);
-            });
-        }, REFRESH_INTERVAL);
-
-        const handleVisibilityChange = () => {
-            clearInterval(dataInterval);
-            if (document.hidden) {
-                dataInterval = setInterval(fetchEmails, REFRESH_INTERVAL_HIDDEN);
-            } else {
-                fetchEmails();
-                dataInterval = setInterval(() => {
-                    setProgress(90);
-                    fetchEmails().then(() => {
-                        setProgress(100);
-                        setTimeout(() => setProgress(0), 200);
-                    });
-                }, REFRESH_INTERVAL);
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => {
-            clearInterval(dataInterval);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, [fetchEmails]);
-
-    // Seçilen e-postanın detayını çek
-    useEffect(() => {
+        let cancelled = false;
         const fetchDetail = async () => {
             if (!selectedEmailId || !activeAccount) {
                 setCurrentEmailDetail(null);
@@ -324,67 +212,56 @@ export function useEmails(
             setIsLoadingDetail(true);
             try {
                 const detail = await getMessageDetail(activeAccount, selectedEmailId);
-                if (detail) setCurrentEmailDetail(detail);
+                if (!cancelled && detail) setCurrentEmailDetail(detail);
             } catch (err) {
-                console.warn('Email detail fetch failed:', err);
+                if (!cancelled) console.warn('Email detail fetch failed:', err);
             } finally {
-                setIsLoadingDetail(false);
+                if (!cancelled) setIsLoadingDetail(false);
             }
         };
         fetchDetail();
+        return () => { cancelled = true; };
     }, [selectedEmailId, activeAccount]);
 
     const handleDeleteEmail = useCallback(async (id: string, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
+        e?.stopPropagation();
         setEmails(prev => prev.filter(email => email.id !== id));
         setDeletedIds(prev => new Set(prev).add(id));
+        previousIdsRef.current.delete(id);
         if (selectedEmailId === id) {
             setSelectedEmailId(null);
             setCurrentEmailDetail(null);
         }
         if (activeAccount) {
-            await deleteMessage(activeAccount, id);
+            try { await deleteMessage(activeAccount, id); } catch (err) { console.warn('Email delete failed:', err); }
         }
     }, [activeAccount, selectedEmailId]);
 
-    const handleDeleteAllEmails = useCallback(() => {
+    const handleDeleteAllEmails = useCallback(async () => {
         const allIds = emails.map(e => e.id);
         setDeletedIds(prev => {
             const next = new Set(prev);
             allIds.forEach(id => next.add(id));
             return next;
         });
+        previousIdsRef.current.clear();
         setEmails([]);
         setSelectedEmailId(null);
         setCurrentEmailDetail(null);
         if (activeAccount) {
-            allIds.forEach(id => deleteMessage(activeAccount, id));
+            await Promise.allSettled(allIds.map(id => deleteMessage(activeAccount, id)));
         }
     }, [emails, activeAccount]);
 
-    // Arama filtreleme (useMemo to prevent creating new array reference on unrelated re-renders)
     const filteredEmails = useMemo(() => {
-        if (!searchQuery || !searchQuery.trim()) return emails;
-        const q = searchQuery.toLowerCase().trim();
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return emails;
         return emails.filter(e => {
             const fromName = typeof e.from === 'string' ? e.from : (e.from?.name || '');
-            const fromAddress = typeof e.from === 'object' ? (e.from?.address || '') : (typeof e.from === 'string' ? e.from : '');
-            const fullFrom = `${fromName} ${fromAddress}`.toLowerCase();
-            const subject = (e.subject || '').toLowerCase();
-            const intro = (e.intro || '').toLowerCase();
-
-            // Check for OTP code pattern
-            const otpMatch = (e.subject || '').match(/\b\d{4,8}\b/) || (e.intro || '').match(/\b\d{4,8}\b/);
-            const otpCode = otpMatch ? otpMatch[0] : '';
-
-            return (
-                fullFrom.includes(q) ||
-                fromName.toLowerCase().includes(q) ||
-                fromAddress.toLowerCase().includes(q) ||
-                subject.includes(q) ||
-                intro.includes(q) ||
-                (otpCode && otpCode.includes(q))
-            );
+            const fromAddress = typeof e.from === 'object' ? (e.from?.address || '') : String(e.from || '');
+            const subject = e.subject || '';
+            const intro = e.intro || '';
+            return `${fromName} ${fromAddress} ${subject} ${intro}`.toLowerCase().includes(q);
         });
     }, [emails, searchQuery]);
 
