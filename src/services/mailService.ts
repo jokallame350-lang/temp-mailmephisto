@@ -789,7 +789,7 @@ const getGuerrillaMessageDetail = async (
       text: undefined,
       hasAttachments: false,
       attachments: [],
-      headers: {},
+      headerFields: {},
     };
   } catch {
     return null;
@@ -1208,7 +1208,7 @@ export const getMessageDetail = async (
             'application/octet-stream',
         }))
       : [],
-    headers: headerFields,
+    headerFields: headerFields,
   };
 };
 

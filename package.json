@@ -9,8 +9,8 @@
     "lint": "tsc -b --pretty false",
     "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
-    "test": "node -e \"console.log('No unit tests configured')\"",
-    "test:watch": "node -e \"console.log('No unit tests configured')\"",
+    "test": "node --test scripts/unit-tests.mjs",
+    "test:watch": "node --test --watch scripts/unit-tests.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
