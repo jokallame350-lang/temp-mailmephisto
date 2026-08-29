@@ -1,4 +1,4 @@
-# 🛡️ MephistoMail — Next-Gen RAM-Only Disposable Email & Privacy Shield
+# 🛡️ MephistoMail — Disposable Email & Privacy Client
 
 <p align="center">
   <a href="https://mephistomail.site">
@@ -7,14 +7,14 @@
 </p>
 
 <p align="center">
-  <strong>The world's fastest, open-source ephemeral email shield engineered for radical privacy, instant 1-second OTP verification, and zero disk persistence.</strong>
+  <strong>An open-source, privacy-focused disposable email frontend client featuring multi-mailbox management, session rehydration, automatic OTP extraction, RFC 5322 EML export, and defense-in-depth content sanitization.</strong>
 </p>
 
 <p align="center">
   <a href="https://mephistomail.site"><img src="https://img.shields.io/badge/Live_Site-mephistomail.site-EA580C?style=for-the-badge&logo=google-chrome&logoColor=white" alt="Live Site"></a>
   <a href="https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob?authuser=0&hl=tr"><img src="https://img.shields.io/badge/Chrome_Web_Store-Official_Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Chrome Extension"></a>
   <a href="https://korben.info/en/mephistomail-disposable-email-no-trace.html"><img src="https://img.shields.io/badge/Featured_On-Korben.info-10B981?style=for-the-badge&logo=safari&logoColor=white" alt="Featured on Korben.info"></a>
-  <a href="https://github.com/jokallame350-lang/temp-mailmephisto/stargazers"><img src="https://img.shields.io/github/stars/jokallame350-lang/temp-mailmephisto?style=for-the-badge&color=F59E0B&logo=github" alt="GitHub Stars"></a>
+  <a href="https://github.com/mephisto-mert/temp-mailmephisto/stargazers"><img src="https://img.shields.io/github/stars/mephisto-mert/temp-mailmephisto?style=for-the-badge&color=F59E0B&logo=github" alt="GitHub Stars"></a>
 </p>
 
 <p align="center">
@@ -23,96 +23,154 @@
   <img src="https://img.shields.io/badge/React-18.2-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 18">
   <img src="https://img.shields.io/badge/Vite-5.2-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite 5">
   <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/Languages-30_Locales-purple?style=flat-square&logo=translate&logoColor=white" alt="30 Languages">
-  <img src="https://img.shields.io/badge/Storage-RAM_Only_(0_Disk)-red?style=flat-square&logo=ram&logoColor=white" alt="RAM Only">
-  <img src="https://img.shields.io/badge/Privacy-GDPR_%26_CCPA_Ready-emerald?style=flat-square&logo=shield&logoColor=white" alt="GDPR Ready">
+  <img src="https://img.shields.io/badge/UI_Languages-9_Locales-purple?style=flat-square&logo=translate&logoColor=white" alt="9 Languages">
+  <img src="https://img.shields.io/badge/Tests-141_Passed-brightgreen?style=flat-square&logo=node.js&logoColor=white" alt="141 Tests">
+  <img src="https://img.shields.io/badge/Extension-Manifest_V3-4285F4?style=flat-square&logo=googlechrome&logoColor=white" alt="Manifest V3">
+  <img src="https://img.shields.io/badge/PWA-Ready-emerald?style=flat-square&logo=pwa&logoColor=white" alt="PWA Ready">
   <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome">
 </p>
 
 ---
 
-## 🌟 As Featured On European Tech Media
+## 🌟 Featured In European Tech Media
 
 > *"MephistoMail stands out with its pretty radical privacy-first approach. No tracking, no logs, no data collection, and most importantly the inbox is truly volatile and can be wiped at any moment by the system. Best of all, there's no account to create, no password to remember, in short, no hassle. And it's free on top of that!"*  
-> — **[Korben.info](https://korben.info/en/mephistomail-disposable-email-no-trace.html)** *(Leading Cybersecurity & Open-Source Technology Journal)*
+> — **[Korben.info](https://korben.info/en/mephistomail-disposable-email-no-trace.html)** *(Cybersecurity & Open-Source Journal)*
 
 ---
 
-## 💡 The Modern Problem & The Mephisto Solution
+## 💡 What is MephistoMail?
 
-Every single time you submit your personal or corporate email to download a whitepaper, try an AI sandbox, or test an untrusted web app, your identity is harvested, cross-referenced with data brokers, and bombarded with promotional spam and phishing attempts. Traditional disposable mail services often log metadata to persistent SQL databases, resell inbound data, or throttle developers behind exorbitant paywalls.
+**MephistoMail** is a modern, client-side disposable email application designed for software developers, QA automation engineers, and privacy-conscious users. It connects to established upstream disposable email providers (such as Guerrilla Mail and Hydra / Mail.tm) to provide instant inbound email receipt, automated OTP verification code parsing, and secure message inspection without requiring user accounts or registration.
 
-**MephistoMail** is the antidote: an open-source, **zero log anonymous inbox** and **custom temp mail generator** engineered from the ground up for high-velocity software engineers, security researchers, and privacy advocates.
+### Core Highlights:
+* 📥 **Inbound Email Client:** Direct integration with upstream disposable mail APIs for real-time inbox polling and message inspection.
+* ⚡ **Automatic OTP Extraction:** Extracts 4-to-8 digit verification pins from subject lines and message bodies with 1-click clipboard copy.
+* 🌐 **Dynamic Domain Switcher:** 1-click domain switching across discovered active upstream domains (`@guerrillamail.com`, `@sharklasers.com`, `@grr.la`, etc.).
+* 📄 **Universal Mail Export:** Export complete messages as RFC 5322 `.EML`, structured JSON, plain text `.TXT`, or sanitized print view.
+* 🔔 **Synthesized Audio Chimes:** Pure Web Audio API acoustic notifications on incoming emails (zero external audio file downloads).
+* 🛡️ **Defense-in-Depth Sanitization:** DOMPurify sanitization, dangerous URL protocol blocking, private IP address defense, and executable attachment neutralization.
+* 🔄 **Reload & Session Recovery:** Rehydrates upstream sessions on page reload (F5) while preserving local inbox summaries and persistent deletion sets.
 
-- ⚡ **1-Second Temp Mail Delivery**: Real-time push delivery receives 2FA OTP tokens and confirmation links within sub-second latencies.
-- 🧠 **Zero Disk Persistence (RAM-Only Engine)**: Inboxes, messages, and attachments exist solely in volatile RAM. Terminate your tab or trigger instant purge to leave zero digital footprint.
-- 🔑 **Temp Mail with Password Support**: Generate persistent ephemeral credentials for automated end-to-end testing and CI/CD pipelines.
-- 🛠️ **Disposable Email for Developers**: Comprehensive REST API endpoints and zero-setup tooling for automated QA test suites (Playwright, Cypress, Selenium).
-- 📦 **RFC822 EML Export Temp Mail**: Complete raw MIME message extraction for digital forensics, email client import, and RFC compliance testing.
-- 🔥 **Throwaway Burner Email on Demand**: Swap domains, create randomized disposable identities, or connect your own custom domain in seconds.
+---
+
+## 🔒 Technical Privacy & Storage Architecture
+
+MephistoMail follows a strict tiered storage model to ensure sensitive credentials never touch persistent browser storage while safe metadata provides a seamless user experience across page reloads:
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           STORAGE ARCHITECTURE                           │
+├────────────────────────────────┬─────────────────────────────────────────┤
+│ Tier                           │ Data Stored & Scope                     │
+├────────────────────────────────┼─────────────────────────────────────────┤
+│ 1. Volatile Runtime Memory     │ • Upstream session tokens (sid_token)   │
+│    (JavaScript Heap / RAM)     │ • Mailbox passwords (credentialStore)   │
+│                                │ • Full raw HTML email bodies / details  │
+│                                │ • In-flight AbortControllers & timers   │
+├────────────────────────────────┼─────────────────────────────────────────┤
+│ 2. Local Safe Storage          │ • Safe account metadata (id, address,   │
+│    (localStorage /             │   createdAt, label, autoDeleteMinutes)  │
+│     sessionStorage)            │ • Inbox summaries (EmailSummary[]: id,  │
+│                                │   from, subject, intro, seen, date)     │
+│                                │ • Deleted message IDs (to prevent       │
+│                                │   resurrection across polls / reloads)  │
+│                                │ • User preferences (theme, lang, sound) │
+├────────────────────────────────┼─────────────────────────────────────────┤
+│ 3. Never Persisted             │ ❌ Upstream authentication tokens       │
+│    (Explicitly Excluded)       │ ❌ Passwords or auth secret headers     │
+│                                │ ❌ Tracking cookies or analytics logs   │
+└────────────────────────────────┴─────────────────────────────────────────┘
+```
+
+> [!IMPORTANT]
+> **Third-Party Provider Dependency:** MephistoMail is a frontend client that communicates with upstream disposable email providers (e.g. Guerrilla Mail, Mail.tm). The lifetime of upstream mailboxes (typically 60 minutes on Guerrilla Mail) and server-side retention policies are governed by those respective services. MephistoMail itself does not operate a persistent backend database.
+
+---
+
+## 🗂️ Session & Multi-Mailbox Architecture
+
+MephistoMail supports managing up to **100 concurrent mailboxes** in a single browser tab with rigorous state and cache isolation:
+
+* **Canonical Full Email Address Cache Isolation:** Every mailbox's local cache is keyed strictly by its normalized full address:
+  ```
+  mephisto_inbox_v2_alpha.test@guerrillamail.com
+  mephisto_inbox_v2_alpha.test@sharklasers.com
+  ```
+  Accounts sharing the same username on different domains maintain completely isolated caches with zero data cross-contamination.
+* **Persistent Deleted Message Tracking:** When a message is deleted, its ID is written to a dedicated per-mailbox set (`mephisto_deleted_v1_<normalized-address>`). On page reload (F5) or subsequent upstream polls, deleted IDs are filtered out, preventing "zombie" emails from reappearing.
+* **Race-Condition Protection:** All asynchronous requests carry unique request IDs (`fetchRequestIdRef`, `activeAccountIdRef`). If a user rapidly switches between accounts (A $\leftrightarrow$ B), late-arriving responses from previous accounts are discarded.
+* **Secondary Account Background Sync:** Open secondary mailboxes are periodically polled in the background to update unread badge counters without disturbing the active account's view.
+
+---
+
+## 🔄 Reload (F5) & Session Recovery Flow
+
+When a user refreshes the page or reopens a saved mailbox URL (`?mailbox=user@domain.com`):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User Browser
+    participant App as React App (Render Frame 0)
+    participant Storage as LocalStorage / Cache
+    participant Engine as Polling Engine (RAM)
+    participant API as Upstream API (Guerrilla / Mail.tm)
+
+    User->>App: Page Reload (F5)
+    App->>Storage: Synchronous read (safe accounts + cached EmailSummary[])
+    Storage-->>App: Return cached metadata (Immediate UI render, 0s blank flash)
+    App->>Storage: Load persistent deleted IDs (mephisto_deleted_v1_<addr>)
+    Storage-->>App: Return deleted IDs set
+    App->>Engine: Initialize active mailbox (token: undefined in RAM)
+    Engine->>API: rehydrateMailboxSession() (get_email_address -> set_email_user)
+    API-->>Engine: Return fresh volatile sid_token (Held in RAM only)
+    Engine->>API: Fetch upstream message list (get_email_list)
+    API-->>Engine: Return latest messages
+    Engine->>App: Deterministic merge (Filter deleted -> Dedupe -> Sort -> Cap 200)
+    App->>Storage: Save updated EmailSummary[] cache
+    App-->>User: Display refreshed inbox
+```
+
+---
+
+## 🛡️ Security & Content Defense-in-Depth
+
+MephistoMail enforces rigorous client-side security policies to protect users when viewing untrusted emails:
+
+* **HTML Sanitization via DOMPurify:** Strips malicious `<script>`, `<object>`, `<embed>`, `<iframe>`, `<form>`, inline event handlers (`onload`, `onerror`), and tracking pixels.
+* **Dangerous Protocol Filtering:** Action link extractors and viewers explicitly block hazardous URI schemes (`javascript:`, `file:`, `data:`, `blob:`, `content:`, `chrome:`).
+* **Private IP Address Defense:** Link analyzers reject private, loopback, and local network ranges (`127.0.0.1`, `localhost`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `0.0.0.0/8`), including obfuscated hex and decimal integer representations (`http://2130706433`).
+* **Attachment Security:** Blocks dangerous executable extensions (`.exe`, `.dll`, `.bat`, `.cmd`, `.sh`, `.vbs`, `.msi`, `.scr`, `.jar`, `.ps1`), sanitizes directory traversal characters (`../`, `..\`), enforces a 25 MB size limit, and verifies MIME type consistency.
+* **Service Worker Cache Isolation:** `public/sw.js` strictly bypasses caching for any cross-origin API requests, ensuring private email payloads are never written to Service Worker cache storage.
 
 ---
 
 ## 🚀 Key Feature Showcase
 
-### 🌐 1. 1-Click Quick Domain Switcher (8+ Instant Active Domains)
-Tired of temporary mail domains getting blocked by restrictive signup gates? MephistoMail features an instant, 1-click domain switcher with an integrated popover and live fuzzy search:
-- **Instant Active Domains:** `@guerrillamail.com`, `@sharklasers.com`, `@grr.la`, `@guerrillamail.info`, `@guerrillamailblock.com`, `@guerrillamail.net`, `@guerrillamail.biz`, `@guerrillamail.de`, `@pokemail.net`, `@spam4.me`.
-- **Zero-Latency In-Place Switching:** Change your active domain without losing your current session, mailbox username, or unread messages.
-- **Dynamic Domain Discovery:** Live upstream domain health checks automatically filter and surface high-deliverability MX routes.
+### 🌐 1. Dynamic Domain Switcher
+* **Live Discovery:** Upstream domains are dynamically fetched and refreshed via `fetchDomains()`.
+* **Instant Switching:** Change domain extensions on demand (`@guerrillamail.com`, `@sharklasers.com`, `@grr.la`, `@guerrillamailblock.com`, `@guerrillamail.de`, etc.) without losing active state.
 
-### 🔔 2. Web Audio API 0-Latency Sound Chimes
-Never miss a time-sensitive verification code while multitasking in other browser tabs:
-- **Pure Synthesized Audio:** Built directly on the native HTML5 Web Audio API (`AudioContext`) — requires **0 external MP3 or audio asset downloads**, ensuring instant zero-latency playback.
-- **Harmonic 2-Tone Chime:** Custom layered acoustic architecture (Primary Tone $D_5$ at $587.33\,\text{Hz}$ + Harmonic $A_5$ at $880.00\,\text{Hz}$ with subtle bell-like overtones) calibrated with exponential gain envelopes to eliminate audio pops.
-- **Mute / Persistence Control:** User sound preferences are saved with instant single-click toggle support.
+### 🔔 2. Web Audio API Acoustic Chimes
+* **Zero External Assets:** Built on native HTML5 `AudioContext` — synthesizes a layered two-tone harmonic chime ($D_5$ at $587.33\,\text{Hz}$ and $A_5$ at $880.00\,\text{Hz}$) with exponential decay envelopes.
+* **Instant Toggle:** User sound preferences are saved locally with 1-click mute/unmute control.
 
-### 📄 3. Universal RFC 5322 / RFC 2822 (.EML) One-Click Mail Export
-MephistoMail is the first open-source disposable email client providing enterprise-grade mail export capabilities:
-- **Raw RFC 5322/2822 (.EML) Export:** Downloads complete MIME multipart messages with standard RFC headers (`Date`, `From`, `To`, `Subject`, `MIME-Version: 1.0`, `Content-Type: multipart/alternative`, `X-Mailer`). Open directly in **Microsoft Outlook, Apple Mail, Mozilla Thunderbird, or Spark**.
-- **Structured JSON AST Dump:** 1-click export of complete payload metadata (sender tokens, headers, timestamp, body HTML/text) for developer automated testing analysis.
-- **Plain Text (.TXT) & Clean PDF Print:** Export clean, sanitized text versions or print responsive, printer-optimized documents with stripped tracker scripts.
+### 📄 3. Universal Mail Exporter
+* **RFC 5322 / RFC 2822 (`.EML`):** Exports full MIME formatted messages with standard headers (`Date`, `From`, `To`, `Subject`, `MIME-Version: 1.0`, `Content-Type: text/html; charset=UTF-8`). Compatible with Outlook, Apple Mail, Thunderbird, and forensic tools.
+* **JSON AST Export:** Structured JSON dump of headers, sender metadata, timestamps, and body content for automated QA analysis.
+* **Plain Text (`.TXT`) & Print:** Clean text exports and print-optimized views with stripped trackers.
 
-### 🔍 4. Live In-Box Search Filter with Gold Text Highlighting & Smart Category Chips
-Effortlessly locate critical authentication emails and activation tokens in seconds:
-- **Sub-Millisecond Regex Filtering:** Live search instantly queries sender name, sender address, subject line, body excerpt, and parsed OTP tokens as you type.
-- **Glowing Amber/Gold Text Highlighting:** Dynamic `<mark>` highlighting with custom high-contrast gold styling visualizes exact search query matches.
-- **Smart Category Filter Chips:** 1-click filters for **All**, **⚡ OTP Codes**, **✅ Verification**, **🛡️ Security Alerts**, and **🏷️ Newsletters**.
+### 🔍 4. In-Box Search & Category Highlighting
+* **Live Search:** Instant client-side search across sender names, email addresses, subjects, intros, and OTP codes.
+* **Visual Match Highlighting:** Dynamic `<mark>` highlighting with high-contrast amber styling.
+* **Smart Filter Chips:** 1-click filtering by category: All, ⚡ OTP Codes, ✅ Verification, 🛡️ Security Alerts, and 🏷️ Newsletters.
 
-### 🧩 5. Official Chrome Web Store Extension Direct Install Integration
-Experience frictionless disposable email directly inside your daily browsing workflow:
-- **Official Store Verified:** Install directly from the [Chrome Web Store](https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob?authuser=0&hl=tr).
-- **Right-Click Context Menu Autofill:** Insert a newly generated disposable burner email address into any input field with a single click.
-- **Smart 4-8 Digit OTP Clipboard Auto-Copy:** Automatically extracts numerical authentication pins and copies them to your OS clipboard with instant desktop badge notifications.
-- **Zero Profiling:** Zero background tracking, zero analytics scripts, and zero telemetry collection.
-
-### 🛡️ 6. AdSense & Google Traffic Quality Compliance + 30-Language Hreflang Matrix
-Engineered to exceed modern web quality standards and global programmatic search discovery:
-- **Full Schema.org JSON-LD Graph:** Structured semantic data covering `WebSite`, `Organization`, `SoftwareApplication`, `FAQPage`, `HowTo`, and `BreadcrumbList`.
-- **30-Language Hreflang Matrix:** Bidirectional alternate hreflang tags covering 30 global locales (`en`, `tr`, `es`, `de`, `fr`, `it`, `pt`, `ru`, `ar`, `zh`, `ja`, `ko`, `nl`, `pl`, `uk`, `hi`, `id`, `vi`, `th`, `sv`, `da`, `fi`, `no`, `cs`, `el`, `ro`, `hu`, `he`, `bn`, `fa`).
-- **Tracker & Spy Pixel Neutralization:** Automatically detects and strips hidden $1\times 1$ tracking pixels, web beacons, and malicious JavaScript payloads via DOMPurify sandboxing.
-- **Core Web Vitals Optimization:** 100/100 Lighthouse performance metrics with aggressive DNS prefetching, zero layout shifts (CLS < 0.01), and ultra-fast First Contentful Paint (FCP < 0.4s).
-
----
-
-## 📊 Feature Comparison: Why MephistoMail Leads
-
-| Feature / Capability | 🛡️ MephistoMail (Open Source) | 📬 Temp-Mail.org | ⏱️ 10MinuteMail | 🦍 GuerrillaMail |
-| :--- | :---: | :---: | :---: | :---: |
-| **Storage Architecture** | **RAM-Only (0 Disk Storage)** | Persistent SQL / Disk | Persistent DB | Temporary MySQL |
-| **Pricing / Paywalls** | **100% Free & Open-Source** | $10/mo Premium Paywall | Free (Ad-Heavy) | Free |
-| **1-Click Quick Domain Switcher** | **✅ 8+ Active Instant Domains** | ❌ (Locked to Paid Tier) | ❌ Single Domain | ⚠️ Basic Dropdown |
-| **Web Audio API 0-Latency Chime** | **✅ Synthesized (0 Assets)** | ❌ None | ❌ None | ❌ None |
-| **RFC 5322/2822 (.EML) Mail Export** | **✅ Yes (EML / JSON / TXT / PDF)**| ❌ None | ❌ None | ⚠️ Raw Source Only |
-| **Live Search & Gold Highlighting** | **✅ Sub-millisecond Regex** | ❌ None | ❌ None | ❌ None |
-| **Smart OTP / 2FA Auto-Extractor** | **✅ Instant 4-8 Digit Copy** | ⚠️ Partial | ❌ None | ❌ None |
-| **Tracker & Spy Pixel Blocker** | **✅ Automated RAM Filter** | ❌ Ad-Trackers Present | ❌ None | ❌ None |
-| **Bring Your Own Domain (BYOD)** | **✅ Custom Cloudflare MX** | ❌ (Paid Only) | ❌ None | ❌ None |
-| **Official Chrome Web Store App** | **✅ Verified Direct Install** | ⚠️ Paid Features | ❌ None | ❌ None |
-| **30-Language Hreflang Matrix** | **✅ 30 Locales Localized** | ⚠️ ~15 Languages | ⚠️ ~10 Languages | ⚠️ English / Basic |
-| **Free Developer REST API** | **✅ Open Hydra & REST APIs** | ❌ Paid RapidAPI Key | ❌ None | ⚠️ Legacy AJAX API |
-| **Outbound Email Sending** | **✅ Ephemeral Outbound Relay** | ❌ Inbound Only | ❌ Inbound Only | ⚠️ Inbound Focused |
-| **Privacy & Zero Log Guarantee** | **✅ Strict RAM Ephemeral** | ⚠️ Tracks Device Fingerprints | ⚠️ Logs Analytics | ⚠️ IP Logs Retained |
+### 🧩 5. Chrome Extension (Manifest V3)
+* **Manifest V3 Compliant:** Full extension implementation located in the `extension/` directory.
+* **Context Menu Autofill:** Right-click on any input field to generate and insert a disposable address.
+* **Clipboard OTP Sync:** Automatically detects incoming verification codes and copies them to the clipboard.
+* **Web Store:** Published on the [Chrome Web Store](https://chromewebstore.google.com/detail/mephistomail/kolhhealinebomlncflljopkphaoilob?authuser=0&hl=tr).
 
 ---
 
@@ -123,234 +181,253 @@ Engineered to exceed modern web quality standards and global programmatic search
 </p>
 
 <p align="center">
-  <img src="public/screenshots/custom_aliasing.png" alt="Custom Temp Mail Generator" width="32%" style="border-radius: 8px;">
-  <img src="public/screenshots/mobile_inbox.png" alt="1-Second Temp Mail Mobile Inbox" width="32%" style="border-radius: 8px;">
+  <img src="public/screenshots/custom_aliasing.png" alt="Custom Mailbox Generator" width="32%" style="border-radius: 8px;">
+  <img src="public/screenshots/mobile_inbox.png" alt="Mobile Inbox View" width="32%" style="border-radius: 8px;">
   <img src="public/screenshots/verification_view.png" alt="Automated 2FA OTP Extractor" width="32%" style="border-radius: 8px;">
 </p>
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## 🏗️ Architecture & Data Flow
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Browser (React 18 + TypeScript + Vite)"]
-        UI["User Interface & Address Bar"]
-        Search["Live Regex Search & Gold Highlighter"]
-        Audio["Web Audio API Synthesizer (0-Latency Chime)"]
-        Purify["DOMPurify & Spy Pixel Stripper"]
-        Export["RFC 5322 EML / JSON / PDF Exporter"]
+    subgraph Browser ["Client Browser (React 18 + Vite + TypeScript)"]
+        UI["User Interface (AddressBar, EmailList, EmailViewer)"]
+        State["React State (useMailbox & useEmails)"]
+        MemoryStore[("Volatile Memory Store\n• Session Tokens (sid_token)\n• Passwords in RAM\n• Full Message HTML")]
+        LocalStorage[("Browser LocalStorage\n• Safe Account Metadata\n• mephisto_inbox_v2_<addr>\n• mephisto_deleted_v1_<addr>\n• User Preferences")]
+        Sanitizer["DOMPurify & Content Sanitizer"]
+        Audio["Web Audio API Synthesizer"]
+        Exporter["RFC 5322 EML / JSON Exporter"]
     end
 
-    subgraph Relays ["Stateless Ingress & Processing Layer"]
-        API["Stateless REST API Router"]
-        SyncEngine["Rapid Auto-Sync / Smart Polling Engine"]
-        GuerrillaRouter["GuerrillaMail Multi-Domain Gateway"]
-        BYOD["Custom Domain Cloudflare MX Ingress"]
+    subgraph Upstream ["Upstream Disposable Mail Services"]
+        Guerrilla["Guerrilla Mail API\n(ajax.php Gateway)"]
+        Hydra["Hydra / Mail.tm API\n(REST Ingress)"]
     end
 
-    subgraph Storage ["Volatile Memory Tier"]
-        RAM[("RAM-Only Ephemeral Buffer (0 Disk Persistence)")]
-    end
-
-    UI -->|"User Action"| Search
-    UI -->|"Receive Message"| Purify
-    Purify -->|"Trigger Notification"| Audio
-    Purify -->|"Export Mail"| Export
-    
-    UI <-->|"HTTPS REST Calls"| API
-    UI <-->|"Auto-Sync Polling"| SyncEngine
-    API <-->|"Multi-Domain Queries"| GuerrillaRouter
-    API <-->|"Custom Ingress"| BYOD
-    
-    API <--> RAM
-    SyncEngine <--> RAM
+    UI -->|"User Action"| State
+    State -->|"Read/Write Safe Metadata"| LocalStorage
+    State -->|"Hold Volatile Session"| MemoryStore
+    State -->|"Adaptive Polling / Fetch"| Guerrilla
+    State -->|"Token Auth Queries"| Hydra
+    Guerrilla -->|"Incoming Messages"| Sanitizer
+    Hydra -->|"Incoming Messages"| Sanitizer
+    Sanitizer -->|"Trigger Chime"| Audio
+    Sanitizer -->|"Sanitized Content"| UI
+    UI -->|"Export Message"| Exporter
 
     classDef client fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
-    classDef relay fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
-    classDef storage fill:#450a0a,stroke:#f87171,stroke-width:2px,color:#fff;
+    classDef storage fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef upstream fill:#1c1917,stroke:#f97316,stroke-width:2px,color:#fff;
 
-    class UI,Search,Audio,Purify,Export client;
-    class API,SyncEngine,GuerrillaRouter,BYOD relay;
-    class RAM storage;
+    class UI,State,Sanitizer,Audio,Exporter client;
+    class MemoryStore,LocalStorage storage;
+    class Guerrilla,Hydra upstream;
 ```
 
 ---
 
-## 📡 Developer REST API & Automated QA Integration
+## 🧰 Built-in Privacy & Developer Utilities
 
-Developers can automate signup tests, QA pipelines, and automated OTP verification using our **free temp mail api**:
+MephistoMail includes a complete suite of browser-native client-side privacy tools:
 
-### 1. Generate Disposable Account via cURL
-```bash
-curl -X POST https://api.mail.tm/accounts \
-  -H "Content-Type: application/json" \
-  -d '{"address": "developer.qa@sharklasers.com", "password": "SecurePassword2026!"}'
-```
-
-### 2. Automated OTP Extraction in Node.js (Playwright / Cypress)
-```typescript
-import fetch from 'node-fetch';
-
-async function waitForOTP(token: string): Promise<string> {
-  const start = Date.now();
-  while (Date.now() - start < 30000) {
-    const res = await fetch('https://api.mail.tm/messages', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = (await res.json()) as { 'hydra:member': Array<{ id: string }> };
-    
-    if (data['hydra:member']?.length > 0) {
-      const msgId = data['hydra:member'][0].id;
-      const detailRes = await fetch(`https://api.mail.tm/messages/${msgId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const detail = (await detailRes.json()) as { text?: string; intro?: string };
-      const content = `${detail.text || ''} ${detail.intro || ''}`;
-      const otpMatch = content.match(/\b\d{4,8}\b/);
-      if (otpMatch) return otpMatch[0];
-    }
-    await new Promise(r => setTimeout(r, 1500));
-  }
-  throw new Error('Verification OTP timed out');
-}
-```
-
-### 3. Python Integration for End-to-End Testing
-```python
-import requests, re, time
-
-def get_disposable_inbox(email_user: str, domain: str = "sharklasers.com"):
-    session = requests.Session()
-    # Query Guerrilla / MailTM stateless endpoint
-    res = session.get(f"https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user={email_user}&lang=en")
-    return res.json()
-
-def wait_for_activation_link(sid_token: str) -> str:
-    for _ in range(15):
-        res = requests.get(f"https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token={sid_token}").json()
-        for msg in res.get("list", []):
-            detail = requests.get(f"https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id={msg['mail_id']}&sid_token={sid_token}").json()
-            links = re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', detail.get("mail_body", ""))
-            if links:
-                return links[0]
-        time.sleep(2)
-    raise TimeoutError("Activation email was not received")
-```
-
----
-
-## 🧰 Built-in Privacy & Developer Micro-Tool Suite
-
-MephistoMail bundles a complete suite of browser-native privacy utilities:
-
-| Tool | URL Route | Description |
+| Utility | Route | Description |
 | :--- | :--- | :--- |
-| **🔍 Email Breach Scanner** | `/breach-checker` | Check if your email or passwords appeared in known credential dumps with zero query logging. |
-| **💳 Dummy Test Card Generator** | `/test-card-generator` | Luhn-compliant test credit card number generator (Visa, MasterCard, Amex) for checkout QA flows. |
-| **🔐 Web Crypto Password Gen** | `/password-generator` | High-entropy, CSPRNG cryptographically secure password & passphrase generator with Shannon entropy score. |
-| **⏱️ 10 Minute Mail Mode** | `/10minutemail` | Self-destructing temporary inbox with user-customizable timers from 5 minutes to 24 hours. |
-| **🔥 Burn Note (Secret Message)** | `/burn-note` | End-to-end encrypted self-destructing text notes that vanish instantly after being read once. |
-| **📦 Bulk Email Generator** | `/bulk-generator` | Generate up to 100 simultaneous disposable inboxes with 1-click CSV/TXT export. |
-| **🛡️ Disposable Email Checker** | `/disposable-email-checker` | Query MX records to verify whether a given domain belongs to a temporary mail vendor. |
+| **🔍 Email Breach Scanner** | `/breach-checker` | Check if an email address appears in publicly known breach databases. |
+| **💳 Test Card Generator** | `/test-card-generator` | Luhn-compliant test credit card number generator for QA checkout flows. |
+| **🔐 Password Generator** | `/password-generator` | Cryptographically secure (CSPRNG) password & passphrase generator with Shannon entropy calculation. |
+| **⏱️ 10 Minute Mail Mode** | `/10minutemail` | Ephemeral temporary inbox mode with customizable auto-expiration countdowns. |
+| **🔥 Burn Note** | `/burn-note` | Client-side encrypted self-destructing text notes stored via URL hash fragments. |
+| **📦 Bulk Mailbox Generator** | `/bulk-generator` | Generate multiple disposable addresses simultaneously with CSV/TXT export. |
+| **🛡️ Disposable Checker** | `/disposable-email-checker` | Inspect domain MX records to identify known disposable email providers. |
 
 ---
 
-## 🤖 Dedicated SaaS & AI Landing Hubs
+## 📡 Developer QA & Automation Examples
 
-Programmatic developer routes optimized for instant trial activations:
-- [`/temp-mail-for-cursor-ai`](https://mephistomail.site/temp-mail-for-cursor-ai) — Cursor AI IDE & Claude 3.5 Sonnet sandbox testing
-- [`/temp-mail-for-v0-dev`](https://mephistomail.site/temp-mail-for-v0-dev) — Vercel v0.dev Generative UI testing
-- [`/temp-mail-for-bolt-new`](https://mephistomail.site/temp-mail-for-bolt-new) — Bolt.new in-browser fullstack development
-- [`/temp-mail-for-github-copilot`](https://mephistomail.site/temp-mail-for-github-copilot) — GitHub Copilot & VS Code trial verification
-- [`/temp-mail-for-perplexity-ai`](https://mephistomail.site/temp-mail-for-perplexity-ai) — Perplexity Pro research accounts
-- [`/temp-mail-for-tradingview`](https://mephistomail.site/temp-mail-for-tradingview) — TradingView Pro trial accounts
-- [`/temp-mail-for-elevenlabs`](https://mephistomail.site/temp-mail-for-elevenlabs) — ElevenLabs AI voice synthesis testing
-- [`/temp-mail-for-figma`](https://mephistomail.site/temp-mail-for-figma) — Figma & FigJam team trial activations
+Developers can leverage upstream disposable email APIs within test automation frameworks (Playwright, Cypress, Selenium):
+
+### Node.js / Playwright OTP Extraction Example
+```typescript
+import { test, expect } from '@playwright/test';
+
+test('verify signup confirmation with disposable inbox', async ({ page, request }) => {
+  const username = `qa.test.${Date.now()}`;
+  
+  // 1. Establish session with Guerrilla Mail API
+  const initRes = await request.get(`https://api.guerrillamail.com/ajax.php?f=set_email_user&email_user=${username}&lang=en`);
+  const session = await initRes.json();
+  const sid = session.sid_token;
+  const emailAddress = `${username}@sharklasers.com`;
+
+  // 2. Submit email to your application under test
+  await page.goto('https://example.com/signup');
+  await page.fill('input[type="email"]', emailAddress);
+  await page.click('button[type="submit"]');
+
+  // 3. Poll for incoming verification message
+  let otpCode = '';
+  for (let i = 0; i < 15; i++) {
+    await page.waitForTimeout(2000);
+    const listRes = await request.get(`https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token=${sid}`);
+    const listData = await listRes.json();
+    
+    if (listData.list && listData.list.length > 0) {
+      const mailId = listData.list[0].mail_id;
+      const fetchRes = await request.get(`https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=${mailId}&sid_token=${sid}`);
+      const mailDetail = await fetchRes.json();
+      
+      const match = (mailDetail.mail_body || mailDetail.mail_excerpt || '').match(/\b\d{4,8}\b/);
+      if (match) {
+        otpCode = match[0];
+        break;
+      }
+    }
+  }
+
+  expect(otpCode).not.toBe('');
+  await page.fill('input[name="otp"]', otpCode);
+  await page.click('button[name="verify"]');
+});
+```
+
+---
+
+## 🌍 Internationalization (i18n) & Locales
+
+MephistoMail features **9 fully translated UI languages** with 100% key parity across all 285 localization keys, including full Right-to-Left (RTL) layout support:
+
+| Code | Language | Direction | Translation Coverage |
+| :---: | :--- | :---: | :---: |
+| `en` | English | LTR | **100% (285 / 285 keys)** |
+| `tr` | Türkçe (Turkish) | LTR | **100% (285 / 285 keys)** |
+| `de` | Deutsch (German) | LTR | **100% (285 / 285 keys)** |
+| `es` | Español (Spanish) | LTR | **100% (285 / 285 keys)** |
+| `fr` | Français (French) | LTR | **100% (285 / 285 keys)** |
+| `it` | Italiano (Italian) | LTR | **100% (285 / 285 keys)** |
+| `pt` | Português (Portuguese) | LTR | **100% (285 / 285 keys)** |
+| `ru` | Русский (Russian) | LTR | **100% (285 / 285 keys)** |
+| `ar` | العربية (Arabic) | **RTL** | **100% (285 / 285 keys)** |
+
+> [!NOTE]
+> `index.html` includes alternate `hreflang` metadata targeting 30 regional search discovery locales, while the interactive application UI is currently fully translated into the 9 primary languages listed above.
 
 ---
 
 ## 🛠️ Local Development & Quick Start
 
 ### Prerequisites
-- **Node.js**: `18.0.0` or higher
-- **Package Manager**: `npm` or `yarn`
+* **Node.js:** `v18.0.0` or higher (tested on Node.js v20 and v24)
+* **npm:** `v9.0.0` or higher
 
-### 1. Clone & Install
+### 1. Installation
 ```bash
-# Clone the repository
-git clone https://github.com/jokallame350-lang/temp-mailmephisto.git
-
-# Enter project directory
+# Clone repository
+git clone https://github.com/mephisto-mert/temp-mailmephisto.git
 cd temp-mailmephisto
 
-# Install dependencies
-npm install
+# Clean install dependencies
+npm ci
 ```
 
-### 2. Run Local Development Server
+### 2. Development Server
 ```bash
 npm run dev
 ```
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### 3. Production Build
+### 3. Production Build & Preview
 ```bash
+# Build production bundle to dist/
 npm run build
+
+# Preview production build locally
 npm run preview
 ```
 
 ---
 
-## 👨‍💻 Maker Story & The Zero-Retention Manifesto
+## 🧪 Testing & Production Verification
 
-**MephistoMail** was created by **Mert Can Yıldız** with a singular mission: *to restore digital autonomy and eliminate the coercive data harvesting model that plagues modern internet access.*
+MephistoMail maintains a comprehensive automated testing pipeline:
 
-Most temporary email websites have degraded into ad-riddled, sluggish traps that sell visitor telemetry and log unencrypted correspondence on persistent disk arrays. We believe that privacy is not a luxury tier — it is a fundamental engineering prerequisite.
+```bash
+# 1. TypeScript Static Typecheck
+npm run typecheck
 
-> *"If software does not store your data on disk, your data cannot be subpoenaed, leaked, breached, or monetized. Ephemeral RAM-only architectures are the only real defense in an era of ubiquitous surveillance."*  
-> — **Mert Can Yıldız**, Creator of MephistoMail
+# 2. ESLint Code Quality Check (Zero Warnings Enforced)
+npm run lint
 
----
+# 3. Automated Unit & Integration Test Suite (141 Tests)
+npm test
 
-## 🌍 Supported Locales & Internationalization
+# 4. Live External Guerrilla Mail Smoke Test
+npm run test:smoke
 
-MephistoMail is fully localized across **30 global languages**:
+# 5. Full Pipeline Check (Typecheck + Lint + Test + Build)
+npm run check
+```
 
-`English (en)` • `Türkçe (tr)` • `Español (es)` • `Deutsch (de)` • `Français (fr)` • `Italiano (it)` • `Português (pt)` • `Русский (ru)` • `العربية (ar)` • `中文 (zh)` • `日本語 (ja)` • `한국어 (ko)` • `Nederlands (nl)` • `Polski (pl)` • `Українська (uk)` • `हिन्दी (hi)` • `Bahasa Indonesia (id)` • `Tiếng Việt (vi)` • `ไทย (th)` • `Svenska (sv)` • `Dansk (da)` • `Suomi (fi)` • `Norsk (no)` • `Čeština (cs)` • `Ελληνικά (el)` • `Română (ro)` • `Magyar (hu)` • `עברית (he)` • `বাংলা (bn)` • `فارسی (fa)`
-
----
-
-## ⭐ Star History & Community Support
-
-If MephistoMail protected your inbox from spam or streamlined your developer testing workflow, please star this repository! ⭐
-
-<p align="center">
-  <a href="https://github.com/jokallame350-lang/temp-mailmephisto">
-    <img src="https://api.star-history.com/svg?repos=jokallame350-lang/temp-mailmephisto&type=Date" alt="MephistoMail GitHub Star History Chart" width="80%">
-  </a>
-</p>
-
----
-
-## 📜 Legal & Compliance
-
-- ⚖️ **Terms of Service:** [https://mephistomail.site/terms](https://mephistomail.site/terms)
-- 🛡️ **Privacy Policy:** [https://mephistomail.site/privacy](https://mephistomail.site/privacy)
-- 🍪 **Cookie Policy:** [https://mephistomail.site/cookies](https://mephistomail.site/cookies)
-- 🏢 **About Us:** [https://mephistomail.site/about](https://mephistomail.site/about)
+### Latest Verified Audit Results:
+* **Unit & Integration Tests:** **141 / 141 passed (100% pass rate, Suites A–S)**
+* **TypeScript Compilation:** **0 errors (`tsc -b`)**
+* **ESLint Validation:** **0 warnings, 0 errors**
+* **Production Build:** **Vite build succeeded (`dist/` transformed in ~3.6s)**
+* **Live Network Smoke Test:** **4 / 4 stages passed against live Guerrilla Mail API**
+* **Browser E2E Verification:** Tested on Vite preview (port 4173) with Playwright
 
 ---
 
-## 👤 Creator & Maintainer
+## ⚠️ Known Limitations & Transparency
 
-- **Developer:** **Mert Can Yıldız**
-- **GitHub:** [@jokallame350-lang](https://github.com/jokallame350-lang)
-- **Contact:** [jokallame0@gmail.com](mailto:jokallame0@gmail.com)
-- **Live Deployment:** [https://mephistomail.site](https://mephistomail.site)
+* **Inbound Only:** MephistoMail is an inbound disposable email client. Outbound SMTP email sending is not supported.
+* **Upstream Provider Retention:** Inboxes on Guerrilla Mail are temporary and automatically purged upstream after 60 minutes. Local inbox summaries remain cached in the browser until deleted.
+* **Forwarding:** The "Ghost Forwarding" feature is currently a client-side preference / private beta registration interface; there is no self-hosted server-side SMTP forwarding relay.
+* **External Delivery Delays:** Inbound email delivery latency is subject to upstream provider queues and external sending mail transfer agents (MTAs).
 
 ---
 
-<p align="center">
-  Released under the <strong>MIT License</strong>. Copyright © 2026 MephistoMail.
-</p>
+## 🗺️ Project Roadmap
+
+### ✅ Completed
+- [x] Multi-mailbox state management with up to 100 concurrent accounts
+- [x] Canonical full email address cache isolation (`mephisto_inbox_v2_<address>`)
+- [x] Persistent deleted message tracking (`mephisto_deleted_v1_<address>`)
+- [x] Zero credential leakage in `localStorage` (RAM-only token storage)
+- [x] Session rehydration after F5 reload with zero blank flash
+- [x] RFC 5322 `.EML`, JSON, and `.TXT` mail export
+- [x] Web Audio API synthesized notification chimes
+- [x] 9-language localization matrix with complete key parity & RTL
+- [x] Manifest V3 Chrome Extension & PWA implementation
+- [x] 141-test automated unit & integration test suite
+
+### 📋 Planned
+- [ ] Additional upstream provider adapters
+- [ ] Automated browser E2E test suite integration in CI
+- [ ] Webhook notification support for local developer workflows
+- [ ] Firefox Add-on Manifest V3 package
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+1. **Fork the repository** and create a feature branch (`git checkout -b feat/my-feature`).
+2. **Make your changes** while adhering to existing architectural standards (zero secrets in `localStorage`, strict canonical address keys).
+3. **Run the complete verification pipeline**:
+   ```bash
+   npm run check
+   ```
+4. **Submit a Pull Request** with a clear explanation of changes. Please do not introduce unsubstantiated marketing claims in documentation.
+
+---
+
+## 📜 License & Legal
+
+* **License:** Released under the [MIT License](LICENSE).
+* **Terms of Service:** [https://mephistomail.site/terms](https://mephistomail.site/terms)
+* **Privacy Policy:** [https://mephistomail.site/privacy](https://mephistomail.site/privacy)
+* **Maintainer:** **Mert Can Yıldız** ([@mephisto-mert](https://github.com/mephisto-mert))
