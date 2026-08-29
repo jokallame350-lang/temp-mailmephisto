@@ -14,7 +14,17 @@ export const clearCredentials = (mailboxId: string) => { if (mailboxId) credenti
 
 type TokenRefreshCallback = (mailboxId: string, newToken: string) => void;
 const tokenRefreshListeners = new Set<TokenRefreshCallback>();
-export const onTokenRefresh = (cb: TokenRefreshCallback) => { tokenRefreshListeners.add(cb); return () => tokenRefreshListeners.delete(cb); };
+export const onTokenRefresh = (cb: TokenRefreshCallback) => { tokenRefreshListeners.add(cb); return () => { tokenRefreshListeners.delete(cb); }; };
+export const subscribeToMailboxEvents = (_mailbox: Mailbox, callback: () => void) => {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => { if (document.visibilityState !== 'hidden') callback(); };
+  window.addEventListener('focus', handler);
+  window.addEventListener('online', handler);
+  return () => {
+    window.removeEventListener('focus', handler);
+    window.removeEventListener('online', handler);
+  };
+};
 const emitTokenRefresh = (mailboxId: string, token: string) => { for (const cb of tokenRefreshListeners) { try { cb(mailboxId, token); } catch (err) { console.warn('Token refresh listener failed', err); } } };
 
 const refreshHydraToken = async (provider: string, address: string, password: string): Promise<string | null> => {
@@ -86,7 +96,7 @@ const generatePassword = (): string => {
 
 const determineCategory = (subject: string, from: string, intro: string): AICategory => { const text = `${subject} ${from} ${intro}`.toLowerCase(); if (/(code|verify|verification|otp|confirm|activation|pin\b|doğrulama|kod|şifre)/.test(text)) return 'Verification'; if (/(security|alert|reset password|suspicious|login attempt|güvenlik|giriş|uyarı)/.test(text)) return 'Security'; if (/(newsletter|bülten|weekly|digest|fırsat|indirim|offer|sale)/.test(text)) return 'Newsletter'; return 'Other'; };
 const formatSenderName = (fromAddress: string): string => { if (!fromAddress || fromAddress === 'unknown') return 'Bilinmeyen Gönderen'; const lower = fromAddress.toLowerCase(); const brands: Record<string,string> = { instagram:'Instagram',cloudflare:'Cloudflare',google:'Google',netflix:'Netflix',facebook:'Facebook',twitter:'X (Twitter)','x.com':'X (Twitter)',github:'GitHub',spotify:'Spotify',discord:'Discord',telegram:'Telegram',steam:'Steam',epicgames:'Epic Games',microsoft:'Microsoft',apple:'Apple' }; for (const [key,value] of Object.entries(brands)) if(lower.includes(key)) return value; const [userPart='',domainPart='']=fromAddress.split('@'); if(/^(no-reply|noreply|info|support|admin|service|notifications?|mailer-daemon)$/i.test(userPart)&&domainPart){const clean=domainPart.split('.')[0];return clean.charAt(0).toUpperCase()+clean.slice(1);} return userPart.charAt(0).toUpperCase()+userPart.slice(1); };
-const formatSmartSubject = (subject: string, excerpt: string, fromAddress: string): string => { const clean=(subject||'').trim(); if(clean&&clean!=='(Konu Yok)'&&clean!=='Konu Yok') return clean; const combined=`${excerpt||''} ${fromAddress||''}`.toLowerCase(); if(combined.includes('instagram')) return 'Instagram Doğrulama Kodu'; if(combined.includes('cloudflare')) return 'Cloudflare E-Posta Yönlendirme Onayı'; if(/code|kod|verify|confirm/.test(combined)) return 'E-posta Doğrulama Kodu'; if(/security|güvenlik/.test(combined)) return 'Güvenlik Bildirimi'; return excerpt?.trim()?excerpt.trim().slice(0,45)+(excerpt.length>45?'...':''):'Gelen Mesaj'; };
+const formatSmartSubject = (subject: string, excerpt: string, fromAddress: string): string => { const clean=(subject||'').trim(); if(clean&&clean!=='(Konu Yok)'&&clean!=='Konu Yok') return clean; const combined=`${excerpt||''} ${fromAddress||''}`.toLowerCase(); if(combined.includes('instagram')) return 'Instagram Doğrulama Kodu'; if(combined.includes('cloudflare')) return 'Cloudflare E-posta Yönlendirme Onayı'; if(/code|kod|verify|confirm/.test(combined)) return 'E-posta Doğrulama Kodu'; if(/security|güvenlik/.test(combined)) return 'Güvenlik Bildirimi'; return excerpt?.trim()?excerpt.trim().slice(0,45)+(excerpt.length>45?'...':''):'Gelen Mesaj'; };
 const isGuerrilla=(provider:string):boolean=>provider==='guerrilla';
 export const GUERRILLA_DOMAINS=['guerrillamail.com','grr.la','sharklasers.com','guerrillamail.info','guerrillamailblock.com','guerrillamail.net','guerrillamail.biz','guerrillamail.de','pokemail.net','spam4.me'];
 export const getGuerrillaDomains=async():Promise<string[]>=>{const domains=new Set<string>();try{const controller=new AbortController();const timeoutId=setTimeout(()=>controller.abort(),3500);const res=await fetch(`${GUERRILLA_API}?f=get_email_address&lang=en`,{signal:controller.signal}).catch(()=>null);clearTimeout(timeoutId);if(res?.ok){const data=await res.json().catch(()=>null);const domain=String(data?.email_addr||'').split('@')[1];if(domain)domains.add(domain);}}catch{}GUERRILLA_DOMAINS.forEach(d=>domains.add(d));return[...domains];};
