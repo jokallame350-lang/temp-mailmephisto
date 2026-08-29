@@ -1,115 +1,78 @@
-// MephistoMail Service Worker v1.0
-const CACHE_NAME = 'mephisto-v1';
-const STATIC_ASSETS = [
-    '/',
-    '/icon.png',
-    '/logo.png',
-];
+// MephistoMail Service Worker v1.1
+const CACHE_NAME = 'mephisto-v2';
+const STATIC_ASSETS = ['/', '/icon.png', '/logo.png'];
 
-// Install — statik dosyaları önbelleğe al
+const isSameOrigin = (url) => url.origin === self.location.origin;
+const safeNotificationUrl = (value) => {
+    try {
+        const url = new URL(typeof value === 'string' ? value : '/', self.location.origin);
+        return isSameOrigin(url) && (url.protocol === 'https:' || url.protocol === 'http:')
+            ? url.href
+            : self.location.origin + '/';
+    } catch {
+        return self.location.origin + '/';
+    }
+};
+
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS);
-        })
-    );
+    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
     self.skipWaiting();
 });
 
-// Activate — eski cache'leri temizle
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then((keys) => {
-            return Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-            );
-        })
+        caches.keys().then((keys) => Promise.all(
+            keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        ))
     );
     self.clients.claim();
 });
 
-// Fetch — Network-first stratejisi (API istekleri network, statik dosyalar cache)
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // API ve Real-time/Worker istekleri her zaman doğrudan NATIVE tarayıcı fetch'ine bırakılır (SW müdahale etmez)
-    if (
-        url.hostname.includes('workers.dev') ||
-        url.hostname.includes('api.mail.tm') ||
-        url.hostname.includes('api.guerrillamail.com') ||
-        url.hostname.includes('guerrillamail') ||
-        url.hostname.includes('cloudflare') ||
-        url.pathname.includes('/api/') ||
-        request.method !== 'GET'
-    ) {
-        return;
-    }
+    if (!isSameOrigin(url) || request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
-    // Statik dosyalar: network-first, fallback cache
     event.respondWith(
-        fetch(request)
-            .then((response) => {
-                // Başarılı response'u cache'e kaydet
-                if (response.status === 200) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(request, clone);
-                    });
-                }
-                return response;
-            })
-            .catch(() => {
-                // Network yoksa cache'den dön
-                return caches.match(request);
-            })
+        fetch(request).then((response) => {
+            if (response.ok && response.type === 'basic') {
+                const clone = response.clone();
+                event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)));
+            }
+            return response;
+        }).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
     );
 });
 
-// Push Bildirim Etkinliği (Web Push)
 self.addEventListener('push', (event) => {
-    let data = { title: 'MephistoMail', body: 'Yeni bir e-posta geldi!' };
+    let data = { title: 'MephistoMail', body: 'Yeni bir e-posta geldi!', url: '/' };
     try {
-        if (event.data) {
-            data = event.data.json();
-        }
-    } catch (e) {
-        if (event.data) {
-            data.body = event.data.text();
-        }
+        if (event.data) data = { ...data, ...event.data.json() };
+    } catch {
+        if (event.data) data.body = event.data.text();
     }
 
     const options = {
-        body: data.body || 'Yeni bir e-posta mesajınız var.',
+        body: String(data.body || 'Yeni bir e-posta mesajınız var.').slice(0, 500),
         icon: '/icon.png',
         badge: '/icon.png',
         vibrate: [100, 50, 100],
-        data: {
-            url: data.url || '/'
-        }
+        data: { url: safeNotificationUrl(data.url) },
     };
 
-    event.waitUntil(
-        self.registration.showNotification(data.title || 'MephistoMail', options)
-    );
+    event.waitUntil(self.registration.showNotification(String(data.title || 'MephistoMail').slice(0, 100), options));
 });
 
-// Bildirime Tıklama Etkinliği — Sekmeyi Odakla veya Aç
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const urlToOpen = event.notification.data?.url || '/';
+    const urlToOpen = safeNotificationUrl(event.notification.data?.url);
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-            for (let i = 0; i < windowClients.length; i++) {
-                const client = windowClients[i];
-                if (client.url.includes(self.location.origin) && 'focus' in client) {
-                    return client.focus();
-                }
-            }
-            if (clients.openWindow) {
-                return clients.openWindow(urlToOpen);
-            }
+            const existing = windowClients.find((client) => isSameOrigin(new URL(client.url)));
+            if (existing && 'focus' in existing) return existing.focus();
+            return clients.openWindow ? clients.openWindow(urlToOpen) : undefined;
         })
     );
 });
