@@ -9,9 +9,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,6 +26,12 @@ jobs:
           node-version: 20
           cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Typecheck and build
+        run: npm ci --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Production build
         run: npm run build
+      - name: Verify build output
+        run: test -f dist/index.html && test -s dist/index.html
