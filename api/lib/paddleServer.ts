@@ -185,3 +185,52 @@ export async function createCustomerPortalSession(
 
   return { url: portalUrl };
 }
+
+/**
+ * Creates a cryptographically signed HMAC token for a verified VIP customer.
+ */
+export function createVipAuthToken(
+  payload: { email: string; paddleCustomerId?: string; isVip: boolean; plan?: string; expiresAt?: number },
+  secret?: string
+): string {
+  const signingSecret = secret || process.env.PADDLE_WEBHOOK_SECRET || process.env.PADDLE_API_KEY || 'mephisto_internal_vip_secret';
+  const data = {
+    ...payload,
+    iat: Date.now(),
+  };
+  const jsonStr = Buffer.from(JSON.stringify(data), 'utf8').toString('base64url');
+  const signature = crypto.createHmac('sha256', signingSecret).update(jsonStr).digest('base64url');
+  return `${jsonStr}.${signature}`;
+}
+
+/**
+ * Verifies a cryptographically signed HMAC VIP token.
+ */
+export function verifyVipAuthToken(
+  token: string,
+  secret?: string
+): { valid: boolean; payload?: { email: string; paddleCustomerId?: string; isVip: boolean; plan?: string; expiresAt?: number } } {
+  if (!token || typeof token !== 'string' || !token.includes('.')) {
+    return { valid: false };
+  }
+
+  try {
+    const signingSecret = secret || process.env.PADDLE_WEBHOOK_SECRET || process.env.PADDLE_API_KEY || 'mephisto_internal_vip_secret';
+    const [jsonStr, signature] = token.split('.');
+    if (!jsonStr || !signature) return { valid: false };
+
+    const expectedSignature = crypto.createHmac('sha256', signingSecret).update(jsonStr).digest('base64url');
+    const sigBuf = Buffer.from(signature, 'utf8');
+    const expBuf = Buffer.from(expectedSignature, 'utf8');
+
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+      return { valid: false };
+    }
+
+    const decoded = JSON.parse(Buffer.from(jsonStr, 'base64url').toString('utf8'));
+    return { valid: true, payload: decoded };
+  } catch {
+    return { valid: false };
+  }
+}
+

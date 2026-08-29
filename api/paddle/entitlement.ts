@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { hasVipAccess } from '../lib/db.ts';
+import { hasVipAccess, getCustomerByEmail } from '../lib/db.ts';
+import { createVipAuthToken } from '../lib/paddleServer.ts';
 
 interface CustomRequest extends IncomingMessage {
   body?: any;
@@ -110,11 +111,25 @@ export default async function handler(
 
   try {
     const vipStatus = await hasVipAccess(email);
+    let vipToken: string | undefined;
+
+    if (vipStatus.isVip) {
+      const customer = await getCustomerByEmail(email);
+      vipToken = createVipAuthToken({
+        email,
+        paddleCustomerId: customer?.paddleCustomerId,
+        isVip: true,
+        plan: vipStatus.plan,
+        expiresAt: vipStatus.expiresAt,
+      });
+    }
+
     sendResponse(res, 200, {
       isVip: vipStatus.isVip,
       plan: vipStatus.plan,
       status: vipStatus.status,
       expiresAt: vipStatus.expiresAt,
+      vipToken,
     });
   } catch (err: any) {
     sendResponse(res, 500, {

@@ -69,6 +69,7 @@ export interface DbAdapter {
 
   isWebhookProcessed(eventId: string): Promise<boolean>;
   markWebhookProcessed(eventId: string, eventType: string): Promise<void>;
+  claimWebhookEvent(eventId: string, eventType: string): Promise<{ claimed: boolean }>;
 
   hasVipAccess(identifier: string): Promise<VipAccessResult>;
   reset(): Promise<void>;
@@ -308,6 +309,20 @@ export class MemoryFileDbAdapter implements DbAdapter {
     this.saveToFile();
   }
 
+  async claimWebhookEvent(eventId: string, eventType: string): Promise<{ claimed: boolean }> {
+    if (!eventId) return { claimed: false };
+    if (this.processedEvents.has(eventId)) {
+      return { claimed: false };
+    }
+    this.processedEvents.set(eventId, {
+      eventId,
+      eventType: eventType || 'unknown',
+      processedAt: Date.now(),
+    });
+    this.saveToFile();
+    return { claimed: true };
+  }
+
   /**
    * Authoritative VIP determination function.
    * - Lifetime: active lifetime entitlement -> isVip: true, plan: 'lifetime'.
@@ -350,7 +365,12 @@ export class MemoryFileDbAdapter implements DbAdapter {
       };
     }
 
-    // 2. Check Subscriptions
+    // 2. Check Subscriptions & Subscription Entitlements
+    const monthlyPriceId = process.env.PADDLE_MONTHLY_PRICE_ID?.trim();
+    const activeSubEntitlement = entitlements.find(
+      (e) => e.type === 'subscription' && e.status === 'active' && (!e.expiresAt || e.expiresAt > Date.now())
+    );
+
     let subscriptions: Subscription[] = [];
     if (isEmail) {
       subscriptions = await this.getSubscriptionsByEmail(normEmail);
@@ -368,7 +388,9 @@ export class MemoryFileDbAdapter implements DbAdapter {
     subscriptions.sort((a, b) => b.updatedAt - a.updatedAt);
 
     const activeSub = subscriptions.find(
-      (s) => s.status === 'active' || s.status === 'trialing'
+      (s) =>
+        (s.status === 'active' || s.status === 'trialing') &&
+        (!monthlyPriceId || s.priceId === monthlyPriceId || Boolean(activeSubEntitlement))
     );
 
     if (activeSub) {
@@ -377,6 +399,15 @@ export class MemoryFileDbAdapter implements DbAdapter {
         plan: 'monthly',
         status: activeSub.status,
         expiresAt: activeSub.scheduledChangeAt,
+      };
+    }
+
+    if (activeSubEntitlement) {
+      return {
+        isVip: true,
+        plan: 'monthly',
+        status: 'active',
+        expiresAt: activeSubEntitlement.expiresAt,
       };
     }
 
@@ -428,6 +459,8 @@ export const upsertEntitlement = (entitlement: Entitlement) => db.upsertEntitlem
 export const isWebhookProcessed = (eventId: string) => db.isWebhookProcessed(eventId);
 export const markWebhookProcessed = (eventId: string, eventType: string) =>
   db.markWebhookProcessed(eventId, eventType);
+export const claimWebhookEvent = (eventId: string, eventType: string) =>
+  db.claimWebhookEvent(eventId, eventType);
 
 export const hasVipAccess = (identifier: string) => db.hasVipAccess(identifier);
 export const resetDb = () => db.reset();

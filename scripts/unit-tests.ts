@@ -134,6 +134,9 @@ import {
   getPaddleApiBaseUrl,
   validatePaddleConfig,
   verifyPaddleWebhookSignature,
+  createCustomerPortalSession,
+  createVipAuthToken,
+  verifyVipAuthToken,
 } from '../api/lib/paddleServer.ts';
 
 import {
@@ -145,6 +148,7 @@ import {
   upsertEntitlement,
   getEntitlementsByCustomerId,
   isWebhookProcessed,
+  claimWebhookEvent,
   resetDb,
 } from '../api/lib/db.ts';
 
@@ -5729,6 +5733,625 @@ test('Suite V (V30): /welcome page polls entitlement and transitions to active s
   assert.equal(poller.isVip, true);
   assert.equal(poller.plan, 'lifetime');
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// SUITE W: PADDLE BILLING SECURITY & PRODUCTION VERIFICATION AUDIT (W1 - W25)
+// ════════════════════════════════════════════════════════════════════════════
+
+test('Suite W (W1): Invalid webhook signature -> rejected with HTTP 401', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w1';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  await resetDb();
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w1_invalid_sig',
+    event_type: 'transaction.completed',
+    data: { id: 'txn_w1', customer_id: 'ctm_w1' },
+  });
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: {
+      'paddle-signature': 'ts=1700000000;h1=0000000000000000000000000000000000000000000000000000000000000000',
+    },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 401);
+  assert.deepEqual(res.getData(), { error: 'Invalid webhook signature' });
+});
+
+test('Suite W (W2): Valid webhook -> accepted with HTTP 200', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w2';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  await resetDb();
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w2_valid_sig',
+    event_type: 'customer.created',
+    data: { id: 'ctm_w2_valid', email: 'valid.user@example.com' },
+  });
+
+  const signature = generatePaddleSignature(rawBody, secret);
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+  assert.deepEqual(res.getData(), { received: true });
+});
+
+test('Suite W (W3): Malformed body -> rejected with HTTP 400', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w3';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  await resetDb();
+
+  const rawBody = 'INVALID_NON_JSON_BODY_<<<>>>';
+  const signature = generatePaddleSignature(rawBody, secret);
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 400);
+  assert.deepEqual(res.getData(), { error: 'Invalid JSON payload' });
+});
+
+test('Suite W (W4): Duplicate webhook -> processed once with duplicate: true', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w4';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  await resetDb();
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w4_duplicate_test',
+    event_type: 'customer.created',
+    data: { id: 'ctm_w4', email: 'dup@example.com' },
+  });
+
+  const signature = generatePaddleSignature(rawBody, secret);
+
+  // Delivery 1
+  const { req: req1, res: res1 } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+  await webhookHandler(req1, res1);
+  assert.equal(res1.getStatusCode(), 200);
+  assert.deepEqual(res1.getData(), { received: true });
+
+  // Delivery 2 (Duplicate)
+  const { req: req2, res: res2 } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+  await webhookHandler(req2, res2);
+  assert.equal(res2.getStatusCode(), 200);
+  assert.deepEqual(res2.getData(), { received: true, duplicate: true });
+});
+
+test('Suite W (W5): Concurrent duplicate webhook -> atomic idempotency claim allows only one processing', async () => {
+  await resetDb();
+  const eventId = 'evt_w5_concurrent_claim';
+  const eventType = 'transaction.completed';
+
+  const [claim1, claim2] = await Promise.all([
+    claimWebhookEvent(eventId, eventType),
+    claimWebhookEvent(eventId, eventType),
+  ]);
+
+  assert.ok((claim1.claimed && !claim2.claimed) || (!claim1.claimed && claim2.claimed));
+  const isClaimedNow = await isWebhookProcessed(eventId);
+  assert.equal(isClaimedNow, true);
+});
+
+test('Suite W (W6): Unknown webhook event type is safely acknowledged without crash or VIP grant', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w6';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  await resetDb();
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w6_unknown_type',
+    event_type: 'report.generated_custom_unexpected',
+    data: { id: 'rep_123', email: 'unknown.event@example.com' },
+  });
+
+  const signature = generatePaddleSignature(rawBody, secret);
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+  assert.deepEqual(res.getData(), { received: true });
+
+  const vip = await hasVipAccess('unknown.event@example.com');
+  assert.equal(vip.isVip, false);
+});
+
+test('Suite W (W7): Unknown price in transaction -> no VIP entitlement granted', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w7';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  process.env.PADDLE_LIFETIME_PRICE_ID = 'pri_lifetime_authoritative_only';
+  await resetDb();
+
+  const userEmail = 'cheapskate@example.com';
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w7_cheap_price',
+    event_type: 'transaction.completed',
+    data: {
+      id: 'txn_w7_cheap',
+      customer_id: 'ctm_w7_cheap',
+      customer: { email: userEmail },
+      items: [{ price: { id: 'pri_cheap_1_cent_item' } }],
+    },
+  });
+
+  const signature = generatePaddleSignature(rawBody, secret);
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, false);
+  assert.equal(vip.status, 'none');
+});
+
+test('Suite W (W8): Valid lifetime transaction -> VIP granted permanently', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w8';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  process.env.PADDLE_LIFETIME_PRICE_ID = 'pri_lifetime_real_prod';
+  await resetDb();
+
+  const userEmail = 'lifetime.supporter@example.com';
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w8_lifetime',
+    event_type: 'transaction.completed',
+    data: {
+      id: 'txn_w8_lifetime',
+      customer_id: 'ctm_w8_lifetime',
+      customer: { email: userEmail },
+      items: [{ price: { id: 'pri_lifetime_real_prod' } }],
+    },
+  });
+
+  const signature = generatePaddleSignature(rawBody, secret);
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, true);
+  assert.equal(vip.plan, 'lifetime');
+  assert.equal(vip.status, 'active');
+});
+
+test('Suite W (W9): Monthly active subscription -> VIP granted', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w9';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  process.env.PADDLE_MONTHLY_PRICE_ID = 'pri_monthly_real_prod';
+  await resetDb();
+
+  const userEmail = 'monthly.user@example.com';
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w9_sub_active',
+    event_type: 'subscription.created',
+    data: {
+      id: 'sub_w9_active',
+      customer_id: 'ctm_w9_monthly',
+      status: 'active',
+      customer: { email: userEmail },
+      items: [{ price: { id: 'pri_monthly_real_prod' } }],
+    },
+  });
+
+  const signature = generatePaddleSignature(rawBody, secret);
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, true);
+  assert.equal(vip.plan, 'monthly');
+  assert.equal(vip.status, 'active');
+});
+
+test('Suite W (W10): Monthly trialing subscription -> VIP granted', async () => {
+  await resetDb();
+  const userEmail = 'trial.user@example.com';
+
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_w10_trial',
+    paddleCustomerId: 'ctm_w10',
+    customerEmail: userEmail,
+    status: 'trialing',
+    priceId: 'pri_monthly_real_prod',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, true);
+  assert.equal(vip.plan, 'monthly');
+  assert.equal(vip.status, 'trialing');
+});
+
+test('Suite W (W11): Scheduled cancellation while active -> VIP remains until period end', async () => {
+  await resetDb();
+  const userEmail = 'scheduled.cancel@example.com';
+  const futureExpiry = Date.now() + 15 * 86400 * 1000; // 15 days in future
+
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_w11_sched',
+    paddleCustomerId: 'ctm_w11',
+    customerEmail: userEmail,
+    status: 'active',
+    priceId: 'pri_monthly_real_prod',
+    scheduledChangeAction: 'cancel',
+    scheduledChangeAt: futureExpiry,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, true);
+  assert.equal(vip.plan, 'monthly');
+  assert.equal(vip.expiresAt, futureExpiry);
+});
+
+test('Suite W (W12): Canceled subscription -> VIP revoked', async () => {
+  await resetDb();
+  const userEmail = 'canceled.user@example.com';
+
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_w12_canceled',
+    paddleCustomerId: 'ctm_w12',
+    customerEmail: userEmail,
+    status: 'canceled',
+    priceId: 'pri_monthly_real_prod',
+    createdAt: Date.now() - 30 * 86400 * 1000,
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, false);
+  assert.equal(vip.status, 'canceled');
+});
+
+test('Suite W (W13): Past due subscription -> VIP revoked under strict policy', async () => {
+  await resetDb();
+  const userEmail = 'pastdue.user@example.com';
+
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_w13_pastdue',
+    paddleCustomerId: 'ctm_w13',
+    customerEmail: userEmail,
+    status: 'past_due',
+    priceId: 'pri_monthly_real_prod',
+    createdAt: Date.now() - 10 * 86400 * 1000,
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, false);
+  assert.equal(vip.status, 'past_due');
+});
+
+test('Suite W (W14): Paused subscription -> VIP revoked under strict policy', async () => {
+  await resetDb();
+  const userEmail = 'paused.user@example.com';
+
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_w14_paused',
+    paddleCustomerId: 'ctm_w14',
+    customerEmail: userEmail,
+    status: 'paused',
+    priceId: 'pri_monthly_real_prod',
+    createdAt: Date.now() - 5 * 86400 * 1000,
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, false);
+  assert.equal(vip.status, 'paused');
+});
+
+test('Suite W (W15): Forged customer ID query -> rejected with 404', async () => {
+  await resetDb();
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/customer-portal',
+    body: {
+      email: 'nonexistent.user@example.com',
+      paddleCustomerId: 'ctm_victim_99999',
+    },
+  });
+
+  await customerPortalHandler(req, res);
+  assert.equal(res.getStatusCode(), 404);
+  assert.deepEqual(res.getData(), {
+    error: 'Customer record not found. No active or past billing account associated with this email.',
+  });
+});
+
+test('Suite W (W16): Forged email in customer portal with invalid token -> rejected with 401', async () => {
+  await resetDb();
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/customer-portal',
+    body: {
+      email: 'victim@example.com',
+      token: 'forged.signature.token',
+    },
+  });
+
+  await customerPortalHandler(req, res);
+  assert.equal(res.getStatusCode(), 401);
+  assert.deepEqual(res.getData(), {
+    error: 'Unauthorized: Invalid or expired VIP session token.',
+  });
+});
+
+test('Suite W (W17): Unauthenticated portal request with corrupted token -> rejected with 401', async () => {
+  await resetDb();
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/customer-portal',
+    headers: {
+      authorization: 'Bearer bad_token_without_dot',
+    },
+    body: {
+      email: 'victim@example.com',
+    },
+  });
+
+  await customerPortalHandler(req, res);
+  assert.equal(res.getStatusCode(), 401);
+});
+
+test('Suite W (W18): Token email mismatch in customer portal request -> rejected with 401', async () => {
+  const secret = 'pdl_ntfset_secret_w18';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  await resetDb();
+
+  const tokenForUserA = createVipAuthToken(
+    { email: 'userA@example.com', isVip: true, plan: 'lifetime' },
+    secret
+  );
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/customer-portal',
+    headers: {
+      authorization: `Bearer ${tokenForUserA}`,
+    },
+    body: {
+      email: 'userB@example.com', // Mismatch!
+    },
+  });
+
+  await customerPortalHandler(req, res);
+  assert.equal(res.getStatusCode(), 401);
+  assert.deepEqual(res.getData(), {
+    error: 'Unauthorized: Invalid or expired VIP session token.',
+  });
+});
+
+test('Suite W (W19): Missing PADDLE_API_KEY -> createCustomerPortalSession fails loudly', async () => {
+  const savedKey = process.env.PADDLE_API_KEY;
+  try {
+    delete process.env.PADDLE_API_KEY;
+    await assert.rejects(
+      async () => createCustomerPortalSession('ctm_test', { apiKey: '' }),
+      /PADDLE_API_KEY is required/
+    );
+  } finally {
+    process.env.PADDLE_API_KEY = savedKey;
+  }
+});
+
+test('Suite W (W20): Missing PADDLE_WEBHOOK_SECRET -> webhook handler returns 500 without crash', async () => {
+  const savedSecret = process.env.PADDLE_WEBHOOK_SECRET;
+  try {
+    delete process.env.PADDLE_WEBHOOK_SECRET;
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      url: '/api/paddle/webhook',
+      rawBody: '{"event_id":"evt_w20"}',
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 500);
+    assert.deepEqual(res.getData(), { error: 'Webhook secret is not configured on server.' });
+  } finally {
+    process.env.PADDLE_WEBHOOK_SECRET = savedSecret;
+  }
+});
+
+test('Suite W (W21): Production/sandbox mismatch -> getPaddleEnv rejects invalid environment strings', () => {
+  const invalidEnvs = ['test', 'staging', 'dev', 'local', 'prod', ''];
+  for (const env of invalidEnvs) {
+    process.env.PADDLE_ENV = env;
+    assert.throws(() => getPaddleEnv(), /PADDLE_ENV/);
+  }
+});
+
+test('Suite W (W22): Client bundle -> zero private secrets (PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, POSTGRES_URL)', () => {
+  const srcDir = path.resolve(process.cwd(), 'src');
+  const allFiles: string[] = [];
+
+  const walk = (d: string) => {
+    for (const f of fs.readdirSync(d, { withFileTypes: true })) {
+      const full = path.join(d, f.name);
+      if (f.isDirectory()) walk(full);
+      else if (['.ts', '.tsx', '.js', '.jsx', '.css', '.html'].includes(path.extname(f.name))) {
+        allFiles.push(full);
+      }
+    }
+  };
+  walk(srcDir);
+
+  const forbidden = [
+    /PADDLE_API_KEY/,
+    /PADDLE_WEBHOOK_SECRET/,
+    /pdl_ntfset_/,
+    /POSTGRES_URL/,
+    /DATABASE_URL/,
+  ];
+
+  for (const file of allFiles) {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const pat of forbidden) {
+      assert.equal(
+        pat.test(text),
+        false,
+        `Private backend secret keyword '${pat}' found in client source file: ${path.relative(process.cwd(), file)}`
+      );
+    }
+  }
+});
+
+test('Suite W (W23): Duplicate transaction event -> creates only one lifetime entitlement in DB', async () => {
+  await resetDb();
+  const customerEmail = 'unique.lifetime@example.com';
+  const paddleCustomerId = 'ctm_unique_101';
+  const txnId = 'txn_unique_101';
+
+  await upsertEntitlement({
+    paddleCustomerId,
+    customerEmail,
+    type: 'lifetime',
+    sourceTransactionId: txnId,
+    status: 'active',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  await upsertEntitlement({
+    paddleCustomerId,
+    customerEmail,
+    type: 'lifetime',
+    sourceTransactionId: txnId,
+    status: 'active',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const entitlements = await getEntitlementsByCustomerId(paddleCustomerId);
+  assert.equal(entitlements.length, 1);
+  assert.equal(entitlements[0].sourceTransactionId, txnId);
+});
+
+test('Suite W (W24): Unknown Paddle price in subscription -> no VIP entitlement created', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w24';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  process.env.PADDLE_MONTHLY_PRICE_ID = 'pri_authoritative_monthly';
+  await resetDb();
+
+  const userEmail = 'nonvip.subscriber@example.com';
+  const rawBody = JSON.stringify({
+    event_id: 'evt_w24_unknown_sub_price',
+    event_type: 'subscription.created',
+    data: {
+      id: 'sub_w24',
+      customer_id: 'ctm_w24',
+      status: 'active',
+      customer: { email: userEmail },
+      items: [{ price: { id: 'pri_some_other_tier_price' } }],
+    },
+  });
+
+  const signature = generatePaddleSignature(rawBody, secret);
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/webhook',
+    rawBody,
+    headers: { 'paddle-signature': signature },
+  });
+
+  await webhookHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+
+  const vip = await hasVipAccess(userEmail);
+  assert.equal(vip.isVip, false);
+});
+
+test('Suite W (W25): Server entitlement endpoint returns signed vipToken when VIP is active', async () => {
+  const secret = 'pdl_ntfset_sec_audit_w25';
+  process.env.PADDLE_WEBHOOK_SECRET = secret;
+  await resetDb();
+
+  const userEmail = 'token.recipient@example.com';
+  await upsertCustomer({
+    paddleCustomerId: 'ctm_w25',
+    email: userEmail,
+  });
+
+  await upsertEntitlement({
+    paddleCustomerId: 'ctm_w25',
+    customerEmail: userEmail,
+    type: 'lifetime',
+    sourceTransactionId: 'txn_w25',
+    status: 'active',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const { req, res } = createMockReqRes({
+    method: 'GET',
+    url: `/api/paddle/entitlement?email=${encodeURIComponent(userEmail)}`,
+  });
+
+  await entitlementHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+  const body = res.getData();
+  assert.equal(body.isVip, true);
+  assert.equal(body.plan, 'lifetime');
+  assert.ok(typeof body.vipToken === 'string' && body.vipToken.includes('.'));
+
+  const verified = verifyVipAuthToken(body.vipToken, secret);
+  assert.equal(verified.valid, true);
+  assert.equal(verified.payload?.email, userEmail);
+  assert.equal(verified.payload?.isVip, true);
+});
+
 
 
 

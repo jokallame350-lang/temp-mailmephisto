@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { getCustomerByEmail, getSubscriptionsByEmail, getEntitlementsByEmail } from '../lib/db.ts';
-import { createCustomerPortalSession } from '../lib/paddleServer.ts';
+import { createCustomerPortalSession, verifyVipAuthToken } from '../lib/paddleServer.ts';
 
 interface CustomRequest extends IncomingMessage {
   body?: any;
@@ -70,10 +70,23 @@ export default async function handler(
 
   const body = await parseRequestBody(req);
   const email = body?.email?.trim();
+  const token =
+    (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7).trim() : '') ||
+    body?.vipToken ||
+    body?.token;
 
   if (!email) {
     sendResponse(res, 400, { error: 'Missing required customer email in request body.' });
     return;
+  }
+
+  // Token Verification (if token provided, ensure it matches email)
+  if (token) {
+    const auth = verifyVipAuthToken(token);
+    if (!auth.valid || (auth.payload?.email && auth.payload.email.toLowerCase() !== email.toLowerCase())) {
+      sendResponse(res, 401, { error: 'Unauthorized: Invalid or expired VIP session token.' });
+      return;
+    }
   }
 
   try {

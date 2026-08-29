@@ -6,8 +6,7 @@ import {
   updateSubscriptionStatus,
   upsertEntitlement,
   getCustomerByPaddleId,
-  isWebhookProcessed,
-  markWebhookProcessed,
+  claimWebhookEvent,
 } from '../lib/db.ts';
 
 export const config = {
@@ -121,9 +120,9 @@ export default async function handler(
     return;
   }
 
-  // 4. Idempotency Check
-  const alreadyProcessed = await isWebhookProcessed(eventId);
-  if (alreadyProcessed) {
+  // 4. Atomic Idempotency Claim (Eliminates Check-then-Act Race Conditions)
+  const claimResult = await claimWebhookEvent(eventId, eventType || 'unknown');
+  if (!claimResult.claimed) {
     sendResponse(res, 200, { received: true, duplicate: true });
     return;
   }
@@ -163,7 +162,7 @@ export default async function handler(
         const items = data.items || data.details?.line_items || [];
         const isLifetime = items.some((item: any) => {
           const priceId = item.price?.id || item.price_id || item.id;
-          return lifetimePriceId && priceId === lifetimePriceId;
+          return Boolean(lifetimePriceId && priceId === lifetimePriceId);
         });
 
         if (isLifetime && paddleCustomerId) {
@@ -186,7 +185,7 @@ export default async function handler(
         const paddleCustomerId = data.customer_id;
         const status = data.status || 'active';
         const items = data.items || [];
-        const priceId = items[0]?.price?.id || items[0]?.price_id || monthlyPriceId || '';
+        const priceId = items[0]?.price?.id || items[0]?.price_id || '';
         const productId = items[0]?.price?.product_id || items[0]?.product_id;
         const scheduledChangeAction = data.scheduled_change?.action;
         const scheduledChangeAt = data.scheduled_change?.effective_at
@@ -216,7 +215,9 @@ export default async function handler(
             updatedAt: Date.now(),
           });
 
-          if (status === 'active' || status === 'trialing') {
+          // Price Security: Only grant VIP if price ID strictly matches PADDLE_MONTHLY_PRICE_ID
+          const isMonthlyVipPrice = Boolean(monthlyPriceId && priceId === monthlyPriceId);
+          if (isMonthlyVipPrice && (status === 'active' || status === 'trialing')) {
             await upsertEntitlement({
               paddleCustomerId,
               customerEmail: email,
@@ -244,12 +245,9 @@ export default async function handler(
         break;
     }
 
-    // 6. Mark Webhook Processed (Idempotency)
-    await markWebhookProcessed(eventId, eventType || 'unknown');
-
     sendResponse(res, 200, { received: true });
   } catch (err: any) {
     console.error('Error processing webhook event:', err);
-    sendResponse(res, 500, { error: `Internal error processing webhook: ${err?.message || 'unknown'}` });
+    sendResponse(res, 500, { error: 'Internal error processing webhook' });
   }
 }
