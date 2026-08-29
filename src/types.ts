@@ -79,3 +79,5 @@ export interface ForwardRule {
   targetEmail: string;
   enabled: boolean;
 }
+
+export * from './types/paddle';

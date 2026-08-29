@@ -1,4 +1,4 @@
-﻿import js from '@eslint/js';
+import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
@@ -52,7 +52,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['scripts/**/*.ts', 'vite.config.ts', 'tailwind.config.js', 'postcss.config.js'],
+    files: ['scripts/**/*.ts', 'api/**/*.ts', 'vite.config.ts', 'tailwind.config.js', 'postcss.config.js'],
     languageOptions: {
       globals: globals.node,
     },

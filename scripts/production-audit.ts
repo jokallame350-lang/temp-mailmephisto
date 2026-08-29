@@ -5,21 +5,25 @@
  * 1. TypeScript typecheck (`tsc -b`)
  * 2. ESLint static analysis check (`eslint . --max-warnings 0`)
  * 3. Unit & Integration test suite (`tsx --test scripts/unit-tests.ts`)
- * 4. Live external smoke test (`tsx scripts/smoke-test.ts`)
- * 5. Production build (`tsc -b && vite build`)
+ * 4. Live External Smoke Test (`tsx scripts/smoke-test.ts`)
+ * 5. Production Vite Build (`tsc -b && vite build`)
+ * 6. Client Bundle Secret Scan (verifying PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET, and server secrets are absent from dist/)
  * 
  * Prints a formatted terminal summary report with execution times and pass/fail statuses.
  */
 
 import { spawn } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
+import fs from 'node:fs';
+import path from 'node:path';
 
 interface AuditStep {
   id: string;
   stepNumber: number;
   title: string;
-  command: string;
-  args: string[];
+  command?: string;
+  args?: string[];
+  customRunner?: () => Promise<{ success: boolean; output: string }>;
 }
 
 interface AuditResult {
@@ -29,6 +33,85 @@ interface AuditResult {
   success: boolean;
   durationMs: number;
   errorOutput?: string;
+}
+
+function getAllFilesRecursively(dirPath: string): string[] {
+  if (!fs.existsSync(dirPath)) return [];
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  const files: string[] = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...getAllFilesRecursively(fullPath));
+    } else if (entry.isFile()) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
+}
+
+async function scanBundleSecrets(): Promise<{ success: boolean; output: string }> {
+  const distDir = path.resolve(process.cwd(), 'dist');
+  if (!fs.existsSync(distDir)) {
+    return {
+      success: false,
+      output: `dist directory does not exist at ${distDir}. Run production build first.`,
+    };
+  }
+
+  const allFiles = getAllFilesRecursively(distDir);
+  if (allFiles.length === 0) {
+    return {
+      success: false,
+      output: 'dist directory is empty. No files found to scan.',
+    };
+  }
+
+  // Forbidden patterns that must NEVER leak to client-side bundles
+  const FORBIDDEN_PATTERNS = [
+    { name: 'PADDLE_API_KEY environment reference', pattern: /PADDLE_API_KEY/g },
+    { name: 'PADDLE_WEBHOOK_SECRET environment reference', pattern: /PADDLE_WEBHOOK_SECRET/g },
+    { name: 'Paddle Webhook Secret (pdl_ntfset_...) live token', pattern: /pdl_ntfset_[a-zA-Z0-9_-]{20,}/g },
+    { name: 'MAILBOX_ISSUER_SECRET environment reference', pattern: /MAILBOX_ISSUER_SECRET/g },
+  ];
+
+  const violations: string[] = [];
+  let totalBytesScanned = 0;
+  let filesScannedCount = 0;
+
+  for (const filePath of allFiles) {
+    // Only inspect text/code assets (.js, .css, .html, .map, .json, .txt)
+    const ext = path.extname(filePath).toLowerCase();
+    if (!['.js', '.css', '.html', '.map', '.json', '.txt'].includes(ext)) {
+      continue;
+    }
+
+    filesScannedCount++;
+    const content = fs.readFileSync(filePath, 'utf-8');
+    totalBytesScanned += content.length;
+    const relPath = path.relative(process.cwd(), filePath).replace(/\\/g, '/');
+
+    for (const { name, pattern } of FORBIDDEN_PATTERNS) {
+      if (pattern.test(content)) {
+        violations.push(`[LEAK DETECTED] ${name} found in ${relPath}`);
+      }
+    }
+  }
+
+  if (violations.length > 0) {
+    const errorMsg = violations.join('\n');
+    return {
+      success: false,
+      output: `CRITICAL SECURITY LEAK: Client bundle secret scan failed!\n${errorMsg}`,
+    };
+  }
+
+  return {
+    success: true,
+    output: `Bundle scan verified ${filesScannedCount} files (${(totalBytesScanned / 1024).toFixed(1)} KB). Zero backend secrets (PADDLE_API_KEY, PADDLE_WEBHOOK_SECRET) found in client dist/ directory.`,
+  };
 }
 
 const AUDIT_STEPS: AuditStep[] = [
@@ -66,6 +149,12 @@ const AUDIT_STEPS: AuditStep[] = [
     title: 'Production Vite Build',
     command: 'npm',
     args: ['run', 'build'],
+  },
+  {
+    id: 'secret_scan',
+    stepNumber: 6,
+    title: 'Client Bundle Secret Scan',
+    customRunner: scanBundleSecrets,
   },
 ];
 
@@ -111,14 +200,30 @@ async function runProductionAudit(): Promise<void> {
   let allPassed = true;
 
   for (const step of AUDIT_STEPS) {
-    const fullCommandStr = `${step.command} ${step.args.join(' ')}`;
+    const fullCommandStr = step.customRunner
+      ? 'Static secret scan across all dist/ production assets'
+      : `${step.command} ${(step.args || []).join(' ')}`;
+
     console.log(`\n────────────────────────────────────────────────────────────────────────────────`);
     console.log(`▶ [Step ${step.stepNumber}/${AUDIT_STEPS.length}] ${step.title}`);
     console.log(`  Executing: ${fullCommandStr}`);
     console.log(`────────────────────────────────────────────────────────────────────────────────\n`);
 
     const stepStart = performance.now();
-    const { success, output } = await runCommand(step.command, step.args);
+    let success = false;
+    let output = '';
+
+    if (step.customRunner) {
+      const res = await step.customRunner();
+      success = res.success;
+      output = res.output;
+      console.log(output);
+    } else if (step.command && step.args) {
+      const res = await runCommand(step.command, step.args);
+      success = res.success;
+      output = res.output;
+    }
+
     const durationMs = Math.round(performance.now() - stepStart);
 
     results.push({
@@ -147,7 +252,7 @@ async function runProductionAudit(): Promise<void> {
 
   for (const r of results) {
     const statusIcon = r.success ? '✅ PASS' : '❌ FAIL';
-    const num = `[${r.stepNumber}/5]`;
+    const num = `[${r.stepNumber}/${AUDIT_STEPS.length}]`;
     const titlePadded = r.title.padEnd(32, ' ');
     const timeFormatted = `(${r.durationMs}ms)`.padStart(10, ' ');
     console.log(` ${statusIcon} | ${num} ${titlePadded} ${timeFormatted}`);

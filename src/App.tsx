@@ -12,6 +12,7 @@ import KeyboardShortcuts from './components/KeyboardShortcuts';
 import { PWAPromptBadge } from './components/PWAPromptBadge';
 import { useMailbox } from './hooks/useMailbox';
 import { useEmails } from './hooks/useEmails';
+import { useVipEntitlement } from './hooks/useVipEntitlement';
 import { Terminal, Loader2, Sparkles, ShieldCheck, ArrowDown } from 'lucide-react';
 import { SEOContent } from './components/SEOContent';
 import { translations, Language } from './translations';
@@ -124,7 +125,7 @@ const App: React.FC<AppProps> = ({
   const [showShareDropModal, setShowShareDropModal] = useState(false);
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [showVipModal, setShowVipModal] = useState(false);
-  const [isVip, setIsVip] = useState(() => localStorage.getItem('mephisto_vip_active') === 'true');
+  const { isVip, setIsVip } = useVipEntitlement();
   const [limitModal, setLimitModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'daily' | 'capacity'; }>({
     isOpen: false,
     title: '',

@@ -25,6 +25,7 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const BreachCheckerPage = lazy(() => import('./pages/BreachCheckerPage'));
 const TestCardGeneratorPage = lazy(() => import('./pages/TestCardGeneratorPage'));
 const PasswordGeneratorPage = lazy(() => import('./pages/PasswordGeneratorPage'));
+const WelcomePage = lazy(() => import('./pages/WelcomePage'));
 
 
 // Loading fallback
@@ -88,6 +89,7 @@ const AppRouter = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/welcome" element={<WelcomePage lang={lang} />} />
           <Route path="/blog" element={<BlogPage lang={lang} />} />
           <Route path="/blog/:slug" element={<BlogPostPage lang={lang} />} />
           <Route path="/tools" element={<ToolsPage lang={lang} />} />

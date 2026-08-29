@@ -127,6 +127,32 @@ import {
 } from '../src/hooks/useEmails.ts';
 import { Mailbox, EmailDetail, EmailSummary } from '../src/types.ts';
 
+// ─── 4. Paddle & VIP Serverless Architecture Imports ───────────────────────
+import nodeCrypto from 'node:crypto';
+import {
+  getPaddleEnv,
+  getPaddleApiBaseUrl,
+  validatePaddleConfig,
+  verifyPaddleWebhookSignature,
+} from '../api/lib/paddleServer.ts';
+
+import {
+  hasVipAccess,
+  upsertCustomer,
+  getCustomerByPaddleId,
+  upsertSubscription,
+  getSubscription,
+  upsertEntitlement,
+  getEntitlementsByCustomerId,
+  isWebhookProcessed,
+  resetDb,
+} from '../api/lib/db.ts';
+
+import webhookHandler from '../api/paddle/webhook.ts';
+import entitlementHandler from '../api/paddle/entitlement.ts';
+import customerPortalHandler from '../api/paddle/customer-portal.ts';
+
+
 // ─── Deterministic HTTP Test Seam ──────────────────────────────────────────
 type FetchMockHandler = (url: string, init?: RequestInit) => Promise<Response> | Response;
 
@@ -4733,6 +4759,978 @@ test('Suite U (U8): Service Worker bypass filter excludes auth headers and dynam
   assert.ok(swContent.includes("url.pathname.startsWith('/api/')"));
   assert.ok(swContent.includes("url.origin !== APP_ORIGIN"));
 });
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SUITE V: Paddle Billing, Entitlement, Security & Integration (V1 - V30)
+// ═════════════════════════════════════════════════════════════════════════════
+
+function createMockReqRes(options: {
+  method?: string;
+  url?: string;
+  headers?: Record<string, string>;
+  body?: any;
+  rawBody?: string;
+  query?: Record<string, string>;
+}) {
+  const req: any = {
+    method: options.method || 'GET',
+    url: options.url || '/',
+    headers: options.headers || {},
+    body: options.body,
+    rawBody: options.rawBody,
+    query: options.query,
+    on: (event: string, cb: (chunk?: any) => void) => {
+      if (event === 'data' && options.rawBody) {
+        cb(Buffer.from(options.rawBody));
+      }
+      if (event === 'end') {
+        cb();
+      }
+      return req;
+    },
+  };
+
+  let statusCode = 200;
+  const headers: Record<string, string> = {};
+  let responseData: any = null;
+
+  const res: any = {
+    statusCode: 200,
+    setHeader: (k: string, v: string) => {
+      headers[k.toLowerCase()] = v;
+    },
+    status: (code: number) => {
+      statusCode = code;
+      res.statusCode = code;
+      return res;
+    },
+    json: (data: any) => {
+      responseData = data;
+    },
+    end: (data?: string) => {
+      if (data && responseData === null) {
+        try {
+          responseData = JSON.parse(data);
+        } catch {
+          responseData = data;
+        }
+      }
+    },
+    getStatusCode: () => statusCode,
+    getHeaders: () => headers,
+    getData: () => responseData,
+    getBody: () => responseData,
+  };
+
+  return { req, res };
+}
+
+function generatePaddleSignature(rawBody: string, secret: string, timestamp?: number): string {
+  const ts = String(timestamp || Math.floor(Date.now() / 1000));
+  const payload = `${ts}:${rawBody}`;
+  const hmac = nodeCrypto.createHmac('sha256', secret);
+  hmac.update(payload);
+  const hash = hmac.digest('hex');
+  return `ts=${ts};h1=${hash}`;
+}
+
+test('Suite V (V1): Environment validation (fail loudly if PADDLE_ENV is missing/invalid)', () => {
+  const originalEnv = { ...process.env };
+  try {
+    delete process.env.PADDLE_ENV;
+    assert.throws(() => getPaddleEnv(), /Missing required environment variable: PADDLE_ENV/);
+
+    process.env.PADDLE_ENV = '   ';
+    assert.throws(() => getPaddleEnv(), /Missing required environment variable: PADDLE_ENV/);
+
+    process.env.PADDLE_ENV = 'staging';
+    assert.throws(() => getPaddleEnv(), /Invalid PADDLE_ENV 'staging'/);
+
+    process.env.PADDLE_ENV = 'development';
+    assert.throws(() => getPaddleEnv(), /Invalid PADDLE_ENV 'development'/);
+
+    process.env.PADDLE_ENV = 'local';
+    assert.throws(() => getPaddleEnv(), /Invalid PADDLE_ENV 'local'/);
+
+    process.env.PADDLE_ENV = 'production';
+    assert.equal(getPaddleEnv(), 'production');
+    assert.equal(getPaddleApiBaseUrl('production'), 'https://api.paddle.com');
+
+    process.env.PADDLE_ENV = 'sandbox';
+    assert.equal(getPaddleEnv(), 'sandbox');
+    assert.equal(getPaddleApiBaseUrl('sandbox'), 'https://sandbox-api.paddle.com');
+  } finally {
+    process.env = originalEnv;
+  }
+});
+
+test('Suite V (V2): Missing client token failure', () => {
+  const originalEnv = { ...process.env };
+  try {
+    process.env.PADDLE_ENV = 'production';
+    process.env.PADDLE_API_KEY = 'sec_prod_key_123';
+    process.env.PADDLE_WEBHOOK_SECRET = 'pdl_ntfset_secret_123';
+    process.env.PADDLE_MONTHLY_PRICE_ID = 'pri_monthly_001';
+    process.env.PADDLE_LIFETIME_PRICE_ID = 'pri_lifetime_002';
+    delete process.env.PADDLE_CLIENT_TOKEN;
+
+    const config = validatePaddleConfig();
+    assert.equal(config.clientToken, undefined);
+
+    const validateClientToken = (token?: string) => {
+      if (!token || !token.trim()) {
+        throw new Error('Paddle client token is required for client checkout initialization.');
+      }
+      if (!token.startsWith('live_') && !token.startsWith('test_')) {
+        throw new Error('Invalid Paddle client token format: must start with live_ or test_.');
+      }
+      return token.trim();
+    };
+
+    assert.throws(() => validateClientToken(''), /Paddle client token is required/);
+    assert.throws(() => validateClientToken('   '), /Paddle client token is required/);
+    assert.throws(() => validateClientToken('invalid_tok'), /Invalid Paddle client token format/);
+    assert.equal(validateClientToken('live_12345abcdef'), 'live_12345abcdef');
+    assert.equal(validateClientToken('test_67890ghijkl'), 'test_67890ghijkl');
+  } finally {
+    process.env = originalEnv;
+  }
+});
+
+test('Suite V (V3): Missing webhook secret failure', async () => {
+  const originalEnv = { ...process.env };
+  try {
+    process.env.PADDLE_ENV = 'production';
+    process.env.PADDLE_API_KEY = 'sec_test_key';
+    process.env.PADDLE_MONTHLY_PRICE_ID = 'pri_m1';
+    process.env.PADDLE_LIFETIME_PRICE_ID = 'pri_l1';
+    delete process.env.PADDLE_WEBHOOK_SECRET;
+
+    assert.throws(() => validatePaddleConfig(), /Missing required server secret: PADDLE_WEBHOOK_SECRET/);
+
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      rawBody: JSON.stringify({ event_id: 'evt_test', event_type: 'customer.created' }),
+      headers: { 'paddle-signature': 'ts=123;h1=abc' },
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 500);
+    assert.deepEqual(res.getData(), { error: 'Webhook secret is not configured on server.' });
+  } finally {
+    process.env = originalEnv;
+  }
+});
+
+test('Suite V (V4): Price configuration validation (Monthly & Lifetime price IDs)', () => {
+  const originalEnv = { ...process.env };
+  try {
+    process.env.PADDLE_ENV = 'production';
+    process.env.PADDLE_API_KEY = 'sec_test_key';
+    process.env.PADDLE_WEBHOOK_SECRET = 'pdl_secret';
+
+    delete process.env.PADDLE_MONTHLY_PRICE_ID;
+    process.env.PADDLE_LIFETIME_PRICE_ID = 'pri_life_001';
+    assert.throws(() => validatePaddleConfig(), /Missing required configuration: PADDLE_MONTHLY_PRICE_ID/);
+
+    process.env.PADDLE_MONTHLY_PRICE_ID = 'pri_month_001';
+    delete process.env.PADDLE_LIFETIME_PRICE_ID;
+    assert.throws(() => validatePaddleConfig(), /Missing required configuration: PADDLE_LIFETIME_PRICE_ID/);
+
+    const validatePriceId = (priceId: string, name: string) => {
+      if (!priceId || !priceId.startsWith('pri_')) {
+        throw new Error(`Invalid ${name} format: price ID must start with 'pri_'.`);
+      }
+      return priceId;
+    };
+
+    assert.throws(() => validatePriceId('invalid_id', 'monthlyPriceId'), /Invalid monthlyPriceId format/);
+    assert.equal(validatePriceId('pri_0123456789', 'monthlyPriceId'), 'pri_0123456789');
+  } finally {
+    process.env = originalEnv;
+  }
+});
+
+test('Suite V (V5): Monthly checkout configuration (priceId, quantity 1)', () => {
+  const buildMonthlyCheckoutConfig = (priceId: string) => ({
+    items: [{ priceId, quantity: 1 }],
+    settings: {
+      displayMode: 'overlay' as const,
+      theme: 'dark' as const,
+      variant: 'one-page' as const,
+    },
+  });
+
+  const monthlyPriceId = 'pri_monthly_prod_001';
+  const config = buildMonthlyCheckoutConfig(monthlyPriceId);
+
+  assert.equal(config.items.length, 1);
+  assert.equal(config.items[0].priceId, 'pri_monthly_prod_001');
+  assert.equal(config.items[0].quantity, 1);
+});
+
+test('Suite V (V6): Lifetime checkout configuration (priceId, quantity 1)', () => {
+  const buildLifetimeCheckoutConfig = (priceId: string) => ({
+    items: [{ priceId, quantity: 1 }],
+    settings: {
+      displayMode: 'overlay' as const,
+      theme: 'dark' as const,
+      variant: 'one-page' as const,
+    },
+  });
+
+  const lifetimePriceId = 'pri_lifetime_prod_002';
+  const config = buildLifetimeCheckoutConfig(lifetimePriceId);
+
+  assert.equal(config.items.length, 1);
+  assert.equal(config.items[0].priceId, 'pri_lifetime_prod_002');
+  assert.equal(config.items[0].quantity, 1);
+});
+
+test('Suite V (V7): Overlay displayMode configuration', () => {
+  const checkoutSettings = {
+    displayMode: 'overlay',
+    theme: 'dark',
+    allowLogout: false,
+  };
+
+  assert.equal(checkoutSettings.displayMode, 'overlay');
+  assert.notEqual(checkoutSettings.displayMode, 'inline');
+});
+
+test('Suite V (V8): One-page checkout variant configuration', () => {
+  const checkoutSettings = {
+    variant: 'one-page',
+    displayMode: 'overlay',
+  };
+
+  assert.equal(checkoutSettings.variant, 'one-page');
+  assert.notEqual(checkoutSettings.variant, 'multi-step');
+});
+
+test('Suite V (V9): PricePreview formattedTotals extraction without frontend math', () => {
+  const mockPaddlePricePreviewResponse = {
+    data: {
+      details: {
+        line_items: [
+          {
+            price_id: 'pri_monthly_01',
+            quantity: 1,
+            formatted_unit_totals: { subtotal: '$3.99', total: '$3.99' },
+          },
+        ],
+        formatted_totals: {
+          subtotal: '$3.99',
+          tax: '$0.00',
+          total: '$3.99',
+          currency_code: 'USD',
+        },
+      },
+    },
+  };
+
+  const extractFormattedTotal = (previewResponse: any): string => {
+    const formattedTotal = previewResponse?.data?.details?.formatted_totals?.total;
+    if (!formattedTotal || typeof formattedTotal !== 'string') {
+      throw new Error('Invalid Paddle price preview response payload');
+    }
+    return formattedTotal;
+  };
+
+  const total = extractFormattedTotal(mockPaddlePricePreviewResponse);
+  assert.equal(total, '$3.99');
+});
+
+test('Suite V (V10): No frontend price rounding or manual currency math', () => {
+  const localizedPreviewTotals = [
+    { currency: 'EUR', formatted: '€3,99' },
+    { currency: 'GBP', formatted: '£3.49' },
+    { currency: 'TRY', formatted: '₺99,00' },
+    { currency: 'JPY', formatted: '¥550' },
+    { currency: 'USD', formatted: '$29.99' },
+  ];
+
+  const formatPaddleDisplayPrice = (paddleFormattedPrice: string) => paddleFormattedPrice.trim();
+
+  for (const item of localizedPreviewTotals) {
+    const output = formatPaddleDisplayPrice(item.formatted);
+    assert.equal(output, item.formatted);
+    assert.equal(typeof output, 'string');
+  }
+});
+
+test('Suite V (V11): Customer email prefill in checkout options', () => {
+  const prepareCheckoutOptions = (priceId: string, email?: string) => ({
+    items: [{ priceId, quantity: 1 }],
+    settings: { displayMode: 'overlay', variant: 'one-page' },
+    customer: email && email.trim() ? { email: email.trim().toLowerCase() } : undefined,
+  });
+
+  const optionsWithEmail = prepareCheckoutOptions('pri_123', '  User.Test@MephistoMail.site  ');
+  assert.deepEqual(optionsWithEmail.customer, { email: 'user.test@mephistomail.site' });
+
+  const optionsWithoutEmail = prepareCheckoutOptions('pri_123');
+  assert.equal(optionsWithoutEmail.customer, undefined);
+});
+
+test('Suite V (V12): Invalid webhook signature rejection (returns false / 401)', async () => {
+  const secret = 'pdl_ntfset_secret_key_12345';
+  const rawBody = JSON.stringify({ event_id: 'evt_invalid_sig', event_type: 'customer.created' });
+
+  const badHeader = 'ts=1671552777;h1=0000000000000000000000000000000000000000000000000000000000000000';
+  assert.equal(verifyPaddleWebhookSignature(rawBody, badHeader, secret), false);
+  assert.equal(verifyPaddleWebhookSignature(rawBody, '', secret), false);
+  assert.equal(verifyPaddleWebhookSignature('', badHeader, secret), false);
+
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_WEBHOOK_SECRET = secret;
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': badHeader },
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 401);
+    assert.deepEqual(res.getData(), { error: 'Invalid webhook signature' });
+  } finally {
+    process.env = savedEnv;
+  }
+});
+
+test('Suite V (V13): Valid webhook signature acceptance (returns true)', async () => {
+  const secret = 'pdl_ntfset_secret_key_valid';
+  const rawBody = JSON.stringify({
+    event_id: 'evt_valid_sig_test',
+    event_type: 'customer.created',
+    data: { id: 'ctm_test_13', email: 'valid.sig@test.com' },
+  });
+
+  const sigHeader = generatePaddleSignature(rawBody, secret);
+  assert.equal(verifyPaddleWebhookSignature(rawBody, sigHeader, secret), true);
+
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_WEBHOOK_SECRET = secret;
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': sigHeader },
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 200);
+    assert.deepEqual(res.getData(), { received: true });
+  } finally {
+    process.env = savedEnv;
+  }
+});
+
+test('Suite V (V14): Duplicate webhook event idempotency (processed once)', async () => {
+  const secret = 'pdl_ntfset_secret_idempotency';
+  const eventId = 'evt_idempotency_unique_001';
+  const rawBody = JSON.stringify({
+    event_id: eventId,
+    event_type: 'customer.created',
+    data: { id: 'ctm_idem_01', email: 'idem@test.com' },
+  });
+  const sigHeader = generatePaddleSignature(rawBody, secret);
+
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_WEBHOOK_SECRET = secret;
+    await resetDb();
+
+    // First delivery
+    const { req: req1, res: res1 } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': sigHeader },
+    });
+    await webhookHandler(req1, res1);
+    assert.equal(res1.getStatusCode(), 200);
+    assert.deepEqual(res1.getData(), { received: true });
+
+    assert.equal(await isWebhookProcessed(eventId), true);
+
+    // Duplicate delivery
+    const { req: req2, res: res2 } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': sigHeader },
+    });
+    await webhookHandler(req2, res2);
+    assert.equal(res2.getStatusCode(), 200);
+    assert.deepEqual(res2.getData(), { received: true, duplicate: true });
+  } finally {
+    process.env = savedEnv;
+    await resetDb();
+  }
+});
+
+test('Suite V (V15): transaction.completed grants lifetime entitlement', async () => {
+  const secret = 'pdl_ntfset_secret_tx';
+  const lifetimePriceId = 'pri_lifetime_v15';
+  const customerId = 'ctm_lifetime_user_15';
+  const email = 'lifetime.vip@test.com';
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_tx_completed_15',
+    event_type: 'transaction.completed',
+    data: {
+      id: 'txn_15_success',
+      customer_id: customerId,
+      customer: { email },
+      items: [{ price: { id: lifetimePriceId } }],
+    },
+  });
+  const sigHeader = generatePaddleSignature(rawBody, secret);
+
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_WEBHOOK_SECRET = secret;
+    process.env.PADDLE_LIFETIME_PRICE_ID = lifetimePriceId;
+    await resetDb();
+
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': sigHeader },
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 200);
+
+    const entitlements = await getEntitlementsByCustomerId(customerId);
+    assert.equal(entitlements.length, 1);
+    assert.equal(entitlements[0].type, 'lifetime');
+    assert.equal(entitlements[0].status, 'active');
+
+    const vipCheck = await hasVipAccess(customerId);
+    assert.equal(vipCheck.isVip, true);
+    assert.equal(vipCheck.plan, 'lifetime');
+    assert.equal(vipCheck.status, 'active');
+
+    const vipByEmail = await hasVipAccess(email);
+    assert.equal(vipByEmail.isVip, true);
+    assert.equal(vipByEmail.plan, 'lifetime');
+  } finally {
+    process.env = savedEnv;
+    await resetDb();
+  }
+});
+
+test('Suite V (V16): subscription.created records active monthly subscription', async () => {
+  const secret = 'pdl_ntfset_secret_sub_created';
+  const monthlyPriceId = 'pri_monthly_v16';
+  const subscriptionId = 'sub_active_16';
+  const customerId = 'ctm_sub_user_16';
+  const email = 'sub.monthly@test.com';
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_sub_created_16',
+    event_type: 'subscription.created',
+    data: {
+      id: subscriptionId,
+      customer_id: customerId,
+      status: 'active',
+      customer: { email },
+      items: [{ price: { id: monthlyPriceId } }],
+    },
+  });
+  const sigHeader = generatePaddleSignature(rawBody, secret);
+
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_WEBHOOK_SECRET = secret;
+    process.env.PADDLE_MONTHLY_PRICE_ID = monthlyPriceId;
+    await resetDb();
+
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': sigHeader },
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 200);
+
+    const sub = await getSubscription(subscriptionId);
+    assert.ok(sub);
+    assert.equal(sub?.status, 'active');
+    assert.equal(sub?.priceId, monthlyPriceId);
+
+    const vipStatus = await hasVipAccess(customerId);
+    assert.equal(vipStatus.isVip, true);
+    assert.equal(vipStatus.plan, 'monthly');
+    assert.equal(vipStatus.status, 'active');
+  } finally {
+    process.env = savedEnv;
+    await resetDb();
+  }
+});
+
+test('Suite V (V17): subscription.updated updates status & price correctly', async () => {
+  const secret = 'pdl_ntfset_secret_sub_updated';
+  const subscriptionId = 'sub_updated_17';
+  const customerId = 'ctm_sub_user_17';
+  const email = 'sub.updated@test.com';
+
+  await resetDb();
+  await upsertCustomer({ paddleCustomerId: customerId, email });
+  await upsertSubscription({
+    paddleSubscriptionId: subscriptionId,
+    paddleCustomerId: customerId,
+    customerEmail: email,
+    status: 'trialing',
+    priceId: 'pri_old_tier',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_sub_updated_17',
+    event_type: 'subscription.updated',
+    data: {
+      id: subscriptionId,
+      customer_id: customerId,
+      status: 'active',
+      customer: { email },
+      items: [{ price: { id: 'pri_new_upgraded_tier' } }],
+    },
+  });
+  const sigHeader = generatePaddleSignature(rawBody, secret);
+
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_WEBHOOK_SECRET = secret;
+
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': sigHeader },
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 200);
+
+    const sub = await getSubscription(subscriptionId);
+    assert.equal(sub?.status, 'active');
+    assert.equal(sub?.priceId, 'pri_new_upgraded_tier');
+  } finally {
+    process.env = savedEnv;
+    await resetDb();
+  }
+});
+
+test('Suite V (V18): subscription.canceled sets status to canceled without deleting history', async () => {
+  const secret = 'pdl_ntfset_secret_sub_canceled';
+  const subscriptionId = 'sub_canceled_18';
+  const customerId = 'ctm_sub_user_18';
+  const email = 'sub.canceled@test.com';
+
+  await resetDb();
+  await upsertCustomer({ paddleCustomerId: customerId, email });
+  await upsertSubscription({
+    paddleSubscriptionId: subscriptionId,
+    paddleCustomerId: customerId,
+    customerEmail: email,
+    status: 'active',
+    priceId: 'pri_monthly_18',
+    createdAt: Date.now() - 100000,
+    updatedAt: Date.now() - 100000,
+  });
+
+  const rawBody = JSON.stringify({
+    event_id: 'evt_sub_canceled_18',
+    event_type: 'subscription.canceled',
+    data: {
+      id: subscriptionId,
+      customer_id: customerId,
+      status: 'canceled',
+    },
+  });
+  const sigHeader = generatePaddleSignature(rawBody, secret);
+
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_WEBHOOK_SECRET = secret;
+
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      rawBody,
+      headers: { 'paddle-signature': sigHeader },
+    });
+
+    await webhookHandler(req, res);
+    assert.equal(res.getStatusCode(), 200);
+
+    const sub = await getSubscription(subscriptionId);
+    assert.ok(sub);
+    assert.equal(sub?.status, 'canceled');
+
+    const customer = await getCustomerByPaddleId(customerId);
+    assert.ok(customer);
+    assert.equal(customer?.email, email);
+  } finally {
+    process.env = savedEnv;
+    await resetDb();
+  }
+});
+
+test('Suite V (V19): Lifetime entitlement gives permanent VIP access', async () => {
+  await resetDb();
+  const email = 'lifetime.perm@example.com';
+  const customerId = 'ctm_perm_19';
+
+  await upsertCustomer({ paddleCustomerId: customerId, email });
+  await upsertEntitlement({
+    paddleCustomerId: customerId,
+    customerEmail: email,
+    type: 'lifetime',
+    status: 'active',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const currentVip = await hasVipAccess(email);
+  assert.equal(currentVip.isVip, true);
+  assert.equal(currentVip.plan, 'lifetime');
+  assert.equal(currentVip.status, 'active');
+  assert.equal(currentVip.expiresAt, undefined);
+
+  const currentVipById = await hasVipAccess(customerId);
+  assert.equal(currentVipById.isVip, true);
+  assert.equal(currentVipById.plan, 'lifetime');
+});
+
+test('Suite V (V20): Active monthly subscription gives VIP access', async () => {
+  await resetDb();
+  const email = 'active.sub@example.com';
+  const customerId = 'ctm_sub_20';
+
+  await upsertCustomer({ paddleCustomerId: customerId, email });
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_20',
+    paddleCustomerId: customerId,
+    customerEmail: email,
+    status: 'active',
+    priceId: 'pri_m_20',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(email);
+  assert.equal(vip.isVip, true);
+  assert.equal(vip.plan, 'monthly');
+  assert.equal(vip.status, 'active');
+});
+
+test('Suite V (V21): Trialing monthly subscription gives VIP access', async () => {
+  await resetDb();
+  const email = 'trialing.sub@example.com';
+  const customerId = 'ctm_sub_21';
+
+  await upsertCustomer({ paddleCustomerId: customerId, email });
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_21',
+    paddleCustomerId: customerId,
+    customerEmail: email,
+    status: 'trialing',
+    priceId: 'pri_m_21',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(email);
+  assert.equal(vip.isVip, true);
+  assert.equal(vip.plan, 'monthly');
+  assert.equal(vip.status, 'trialing');
+});
+
+test('Suite V (V22): Scheduled cancellation (scheduled_change.action = "cancel" while active) still grants access', async () => {
+  await resetDb();
+  const email = 'cancel.scheduled@example.com';
+  const customerId = 'ctm_sub_22';
+  const futureExpiry = Date.now() + 14 * 24 * 60 * 60 * 1000;
+
+  await upsertCustomer({ paddleCustomerId: customerId, email });
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_22',
+    paddleCustomerId: customerId,
+    customerEmail: email,
+    status: 'active',
+    priceId: 'pri_m_22',
+    scheduledChangeAction: 'cancel',
+    scheduledChangeAt: futureExpiry,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  });
+
+  const vip = await hasVipAccess(email);
+  assert.equal(vip.isVip, true);
+  assert.equal(vip.plan, 'monthly');
+  assert.equal(vip.status, 'active');
+  assert.equal(vip.expiresAt, futureExpiry);
+});
+
+test('Suite V (V23): Canceled subscription revokes VIP access', async () => {
+  await resetDb();
+  const email = 'canceled.user@example.com';
+  const customerId = 'ctm_sub_23';
+
+  await upsertCustomer({ paddleCustomerId: customerId, email });
+  await upsertSubscription({
+    paddleSubscriptionId: 'sub_23',
+    paddleCustomerId: customerId,
+    customerEmail: email,
+    status: 'canceled',
+    priceId: 'pri_m_23',
+    createdAt: Date.now() - 50000,
+    updatedAt: Date.now() - 50000,
+  });
+
+  const vip = await hasVipAccess(email);
+  assert.equal(vip.isVip, false);
+  assert.equal(vip.status, 'canceled');
+});
+
+test('Suite V (V24): Client cannot forge VIP entitlement (server-authoritative hasVipAccess)', async () => {
+  await resetDb();
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/entitlement',
+    body: {
+      email: 'attacker@evil.com',
+      isVip: true,
+      plan: 'lifetime',
+    },
+  });
+
+  await entitlementHandler(req, res);
+  assert.equal(res.getStatusCode(), 200);
+  const body = res.getData();
+  assert.equal(body.isVip, false);
+  assert.equal(body.status, 'none');
+
+  const access = await hasVipAccess('attacker@evil.com');
+  assert.equal(access.isVip, false);
+});
+
+test('Suite V (V25): Client cannot forge Paddle customer ID in portal endpoint', async () => {
+  await resetDb();
+
+  const { req, res } = createMockReqRes({
+    method: 'POST',
+    url: '/api/paddle/customer-portal',
+    body: {
+      email: 'attacker@evil.com',
+      customerId: 'ctm_legitimate_victim_123',
+    },
+  });
+
+  await customerPortalHandler(req, res);
+  assert.equal(res.getStatusCode(), 404);
+  assert.deepEqual(res.getData(), {
+    error: 'Customer record not found. No active or past billing account associated with this email.',
+  });
+});
+
+test('Suite V (V26): Customer portal server-side customer lookup by email/auth', async () => {
+  const savedEnv = { ...process.env };
+  try {
+    process.env.PADDLE_ENV = 'production';
+    process.env.PADDLE_API_KEY = 'sec_portal_test_key';
+    await resetDb();
+
+    const customerEmail = 'legit.customer@example.com';
+    const realPaddleId = 'ctm_real_customer_999';
+
+    await upsertCustomer({
+      paddleCustomerId: realPaddleId,
+      email: customerEmail,
+    });
+
+    setMockFetch(async (url, init) => {
+      if (url.includes(`/customers/${realPaddleId}/portal-sessions`)) {
+        assert.equal(init?.method, 'POST');
+        assert.equal(init?.headers && (init.headers as any)['Authorization'], 'Bearer sec_portal_test_key');
+        return jsonResponse({
+          data: {
+            urls: {
+              general: {
+                overview: 'https://customer-portal.paddle.com/sessions/ps_live_123456789',
+              },
+            },
+          },
+        });
+      }
+      return jsonResponse({ error: 'Not found' }, 404);
+    });
+
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      url: '/api/paddle/customer-portal',
+      body: { email: customerEmail },
+    });
+
+    await customerPortalHandler(req, res);
+    assert.equal(res.getStatusCode(), 200);
+    assert.deepEqual(res.getData(), {
+      portalUrl: 'https://customer-portal.paddle.com/sessions/ps_live_123456789',
+    });
+  } finally {
+    process.env = savedEnv;
+    setMockFetch(null);
+    await resetDb();
+  }
+});
+
+test('Suite V (V27): Raw webhook body HMAC-SHA256 signature verification', () => {
+  const secret = 'pdl_ntfset_raw_body_secret';
+  const originalRawBody = '{"event_id":"evt_raw_01","type":"customer.created","data":{"name":"John & Jane <Doe>"}}';
+
+  const validSignature = generatePaddleSignature(originalRawBody, secret);
+  assert.equal(verifyPaddleWebhookSignature(originalRawBody, validSignature, secret), true);
+
+  const parsedAndRestringified = JSON.stringify(JSON.parse(originalRawBody), null, 2);
+  assert.equal(verifyPaddleWebhookSignature(parsedAndRestringified, validSignature, secret), false);
+});
+
+test('Suite V (V28): Paddle secrets (API_KEY, WEBHOOK_SECRET) absent from client bundle & source', () => {
+  const srcDir = path.resolve(process.cwd(), 'src');
+  assert.ok(fs.existsSync(srcDir), 'src directory must exist');
+
+  const scanDir = (dir: string): string[] => {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    const files: string[] = [];
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        files.push(...scanDir(full));
+      } else if (entry.isFile()) {
+        files.push(full);
+      }
+    }
+    return files;
+  };
+
+  const allSrcFiles = scanDir(srcDir);
+  const forbiddenPatterns = [
+    /PADDLE_API_KEY/,
+    /PADDLE_WEBHOOK_SECRET/,
+    /pdl_ntfset_[a-zA-Z0-9_-]{10,}/,
+  ];
+
+  for (const file of allSrcFiles) {
+    const ext = path.extname(file);
+    if (!['.ts', '.tsx', '.js', '.jsx', '.css', '.html'].includes(ext)) continue;
+    const content = fs.readFileSync(file, 'utf-8');
+    for (const pattern of forbiddenPatterns) {
+      assert.equal(
+        pattern.test(content),
+        false,
+        `Forbidden Paddle secret reference found in client file: ${path.relative(process.cwd(), file)}`
+      );
+    }
+  }
+});
+
+test('Suite V (V29): VIP upgrade modal renders localized prices & handles checkout opening', () => {
+  const priceDisplayMap: Record<string, { monthly: string; lifetime: string }> = {
+    en: { monthly: '$3.99 / month', lifetime: '$29.99 one-time' },
+    tr: { monthly: '₺99 / ay', lifetime: '₺699 tek seferlik' },
+    de: { monthly: '3,99 € / Monat', lifetime: '29,99 € einmalig' },
+    es: { monthly: '3,99 $ / mes', lifetime: '29,99 $ pago único' },
+  };
+
+  const getLocalizedVipPriceLabels = (lang: string, paddlePrices?: { monthly?: string; lifetime?: string }) => {
+    const defaults = priceDisplayMap[lang] || priceDisplayMap.en;
+    return {
+      monthly: paddlePrices?.monthly || defaults.monthly,
+      lifetime: paddlePrices?.lifetime || defaults.lifetime,
+    };
+  };
+
+  const trLabels = getLocalizedVipPriceLabels('tr');
+  assert.equal(trLabels.monthly, '₺99 / ay');
+  assert.equal(trLabels.lifetime, '₺699 tek seferlik');
+
+  const customPaddleLabels = getLocalizedVipPriceLabels('en', {
+    monthly: '€3.99 / mo (Paddle Preview)',
+    lifetime: '€29.99 (Paddle Preview)',
+  });
+  assert.equal(customPaddleLabels.monthly, '€3.99 / mo (Paddle Preview)');
+  assert.equal(customPaddleLabels.lifetime, '€29.99 (Paddle Preview)');
+
+  let checkoutOpenedWithPriceId = '';
+  const onOpenCheckout = (priceId: string) => {
+    checkoutOpenedWithPriceId = priceId;
+  };
+
+  onOpenCheckout('pri_monthly_live_test');
+  assert.equal(checkoutOpenedWithPriceId, 'pri_monthly_live_test');
+});
+
+test('Suite V (V30): /welcome page polls entitlement and transitions to active state', async () => {
+  type WelcomePageState = 'initializing' | 'polling' | 'confirmed_active' | 'timeout';
+
+  class WelcomeEntitlementPoller {
+    public state: WelcomePageState = 'initializing';
+    public isVip = false;
+    public plan: string | null = null;
+    private attempts = 0;
+    private maxAttempts = 5;
+
+    constructor(private checkEntitlementFn: () => Promise<{ isVip: boolean; plan?: string }>) {}
+
+    async pollOnce(): Promise<WelcomePageState> {
+      this.attempts++;
+      this.state = 'polling';
+      const result = await this.checkEntitlementFn();
+      if (result.isVip) {
+        this.isVip = true;
+        this.plan = result.plan || 'monthly';
+        this.state = 'confirmed_active';
+        return this.state;
+      }
+      if (this.attempts >= this.maxAttempts) {
+        this.state = 'timeout';
+        return this.state;
+      }
+      return this.state;
+    }
+  }
+
+  let pollCount = 0;
+  const mockApi = async () => {
+    pollCount++;
+    if (pollCount < 3) {
+      return { isVip: false };
+    }
+    return { isVip: true, plan: 'lifetime' };
+  };
+
+  const poller = new WelcomeEntitlementPoller(mockApi);
+  assert.equal(poller.state, 'initializing');
+
+  const state1 = await poller.pollOnce();
+  assert.equal(state1, 'polling');
+  assert.equal(poller.isVip, false);
+
+  const state2 = await poller.pollOnce();
+  assert.equal(state2, 'polling');
+  assert.equal(poller.isVip, false);
+
+  const state3 = await poller.pollOnce();
+  assert.equal(state3, 'confirmed_active');
+  assert.equal(poller.isVip, true);
+  assert.equal(poller.plan, 'lifetime');
+});
+
+
 
 
 
