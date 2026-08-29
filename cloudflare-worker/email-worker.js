@@ -6,11 +6,14 @@
  */
 
 const MESSAGE_TTL = 3600;
+const CREATE_WINDOW = 3600;
+const CREATE_LIMIT = 20;
 const MAX_MESSAGES = 50;
 const MAX_RAW_BYTES = 512 * 1024;
 const MAX_HTML_BYTES = 256 * 1024;
 const MAIL_DOMAINS = ['mephistomail.site', 'anon.mephistomail.site'];
 const ADDRESS_RE = /^[a-z0-9][a-z0-9._-]{0,63}@[a-z0-9.-]+\.[a-z]{2,}$/i;
+const MESSAGE_ID_RE = /^msg_[a-z0-9-]+$/i;
 const ALLOWED_ORIGIN = 'https://mephistomail.site';
 
 const securityHeaders = {
@@ -30,7 +33,7 @@ const corsHeaders = request => {
   return {
     ...securityHeaders,
     ...(origin === ALLOWED_ORIGIN ? { 'Access-Control-Allow-Origin': ALLOWED_ORIGIN, 'Vary': 'Origin' } : {}),
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
   };
 };
@@ -46,8 +49,7 @@ const keyFor = secret => crypto.subtle.importKey('raw', new TextEncoder().encode
 
 const signToken = async (address, secret) => {
   const payload = encode(JSON.stringify({ sub: address, exp: Math.floor(Date.now() / 1000) + MESSAGE_TTL, v: 1 }));
-  const key = await keyFor(secret);
-  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload)));
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', await keyFor(secret), new TextEncoder().encode(payload)));
   return `${payload}.${base64url(sig)}`;
 };
 
@@ -77,16 +79,36 @@ const randomLocalPart = () => {
   return `m${base64url(bytes).toLowerCase()}`.replace(/[^a-z0-9]/g, '').slice(0, 24);
 };
 
+const clientKey = request => {
+  const ip = request.headers.get('CF-Connecting-IP') || request.headers.get('x-forwarded-for') || 'unknown';
+  return String(ip).slice(0, 128);
+};
+
+const checkCreateLimit = async (request, env) => {
+  const key = `rl:create:${clientKey(request)}`;
+  const now = Date.now();
+  const existing = await env.MEPHISTO_KV.get(key, 'json').catch(() => null);
+  if (existing && existing.resetAt > now && existing.count >= CREATE_LIMIT) {
+    return { allowed: false, retryAfter: Math.ceil((existing.resetAt - now) / 1000) };
+  }
+  const next = existing && existing.resetAt > now
+    ? { count: existing.count + 1, resetAt: existing.resetAt }
+    : { count: 1, resetAt: now + CREATE_WINDOW * 1000 };
+  await env.MEPHISTO_KV.put(key, JSON.stringify(next), { expirationTtl: CREATE_WINDOW });
+  return { allowed: true, retryAfter: 0 };
+};
+
 const createMailbox = async env => {
   if (!env.MEPHISTO_KV || !env.MAILBOX_ISSUER_SECRET) throw new Error('Server configuration error');
   const address = `${randomLocalPart()}@${MAIL_DOMAINS[0]}`;
-  // Reserve the mailbox briefly. The email handler can still receive mail for it,
-  // while the token proves the caller obtained this exact mailbox from the service.
-  const reservation = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
   await env.MEPHISTO_KV.put(`mailbox:${address}`, '1', { expirationTtl: MESSAGE_TTL });
-  await env.MEPHISTO_KV.put(`reservation:${reservation}`, address, { expirationTtl: 300 });
   const token = await signToken(address, env.MAILBOX_ISSUER_SECRET);
-  return { address, token, expiresIn: MESSAGE_TTL, reservation };
+  return { address, token, expiresIn: MESSAGE_TTL };
+};
+
+const readInbox = async (address, env) => {
+  const messages = await env.MEPHISTO_KV.get(`inbox:${address}`, 'json');
+  return Array.isArray(messages) ? messages : [];
 };
 
 export default {
@@ -110,8 +132,7 @@ export default {
       };
 
       const key = `inbox:${recipient}`;
-      const existing = await env.MEPHISTO_KV.get(key, 'json');
-      const messages = Array.isArray(existing) ? existing : [];
+      const messages = await readInbox(recipient, env);
       messages.unshift(emailObj);
       await env.MEPHISTO_KV.put(key, JSON.stringify(messages.slice(0, MAX_MESSAGES)), { expirationTtl: MESSAGE_TTL });
       await env.MEPHISTO_KV.put(`mailbox:${recipient}`, '1', { expirationTtl: MESSAGE_TTL });
@@ -123,6 +144,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const headers = corsHeaders(request);
+
     if (request.method === 'OPTIONS') {
       if (request.headers.get('Origin') !== ALLOWED_ORIGIN) return new Response(null, { status: 403, headers });
       return new Response(null, { status: 204, headers });
@@ -137,8 +159,9 @@ export default {
 
     if (url.pathname === '/api/mailbox/create' && request.method === 'POST') {
       try {
-        const result = await createMailbox(env);
-        return json(result, 201, headers);
+        const limit = await checkCreateLimit(request, env);
+        if (!limit.allowed) return json({ error: 'Too many mailbox creations', retryAfter: limit.retryAfter }, 429, { ...headers, 'Retry-After': String(limit.retryAfter) });
+        return json(await createMailbox(env), 201, headers);
       } catch {
         return json({ error: 'Server configuration error' }, 500, headers);
       }
@@ -147,8 +170,22 @@ export default {
     if (url.pathname === '/api/messages' && request.method === 'GET') {
       const address = String(url.searchParams.get('address') || '').toLowerCase().trim();
       if (!await authenticate(request, address, env)) return json({ error: 'Unauthorized' }, 401, headers);
-      const messages = await env.MEPHISTO_KV.get(`inbox:${address}`, 'json');
-      return json({ messages: Array.isArray(messages) ? messages : [] }, 200, headers);
+      return json({ messages: await readInbox(address, env) }, 200, headers);
+    }
+
+    const messageMatch = url.pathname.match(/^\/api\/messages\/([^/]+)$/);
+    if (messageMatch && (request.method === 'GET' || request.method === 'DELETE')) {
+      const messageId = decodeURIComponent(messageMatch[1]);
+      if (!MESSAGE_ID_RE.test(messageId)) return json({ error: 'Invalid message id' }, 400, headers);
+      const address = String(url.searchParams.get('address') || '').toLowerCase().trim();
+      if (!await authenticate(request, address, env)) return json({ error: 'Unauthorized' }, 401, headers);
+      const messages = await readInbox(address, env);
+      const index = messages.findIndex(message => message?.id === messageId);
+      if (index < 0) return json({ error: 'Message not found' }, 404, headers);
+      if (request.method === 'GET') return json({ message: messages[index] }, 200, headers);
+      messages.splice(index, 1);
+      await env.MEPHISTO_KV.put(`inbox:${address}`, JSON.stringify(messages), { expirationTtl: MESSAGE_TTL });
+      return new Response(null, { status: 204, headers });
     }
 
     return json({ service: 'MephistoMail Cloudflare Engine', status: 'online' }, 200, headers);
