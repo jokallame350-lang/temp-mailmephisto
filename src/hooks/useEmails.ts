@@ -60,10 +60,6 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
             const htmlText = typeof html === 'string' ? html : '';
             const action = extractActionLinks(htmlText);
             if (!action) return;
-
-            // Only the strict HTTPS URL accepted by extractActionLinks is contacted.
-            // no-cors is intentional: verification endpoints commonly do not expose CORS,
-            // while the GET still reaches the destination without exposing its response.
             await fetch(action.url, { method: 'GET', mode: 'no-cors', credentials: 'omit', redirect: 'error' }).catch(() => undefined);
             if (mountedRef.current) onAutoVerifySuccess?.(action.label);
         } catch {
@@ -98,3 +94,28 @@ export function useEmails(activeAccount: Mailbox | null, onNewEmail?: (from: str
     }, [activeAccount, autoVerifyEmail, autoVerifyEnabled, notifyNewEmails, onNewEmail]);
 
     const handleManualRefresh = useCallback(async () => { if (!activeAccount) return; setIsLoadingEmails(true); setProgress(25); await fetchEmails(); if (!mountedRef.current) return; setProgress(100); window.setTimeout(() => { if (mountedRef.current) { setIsLoadingEmails(false); setProgress(0); } }, 300); }, [activeAccount, fetchEmails]);
+    useEffect(() => { if (!activeAccount) return; return subscribeToMailboxEvents(activeAccount, fetchEmails); }, [activeAccount, fetchEmails]);
+    useEffect(() => {
+        if (!activeAccount) return;
+        fetchEmails();
+        let intervalId = window.setInterval(fetchEmails, document.hidden ? REFRESH_INTERVAL_HIDDEN : REFRESH_INTERVAL);
+        const handleVisibility = () => { window.clearInterval(intervalId); intervalId = window.setInterval(fetchEmails, document.hidden ? REFRESH_INTERVAL_HIDDEN : REFRESH_INTERVAL); if (!document.hidden) fetchEmails(); };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => { window.clearInterval(intervalId); document.removeEventListener('visibilitychange', handleVisibility); };
+    }, [activeAccount, fetchEmails]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (!selectedEmailId || !activeAccount) { setCurrentEmailDetail(null); return; }
+        setIsLoadingDetail(true);
+        getMessageDetail(activeAccount, selectedEmailId).then(detail => { if (!cancelled) setCurrentEmailDetail(detail || null); }).catch(err => { if (!cancelled) console.warn('Email detail fetch failed:', err); }).finally(() => { if (!cancelled) setIsLoadingDetail(false); });
+        return () => { cancelled = true; };
+    }, [selectedEmailId, activeAccount]);
+
+    const handleDeleteEmail = useCallback(async (id: string, e?: React.MouseEvent) => { e?.stopPropagation(); setEmails(prev => prev.filter(email => email.id !== id)); setDeletedIds(prev => new Set(prev).add(id)); previousIdsRef.current.delete(id); if (selectedEmailId === id) { setSelectedEmailId(null); setCurrentEmailDetail(null); } if (activeAccount) { try { await deleteMessage(activeAccount, id); } catch (err) { console.warn('Email delete failed:', err); } } }, [activeAccount, selectedEmailId]);
+    const handleDeleteAllEmails = useCallback(async () => { const allIds = emails.map(e => e.id); setDeletedIds(prev => { const next = new Set(prev); allIds.forEach(id => next.add(id)); return next; }); previousIdsRef.current.clear(); setEmails([]); setSelectedEmailId(null); setCurrentEmailDetail(null); if (activeAccount) await Promise.allSettled(allIds.map(id => deleteMessage(activeAccount, id))); }, [emails, activeAccount]);
+    const filteredEmails = useMemo(() => { const q = searchQuery.trim().toLowerCase(); if (!q) return emails; return emails.filter(e => { const from = typeof e.from === 'string' ? e.from : `${e.from?.name || ''} ${e.from?.address || ''}`; return `${from} ${e.subject || ''} ${e.intro || ''}`.toLowerCase().includes(q); }); }, [emails, searchQuery]);
+    const incrementAccountStat = useCallback(() => setStats(prev => ({ ...prev, totalAccountsCreated: prev.totalAccountsCreated + 1, lastActivity: Date.now() })), []);
+
+    return { emails: filteredEmails, allEmails: emails, selectedEmailId, currentEmailDetail, isLoadingDetail, isLoadingEmails, fetchError, progress, searchQuery, stats, notifFilters, setSearchQuery, setSelectedEmailId, setNotifFilters, handleManualRefresh, handleDeleteEmail, handleDeleteAllEmails, incrementAccountStat };
+}
