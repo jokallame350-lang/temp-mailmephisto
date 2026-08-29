@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "typecheck": "tsc -b --pretty false",
+    "preview": "vite preview",
+    "check": "npm run typecheck && npm run lint && npm run build"
   },
   "dependencies": {
     "dompurify": "^3.3.1",
